@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Результат сверки</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+  <link rel="icon" type="image/png"
+        href="{{ url_for('static', path='img/omega-logo.png') }}">
+  <style>
+    :root{
+      --brand:#3b82f6;
+      --brand-2:#2563eb;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --bg:#f8fafc;
+      --card:#ffffff;
+    }
+    body{background:#f3f4f6}
+    .container .card{box-shadow:0 12px 35px rgba(15,23,42,0.08);border-radius:16px}
+
+    /* Top back button */
+    .back-top{
+      position:fixed;left:12px;top:14px;z-index:1000;
+      background:linear-gradient(180deg,#fff,#f8fafc);
+      border:1px solid rgba(15,23,42,.08);
+      border-left:3px solid var(--brand);
+      border-radius:9999px;
+      padding:8px 12px;
+      display:flex;align-items:center;gap:8px;
+      color:var(--ink);font-weight:600;cursor:pointer;
+      box-shadow:0 6px 20px rgba(15,23,42,.10);
+    }
+    .back-top:hover{background:#fff}
+
+    /* AI analysis box (без summary/details) */
+    .ai-box{
+      margin:20px 0;
+      background:#f5f7fc;
+      border:1px solid #e2e8f0;
+      border-left:4px solid var(--brand);
+      border-radius:10px;
+      padding:16px;
+    }
+    .toggle-under{
+      display:inline-flex;align-items:center;gap:8px;margin-top:10px;
+      padding:8px 12px;border-radius:10px;border:1px solid #cbd5e1;background:#eef2ff;
+      color:#1e293b;font-weight:600;cursor:pointer;
+      box-shadow:0 1px 2px rgba(0,0,0,.04);
+    }
+    .toggle-under:hover{background:#e2e8ff}
+
+    /* Mail buttons */
+    .mail-buttons{display:flex;gap:15px;margin-top:15px;flex-wrap:wrap}
+    .mail-buttons a,.mail-buttons button{
+      flex:1;min-width:220px;padding:12px 20px;font-size:16px;cursor:pointer;border:none;border-radius:8px;
+      transition:all .3s ease;color:#fff;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;font-weight:500
+    }
+    .btn-primary{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+    .btn-success{background:linear-gradient(135deg,#28a745,#20c997)}
+    .btn-warning{background:linear-gradient(135deg,#ffc107,#ff9800)}
+    .btn-danger{background:linear-gradient(135deg,#dc3545,#c82333)}
+    .btn-neutral{background:linear-gradient(135deg,#6b7280,#4b5563)}
+    .mail-buttons a:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+    .hidden{display:none!important}
+
+    /* Loader */
+    #mail-loading{display:none;margin-top:16px;min-height:90px;text-align:center}
+    .loading-spinner{border:4px solid #f3f3f3;border-top:4px solid #3498db;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:10px auto}
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+    /* Mail result */
+    #mail-result{display:none;margin-top:20px;background:#fff;border-radius:8px;padding:15px;box-shadow:0 2px 6px rgba(0,0,0,.05);animation:fadeIn .3s ease-in}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+    #mail-text{white-space:normal;line-height:1.6}
+
+    .mail-toolbar{display:none;justify-content:flex-end;gap:10px;margin-bottom:10px}
+    .copy-btn{
+      background:linear-gradient(135deg,#10b981,#059669);
+      border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600
+    }
+    .copy-btn:hover{filter:brightness(1.05)}
+    .edit-btn{
+      background:linear-gradient(135deg,#6366f1,#4f46e5);
+      border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600
+    }
+    .edit-btn:hover{filter:brightness(1.05)}
+    .mail-editor{
+      width:100%;min-height:260px;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;
+      font:400 15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;resize:vertical;
+      box-shadow:inset 0 1px 2px rgba(0,0,0,.04);margin-top:10px;
+    }
+
+    /* Кнопки отправки (Telegram / e-mail) под письмом */
+    .send-actions{
+      display:none;
+      margin-top:14px;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-start;
+    }
+    .send-btn{
+      border:none;
+      border-radius:8px;
+      padding:9px 14px;
+      font-size:0.9rem;
+      font-weight:600;
+      cursor:pointer;
+      color:#fff;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      box-shadow:0 2px 6px rgba(15,23,42,.18);
+    }
+    .send-btn-tg{
+      background:linear-gradient(135deg,#0ea5e9,#0284c7);
+    }
+    .send-btn-mail{
+      background:linear-gradient(135deg,#f97316,#ea580c);
+    }
+    .send-btn:hover{
+      filter:brightness(1.05);
+      transform:translateY(-1px);
+    }
+
+    /* Clarifications */
+    .clarify-wrap{margin-top:18px}
+    .clarify-actions{display:none;gap:10px;margin:12px 0}
+    .clarify-btn{background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+    .clarify-form{display:none;margin-top:10px;background:var(--bg);border:1px solid #e2e8f0;border-radius:10px;padding:12px}
+    .clarify-form textarea{width:100%;min-height:160px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:400 14px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+    .clarify-save{margin-top:10px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700}
+    .clarify-hint{color:var(--muted);font-size:13px;margin-top:6px}
+
+    /* Contacts */
+    .contacts-block{margin-top:35px;background:#f8fafc;border-left:4px solid var(--brand);border-radius:10px;padding:20px 24px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+    .contacts-block h3{margin-top:0;color:#1e293b}
+    .contacts-block p{margin:6px 0;font-size:15px;line-height:1.6}
+
+    /* --- новая анимация появления WL --- */
+    @keyframes pulseWL{
+      0%{box-shadow:0 0 0 0 rgba(37,99,235,.55)}
+      70%{box-shadow:0 0 0 12px rgba(37,99,235,0)}
+      100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}
+    }
+    .pulse-wl{animation:pulseWL 1.2s ease-out 3;}
+  </style>
+</head>
+<body>
+  {# Подготовка контактов для кнопок и блока контактов #}
+  {% set c = contacts or {} %}
+  {% set _tg_raw = (c.get('telegram') or '').strip() %}
+  {% if not _tg_raw and tg_username %}{% set _tg_raw = tg_username.strip() %}{% endif %}
+  {% if _tg_raw and ('Нет' not in _tg_raw) %}
+    {% set _tg_noat = _tg_raw[1:] if _tg_raw[0] == '@' else _tg_raw %}
+    {% set _has_tg = True %}
+  {% else %}
+    {% set _tg_noat = '' %}
+    {% set _has_tg = False %}
+  {% endif %}
+
+  {% set _email = (c.get('email') or '').strip() %}
+  {% if _email and ('Нет' not in _email) %}
+    {% set _has_email = True %}
+  {% else %}
+    {% set _has_email = False %}
+  {% endif %}
+
+  {% set _phone = (c.get('phone') or '').strip() %}
+  {% if _phone and ('Нет' not in _phone) %}
+    {% set _has_phone = True %}
+  {% else %}
+    {% set _has_phone = False %}
+  {% endif %}
+
+  {% set _li = (c.get('linkedin') or '').strip() %}
+  {% if _li and ('Нет' not in _li) %}
+    {% set _has_li = True %}
+  {% else %}
+    {% set _has_li = False %}
+  {% endif %}
+
+  {% include "auth/header_auth.html" %}
+  <button type="button" class="back-top" onclick="history.back()">
+    <span>⬅</span><span>Назад</span>
+  </button>
+
+  <div class="container">
+    <div class="card">
+      <h1>✅ Результат сверки</h1>
+      <p class="subtitle">Анализ соответствия резюме требованиям вакансии от искусственного интеллекта</p>
+
+      <!-- Анализ ИИ (без summary/details) -->
+      <div id="ai-box" class="ai-box">
+        <div class="ai-analysis">{{ ai_text|safe }}</div>
+      </div>
+      <!-- Кнопка под сверкой -->
+      <button type="button" id="toggle-sverka" class="toggle-under">⬆ Скрыть сверку</button>
+
+      <!-- Генерация писем -->
+      <div class="result-section">
+        <div class="result-header"><h3>✉️ Генерация писем</h3></div>
+
+        <div class="mail-buttons" id="mail-buttons">
+          <a href="/api/mail/client?vacancy_id={{ vacancy_id }}&candidate_fullname={{ candidate_fullname }}&tg_username={{tg_username}}" class="btn-primary mail-btn" data-type="client">📝 Письмо клиенту</a>
+          <a href="/api/mail/finalist?vacancy_id={{ vacancy_id }}&candidate_fullname={{ candidate_fullname }}&tg_username={{tg_username}}" class="btn-success mail-btn" data-type="finalist">✅ Письмо финалисту</a>
+          <a href="/api/mail/utochnenie?vacancy_id={{ vacancy_id }}&candidate_fullname={{ candidate_fullname }}&tg_username={{tg_username}}" class="btn-warning mail-btn" data-type="utochnenie">❓ Уточняющее письмо</a>
+          <a href="/api/mail/otkaz?vacancy_id={{ vacancy_id }}&candidate_fullname={{ candidate_fullname }}&tg_username={{tg_username}}" class="btn-danger mail-btn" data-type="otkaz">❌ Письмо об отказе</a>
+          <a href="/api/wl/create?vacancy_id={{ vacancy_id }}&candidate_fullname={{ candidate_fullname }}&tg_username={{tg_username}}" class="btn-neutral mail-btn hidden" id="btn-wl" data-type="wl">📄 Сформировать WL-резюме</a>
+        </div>
+
+        <!-- Лоадер -->
+        <div id="mail-loading">
+          <div class="loading-spinner"></div>
+          <p style="color:#475569">Генерация… пожалуйста, подождите.</p>
+        </div>
+
+        <!-- Результат писем -->
+        <div id="mail-result">
+          <div class="mail-toolbar" id="mail-toolbar">
+            <button type="button" class="copy-btn" id="copy-btn">📋 Скопировать</button>
+            <button type="button" class="edit-btn" id="edit-btn" data-state="view">✏️ Редактировать</button>
+          </div>
+
+          <textarea id="mail-editor" class="mail-editor" style="display:none;"></textarea>
+
+          <h4>📧 Сгенерированный текст</h4>
+          <div id="mail-text" aria-live="polite"></div>
+
+          <!-- Кнопки отправки письма -->
+          <div class="send-actions" id="send-actions">
+            {% if _has_tg %}
+              <button type="button" class="send-btn send-btn-tg" id="send-tg-btn">
+                📨 Отправить в Telegram
+              </button>
+            {% endif %}
+            {% if _has_email %}
+              <button type="button" class="send-btn send-btn-mail" id="send-email-btn">
+                📧 Отправить на e-mail
+              </button>
+            {% endif %}
+          </div>
+
+          <!-- Блок уточнений -->
+          <div class="clarify-wrap">
+            <div class="clarify-actions" id="clarify-actions">
+              <button type="button" class="clarify-btn" id="clarify-add">➕ Добавить уточнения</button>
+            </div>
+
+            <form class="clarify-form" id="clarify-form">
+              <label for="clarify-text"><strong>Текст уточнений кандидата / вопросы:</strong></label>
+              <textarea id="clarify-text" name="clarify_text" placeholder="Например: Готов на full-time с 25 ноября; ставка от 1800; РФ, Краснодар; опыт с GraphQL/Apollo — коммерческий, 1,5 года; Micro-frontends — Module Federation, внедрял shell-app и общий UI-кит."></textarea>
+              <div class="clarify-hint">После сохранения бэкенд сохранит уточнения и сформирует WL-резюме и письмо клиенту.</div>
+              <button type="submit" class="clarify-save" id="clarify-save">💾 Сохранить уточнения (создать WL и письмо клиенту)</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Контакты -->
+      <div class="contacts-block">
+        <h3>📞 Контакты для связи</h3>
+
+        {% if _has_tg %}
+          <p><strong>Telegram:</strong> <a href="https://t.me/{{ _tg_noat }}" target="_blank">@{{ _tg_noat }}</a></p>
+        {% endif %}
+
+        {% if _has_email %}
+          <p><strong>E-mail:</strong> <a href="mailto:{{ _email }}">{{ _email }}</a></p>
+        {% endif %}
+
+        {% if _has_phone %}
+          {% set _tel = _phone.replace(' ', '').replace('(', '').replace(')', '').replace('-', '') %}
+          <p><strong>Телефон:</strong> <a href="tel:{{ _tel }}">{{ _phone }}</a></p>
+        {% endif %}
+
+        {% if _has_li %}
+          {% set _li_href = _li if 'http' in _li else 'https://www.linkedin.com/in/' + _li %}
+          <p><strong>LinkedIn:</strong> <a href="{{ _li_href }}" target="_blank">{{ _li }}</a></p>
+        {% endif %}
+
+        {% if not _has_tg and not _has_email and not _has_phone and not _has_li %}
+          <p style="color:#64748b">Контакты не заполнены или требуют уточнения.</p>
+        {% endif %}
+      </div>
+
+      <div class="navigation" style="margin-top:15px;">
+        <a href="/">🏠 Главная</a>
+        <a href="/vacancy"> 📤 Открыть вакансии</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const mailButtons  = document.getElementById('mail-buttons');
+      const wlButton     = document.getElementById('btn-wl');
+      const mailLoading  = document.getElementById('mail-loading');
+      const mailResult   = document.getElementById('mail-result');
+      const mailText     = document.getElementById('mail-text');
+      const toolbar      = document.getElementById('mail-toolbar');
+      const copyBtn      = document.getElementById('copy-btn');
+      const editBtn      = document.getElementById('edit-btn');
+      const mailEditor   = document.getElementById('mail-editor');
+
+      const aiBox        = document.getElementById('ai-box');
+      const toggleSverkaBtn = document.getElementById('toggle-sverka');
+
+      // Кнопки отправки
+      const sendActions   = document.getElementById('send-actions');
+      const sendTgBtn     = document.getElementById('send-tg-btn');
+      const sendEmailBtn  = document.getElementById('send-email-btn');
+
+      // Уточнения
+      const clarifyActions = document.getElementById('clarify-actions');
+      const clarifyAddBtn  = document.getElementById('clarify-add');
+      const clarifyForm    = document.getElementById('clarify-form');
+      const clarifyText    = document.getElementById('clarify-text');
+      const clarifySaveBtn = document.getElementById('clarify-save');
+
+      let currentPlainText = '';
+      let hasLetter = false;
+
+      const pageParams = {
+        vacancy_id: "{{ vacancy_id }}",
+        candidate_fullname: "{{ candidate_fullname }}",
+        tg_username: "{{ tg_username }}"
+      };
+
+      // Контакты для отправки (подставлены с сервера)
+      const CONTACT_TG    = "{{ _tg_noat if _has_tg else '' }}";
+      const CONTACT_EMAIL = "{{ _email  if _has_email else '' }}";
+
+
+      function setLetter(plainText){
+        const html = (plainText || '').replace(/\n/g,'<br>');
+        mailText.innerHTML = html;
+        currentPlainText   = plainText || '';
+        toolbar.style.display = 'flex';
+        mailResult.style.display = 'block';
+        mailResult.scrollIntoView({behavior:'smooth',block:'nearest'});
+        hasLetter = true;
+        if (sendActions && (sendTgBtn || sendEmailBtn)) {
+          sendActions.style.display = 'flex';
+        }
+      }
+      function showButtons(){ mailButtons.style.display = 'flex'; }
+      function normalizeUrl(u){ return String(u || '').replace(/\\/g,'/'); }
+
+      /* === Управление WL-кнопкой === */
+      function hideWl(){
+        wlButton.classList.add('hidden');
+        wlButton.classList.remove('btn-primary');
+        wlButton.classList.add('btn-neutral');
+        wlButton.dataset.type = 'wl';
+        wlButton.removeAttribute('download');
+        wlButton.textContent = '📄 Сформировать WL-резюме';
+        wlButton.href = `/api/wl/create?vacancy_id=${encodeURIComponent(pageParams.vacancy_id)}&candidate_fullname=${encodeURIComponent(pageParams.candidate_fullname)}&tg_username=${encodeURIComponent(pageParams.tg_username||'')}`;
+      }
+      function showWlCreate(){
+        wlButton.classList.remove('hidden');
+        wlButton.classList.remove('btn-primary');
+        wlButton.classList.add('btn-neutral');
+        wlButton.dataset.type = 'wl';
+        wlButton.removeAttribute('download');
+        wlButton.textContent = '📄 Сформировать WL-резюме';
+        wlButton.href = `/api/wl/create?vacancy_id=${encodeURIComponent(pageParams.vacancy_id)}&candidate_fullname=${encodeURIComponent(pageParams.candidate_fullname)}&tg_username=${encodeURIComponent(pageParams.tg_username||'')}`;
+        try{ wlButton.scrollIntoView({behavior:'smooth',block:'center'});}catch(_){}
+      }
+      function turnWlButtonToDownload(url, filename){
+        url = normalizeUrl(url);
+        if(!url) return;
+        wlButton.classList.remove('hidden');
+        wlButton.href = url;
+        wlButton.textContent = '⬇ Скачать WL-резюме';
+        wlButton.classList.remove('btn-neutral');
+        wlButton.classList.add('btn-primary');
+        wlButton.dataset.type = 'download';
+        if (filename) wlButton.setAttribute('download', filename);
+        else wlButton.removeAttribute('download');
+        requestAnimationFrame(() => {
+          wlButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          try { wlButton.focus({ preventScroll: true }); } catch(_) {}
+          wlButton.classList.add('pulse-wl');
+          setTimeout(() => wlButton.classList.remove('pulse-wl'), 2500);
+        });
+      }
+
+      // Переключатель сверки
+      toggleSverkaBtn.addEventListener('click', () => {
+        const hidden = aiBox.style.display === 'none';
+        aiBox.style.display = hidden ? 'block' : 'none';
+        toggleSverkaBtn.textContent = hidden ? '⬆ Скрыть сверку' : '⬇ Раскрыть сверку';
+      });
+
+      // Обработчик кликов по кнопкам генерации
+      async function handleClick(btn){
+        // Сброс UI перед запросом
+        clarifyActions.style.display = 'none';     // по умолчанию скрыть блок уточнений
+        if (btn.dataset.type === 'client') {
+          hideWl();
+        } else if (btn.dataset.type === 'utochnenie') {
+          hideWl();
+        } else if (btn.dataset.type === 'finalist' || btn.dataset.type === 'otkaz') {
+          hideWl();
+        }
+
+        if(btn.dataset.type !== 'wl'){ mailResult.style.display = 'none'; }
+        mailButtons.style.display = 'none';
+        mailLoading.style.display = 'block';
+
+        try{
+          const resp = await fetch(btn.href);
+          const data = await (async function parseJsonSafe(r){
+            const ct = r.headers.get('content-type') || '';
+            if (ct.includes('application/json')) return await r.json();
+            const t = await r.text();
+            throw new Error(t.slice(0,500));
+          })(resp);
+
+          mailLoading.style.display = 'none';
+          showButtons();
+
+          if(data.error){
+            mailText.innerText = 'Ошибка: ' + (data.error || 'Неизвестная ошибка.');
+            toolbar.style.display = 'none';
+            mailResult.style.display = 'block';
+            return;
+          }
+
+          if(btn.dataset.type === 'wl'){
+            const url = data.download_link || data.url || data.file_url || '';
+            const filename = data.filename || '';
+            turnWlButtonToDownload(url, filename);
+            if(!hasLetter){ setLetter('WL-резюме сформировано.'); }
+          } else {
+            const text =
+              (typeof data.mail_text === 'string' && data.mail_text.trim())
+                ? data.mail_text
+                : (data.message ? String(data.message) : 'Готово. Ответ сервиса получен.');
+            setLetter(text);
+
+            if(btn.dataset.type === 'client'){
+              showWlCreate();
+            } else if (btn.dataset.type === 'utochnenie'){
+              clarifyActions.style.display = 'flex';
+              hideWl();
+            } else if (btn.dataset.type === 'finalist' || btn.dataset.type === 'otkaz'){
+              hideWl();
+            }
+          }
+        }catch(err){
+          mailLoading.style.display = 'none';
+          showButtons();
+          mailText.innerText = 'Ошибка при запросе: ' + err.message;
+          toolbar.style.display = 'none';
+          mailResult.style.display = 'block';
+        }
+      }
+
+      if(mailButtons){
+        mailButtons.addEventListener('click', function(e){
+          const target = e.target.closest('.mail-btn');
+          if(!target) return;
+          const type = target.dataset.type || '';
+          if (type === 'download') { return; } // Позволяем обычное скачивание
+          e.preventDefault();
+          handleClick(target);
+        });
+      }
+
+      // Копирование
+      copyBtn.addEventListener('click', async () => {
+        try{
+          await navigator.clipboard.writeText(currentPlainText);
+          copyBtn.textContent = '✅ Скопировано';
+          setTimeout(()=>{copyBtn.textContent='📋 Скопировать';},1200);
+        }catch(e){
+          const ta = document.createElement('textarea');
+          ta.value = currentPlainText;
+          document.body.appendChild(ta);
+          ta.select();
+          try{ document.execCommand('copy'); }catch{}
+          document.body.removeChild(ta);
+          copyBtn.textContent = '✅ Скопировано';
+          setTimeout(()=>{copyBtn.textContent='📋 Скопировать';},1200);
+        }
+      });
+
+      // Редактирование письма
+      function enterEditMode(){
+        mailEditor.value = currentPlainText || '';
+        mailText.style.display = 'none';
+        mailEditor.style.display = 'block';
+        editBtn.textContent = '💾 Сохранить';
+        editBtn.dataset.state = 'edit';
+      }
+      function saveFromEditor(){
+        const newText = (mailEditor.value || '').replace(/\r\n/g,'\n');
+        currentPlainText = newText;
+        mailText.innerHTML = (newText || '').replace(/\n/g,'<br>');
+        mailEditor.style.display = 'none';
+        mailText.style.display = 'block';
+        editBtn.textContent = '✏️ Редактировать';
+        editBtn.dataset.state = 'view';
+      }
+      editBtn.addEventListener('click',()=>{
+        (editBtn.dataset.state||'view')==='view' ? enterEditMode() : saveFromEditor();
+      });
+
+      /* === Уточнения — отправка === */
+      clarifyAddBtn.addEventListener('click', () => {
+        clarifyForm.style.display = 'block';
+      });
+
+      clarifyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          vacancy_id: "{{ vacancy_id }}",
+          candidate_fullname: "{{ candidate_fullname }}",
+          tg_username: "{{ tg_username }}",
+          clarifications: (clarifyText.value || '').trim()
+        };
+        if(!payload.clarifications){ return; }
+
+        clarifySaveBtn.disabled = true;
+        clarifySaveBtn.style.opacity = '0.7';
+        mailResult.style.display = 'none';
+        mailButtons.style.display = 'none';
+        mailLoading.style.display = 'block';
+
+        try{
+          const resp = await fetch('/api/mail/utochnenie/save', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+          });
+          const ct = resp.headers.get('content-type') || '';
+          const data = ct.includes('application/json') ? await resp.json() : JSON.parse(await resp.text());
+
+          const wlLink = data?.wl_download_link;
+          if (wlLink) {
+            turnWlButtonToDownload(wlLink, data?.filename || '');
+          } else {
+            await (async function generateWLFallback(){
+              const url = `/api/wl/create?vacancy_id=${encodeURIComponent(pageParams.vacancy_id)}&candidate_fullname=${encodeURIComponent(pageParams.candidate_fullname)}&tg_username=${encodeURIComponent(pageParams.tg_username||'')}`;
+              const r = await fetch(url);
+              const ctt = r.headers.get('content-type') || '';
+              const d = ctt.includes('application/json') ? await r.json() : JSON.parse(await r.text());
+              if (d.error) throw new Error(d.error);
+              turnWlButtonToDownload(d.download_link || d.url || d.file_url || '', d.filename || '');
+              if(!hasLetter){ setLetter('WL-резюме сформировано.'); }
+            })();
+          }
+
+          const clientText = (typeof data?.client_mail_text==='string' && data.client_mail_text.trim())
+            ? data.client_mail_text
+            : await (async function generateClientLetterFallback(){
+                const url = `/api/mail/client?vacancy_id=${encodeURIComponent(pageParams.vacancy_id)}&candidate_fullname=${encodeURIComponent(pageParams.candidate_fullname)}&tg_username=${encodeURIComponent(pageParams.tg_username||'')}`;
+                const r = await fetch(url);
+                const ctt = r.headers.get('content-type') || '';
+                const d = ctt.includes('application/json') ? await r.json() : JSON.parse(await r.text());
+                if (d.error) throw new Error(d.error);
+                return (typeof d.mail_text==='string' && d.mail_text.trim())
+                  ? d.mail_text : (d.message || 'Письмо клиенту готово.');
+              })();
+
+          setLetter(clientText);
+          clarifyForm.style.display = 'none';
+          clarifyActions.style.display = 'flex';
+
+        }catch(err){
+          mailText.innerText = 'Ошибка при сохранении уточнений: ' + (err.message || err);
+          toolbar.style.display = 'none';
+          mailResult.style.display = 'block';
+          hideWl();
+        }finally{
+          mailLoading.style.display = 'none';
+          showButtons();
+          clarifySaveBtn.disabled = false;
+          clarifySaveBtn.style.opacity = '1';
+        }
+      });
+
+      // Отправка в Telegram
+      if (sendTgBtn) {
+        sendTgBtn.addEventListener('click', async () => {
+          if (!hasLetter || !currentPlainText.trim()) {
+            alert('Сначала сгенерируйте текст письма.');
+            return;
+          }
+          try {
+            const resp = await fetch('/api/send/telegram', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({
+                vacancy_id: pageParams.vacancy_id,
+                candidate_fullname: pageParams.candidate_fullname,
+                contact: CONTACT_TG,
+                message: currentPlainText
+              })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+              alert(data.message || 'Сообщение отправлено в Telegram.');
+            } else {
+              alert(data.detail || data.error || 'Ошибка отправки в Telegram.');
+            }
+          } catch (e) {
+            alert('Сетевая ошибка при отправке в Telegram: ' + e);
+          }
+        });
+      }
+
+      // Отправка на e-mail
+      if (sendEmailBtn) {
+        sendEmailBtn.addEventListener('click', async () => {
+          if (!hasLetter || !currentPlainText.trim()) {
+            alert('Сначала сгенерируйте текст письма.');
+            return;
+          }
+          try {
+            const resp = await fetch('/api/send/email', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({
+                vacancy_id: pageParams.vacancy_id,
+                candidate_fullname: pageParams.candidate_fullname,
+                contact: CONTACT_EMAIL,
+                message: currentPlainText
+              })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+              alert(data.message || 'Сообщение отправлено на e-mail.');
+            } else {
+              alert(data.detail || data.error || 'Ошибка отправки e-mail.');
+            }
+          } catch (e) {
+            alert('Сетевая ошибка при отправке e-mail: ' + e);
+          }
+        });
+      }
+
+      // Изначально WL скрыт
+      hideWl();
+    });
+  </script>
+</body>
+</html>

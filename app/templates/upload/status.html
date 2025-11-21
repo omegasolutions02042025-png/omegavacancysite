@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Статус обработки</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>📊 Статус обработки</h1>
+      <p class="subtitle">Информация о текущем состоянии задачи</p>
+      
+      <div class="result-section">
+        <div class="result-header">
+          <h3>ℹ️ Информация о задаче</h3>
+          <span class="status-badge status-{{ status }}">{{ status_text }}</span>
+        </div>
+        <div class="result-content">
+          {% if task_info %}
+            <p><strong>🆔 ID задачи:</strong> {{ task_info.id }}</p>
+            <p><strong>⏰ Время создания:</strong> {{ task_info.created_at }}</p>
+            <p><strong>📄 Файл:</strong> {{ task_info.filename }}</p>
+          {% else %}
+            <p>Информация о задаче недоступна</p>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <a href="/upload" class="btn btn-primary">📤 Новая загрузка</a>
+        <a href="/sverka" class="btn btn-secondary">🎯 Сверка резюме</a>
+      </div>
+      
+      <div class="navigation">
+        <a href="/">🏠 Главная</a>
+        <a href="/upload">📤 Загрузка</a>
+        <a href="/sverka">🎯 Сверка</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

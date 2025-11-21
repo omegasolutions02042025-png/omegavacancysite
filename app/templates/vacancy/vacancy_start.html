@@ -1,0 +1,1321 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Вакансии</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+  <link rel="icon" type="image/png"
+        href="{{ url_for('static', path='img/omega-logo.png') }}">
+  <style>
+    body { background:#f3f4f6; }
+
+    .container {
+      max-width: 1240px;
+    }
+
+    .layout {
+      display:flex;
+      gap:24px;
+      margin-top:24px;
+      align-items:flex-start;
+    }
+
+    .sidebar {
+      width:340px;
+      flex-shrink:0;
+      background:#ffffff;
+      border-radius:16px;
+      padding:18px 18px 20px;
+      box-shadow:0 12px 35px rgba(15,23,42,0.08);
+      border:1px solid rgba(148,163,184,0.35);
+    }
+
+    .sidebar h2 {
+      margin:0 0 4px;
+      font-size:1.05rem;
+      font-weight:600;
+      color:#0f172a;
+    }
+
+    .sidebar .hint {
+      font-size:0.78rem;
+      color:#64748b;
+      margin-bottom:12px;
+    }
+
+    .filter-block {
+      margin-bottom:14px;
+    }
+
+    .filter-label {
+      display:block;
+      font-size:0.9rem;
+      font-weight:500;
+      color:#111827;
+      margin-bottom:4px;
+    }
+
+    .filter-select {
+      width:100%;
+      padding:6px 8px;
+      border-radius:8px;
+      border:1px solid #cbd5e1;
+      font-size:0.9rem;
+      background:#f9fafb;
+    }
+
+    .filter-chips {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:4px;
+    }
+
+    .chip-checkbox {
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      padding:4px 9px;
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      font-size:0.8rem;
+      cursor:pointer;
+      background:#f9fafb;
+      color:#374151;
+      user-select:none;
+    }
+
+    .chip-checkbox input {
+      position:absolute;
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .chip-checkbox.active {
+      background:#1d4ed8;
+      border-color:#1d4ed8;
+      color:#ffffff;
+    }
+
+    .sidebar-actions {
+      margin-top:12px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .btn-reset {
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:0.85rem;
+      border:1px solid #cbd5e1;
+      background:#ffffff;
+      color:#64748b;
+      cursor:pointer;
+    }
+
+    /* Правая часть с вакансиями */
+    .content {
+      flex:1;
+      min-width:0;
+    }
+
+    .vacancy-list-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:12px;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .vacancy-list-header h1 {
+      margin:0;
+      font-size:1.3rem;
+      color:#0f172a;
+    }
+
+    .vacancy-counter {
+      font-size:0.85rem;
+      color:#64748b;
+      white-space:nowrap;
+    }
+
+    .vacancy-search {
+      flex:1 1 220px;
+      max-width:380px;
+    }
+
+    .vacancy-search-input {
+      width:100%;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      background:#f9fafb;
+      font-size:0.9rem;
+    }
+
+    .vacancy-list {
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .vacancy-card {
+      background:#ffffff;
+      border-radius:14px;
+      padding:14px 16px;
+      border:1px solid #e5e7eb;
+      box-shadow:0 8px 25px rgba(15,23,42,0.06);
+      cursor:pointer;
+      transition:transform 0.05s ease-out, box-shadow 0.05s ease-out, border-color 0.05s;
+    }
+
+    .vacancy-card:hover {
+      transform:translateY(-1px);
+      box-shadow:0 14px 35px rgba(15,23,42,0.12);
+      border-color:#bfdbfe;
+    }
+
+    .vacancy-top-row {
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:6px;
+    }
+
+    .vacancy-meta-tags {
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px;
+    }
+
+    .meta-pill {
+      font-size:0.75rem;
+      padding:3px 7px;
+      border-radius:999px;
+      background:#e5e7eb;
+      color:#4b5563;
+      text-transform:lowercase;
+    }
+
+    .vacancy-age {
+      font-size:0.75rem;
+      color:#9ca3af;
+      white-space:nowrap;
+    }
+
+    .vacancy-title-row {
+      display:flex;
+      align-items:center;
+      gap:6px;
+      margin-bottom:4px;
+      flex-wrap:wrap;
+    }
+
+    .vacancy-title {
+      margin:0;
+      font-size:1.02rem;
+      font-weight:600;
+      color:#111827;
+    }
+
+    .vacancy-id {
+      font-size:0.78rem;
+      color:#9ca3af;
+    }
+
+    /* строка со специализациями */
+    .vacancy-specializations {
+      font-size:0.8rem;
+      color:#6b7280;
+      margin-bottom:4px;
+    }
+
+    .vacancy-specializations strong {
+      font-weight:600;
+      color:#4b5563;
+    }
+
+    .skills-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:4px;
+    }
+
+    .skill-pill {
+      font-size:0.75rem;
+      padding:3px 8px;
+      border-radius:999px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      border:1px solid #bfdbfe;
+    }
+
+    .no-results {
+      padding:18px;
+      border-radius:12px;
+      background:#f9fafb;
+      border:1px dashed #d1d5db;
+      font-size:0.9rem;
+      color:#6b7280;
+      text-align:center;
+      margin-top:12px;
+    }
+
+    .vacancy-loading {
+      padding:12px;
+      text-align:center;
+      font-size:0.85rem;
+      color:#6b7280;
+    }
+
+    /* ===== мульти-дропдауны ===== */
+
+    .multi-dropdown {
+      position:relative;
+      font-size:0.9rem;
+    }
+
+    .multi-dropdown-control {
+      display:flex;
+      align-items:center;
+      min-height:36px;
+      padding:6px 8px;
+      border-radius:8px;
+      border:1px solid #cbd5e1;
+      background:#f9fafb;
+      cursor:pointer;
+      justify-content:space-between;
+      gap:6px;
+    }
+
+    .multi-dropdown-values {
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px;
+      max-height:72px;
+      overflow:auto;
+    }
+
+    .multi-dropdown-placeholder {
+      color:#9ca3af;
+      font-size:0.85rem;
+    }
+
+    .multi-dropdown-arrow {
+      font-size:0.8rem;
+      color:#9ca3af;
+    }
+
+    .multi-dropdown-menu {
+      position:absolute;
+      top:100%;
+      left:0;
+      right:0;
+      margin-top:4px;
+      background:#ffffff;
+      border-radius:12px;
+      border:1px solid #d1d5db;
+      box-shadow:0 12px 32px rgba(15,23,42,0.18);
+      z-index:20;
+      display:none;
+      max-height:280px;
+      overflow:hidden;
+    }
+
+    .multi-dropdown-menu.open {
+      display:block;
+    }
+
+    .multi-dropdown-search {
+      padding:6px 10px 4px;
+      border-bottom:1px solid #e5e7eb;
+    }
+
+    .multi-dropdown-search input {
+      width:100%;
+      border-radius:8px;
+      border:1px solid #e5e7eb;
+      padding:5px 8px;
+      font-size:0.85rem;
+    }
+
+    .multi-dropdown-list {
+      max-height:220px;
+      overflow-y:auto;
+    }
+
+    .multi-dropdown-item {
+      padding:6px 10px;
+      font-size:0.9rem;
+      cursor:pointer;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .multi-dropdown-item:hover {
+      background:#f3f4ff;
+    }
+
+    .multi-dropdown-item.selected {
+      background:#eff6ff;
+      font-weight:500;
+      color:#1d4ed8;
+    }
+
+    .multi-dropdown-empty {
+      padding:8px 10px;
+      font-size:0.85rem;
+      color:#9ca3af;
+    }
+
+    .badge-small {
+      font-size:0.72rem;
+      color:#6b7280;
+    }
+
+    .multi-pill {
+      padding:2px 8px;
+      border-radius:999px;
+      background:#e5e7eb;
+      font-size:0.78rem;
+      color:#374151;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+
+    .multi-pill-close {
+      font-size:0.82rem;
+      cursor:pointer;
+      color:#6b7280;
+    }
+
+    .multi-pill-close:hover {
+      color:#ef4444;
+    }
+  </style>
+</head>
+<body>
+  {% include "auth/header_auth.html" %}
+
+  <div class="container">
+    <div class="card">
+
+      <div class="layout">
+        <!-- Сайдбар с фильтрами -->
+        <aside class="sidebar">
+          <h2>Фильтры вакансий</h2>
+          <div class="hint">Выберите параметры — список справа обновится автоматически.</div>
+
+          <!-- work_format как чипы -->
+          <div class="filter-block">
+            <span class="filter-label">Формат работы</span>
+            <div id="filter_work_format_group" class="filter-chips">
+              <label class="chip-checkbox">
+                <input type="checkbox" value="office"> office
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="remote"> remote
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="hybrid"> hybrid
+              </label>
+            </div>
+          </div>
+
+          <!-- employment_type как чипы -->
+          <div class="filter-block">
+            <span class="filter-label">Тип занятости</span>
+            <div id="filter_employment_type_group" class="filter-chips">
+              <label class="chip-checkbox">
+                <input type="checkbox" value="full_time"> full-time
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="part_time"> part-time
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="project"> project
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="internship"> internship
+              </label>
+            </div>
+          </div>
+
+          <!-- english_level как чипы -->
+          <div class="filter-block">
+            <span class="filter-label">Уровень английского</span>
+            <div id="filter_english_level_group" class="filter-chips">
+              <label class="chip-checkbox">
+                <input type="checkbox" value="a1"> A1
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="a2"> A2
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="b1"> B1
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="b2"> B2
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="c1"> C1
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="c2"> C2
+              </label>
+            </div>
+          </div>
+
+          <!-- grade -->
+          <div class="filter-block">
+            <span class="filter-label">Грейд</span>
+            <div id="filter_grade" class="filter-chips">
+              <label class="chip-checkbox">
+                <input type="checkbox" value="trainee"> trainee
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="junior"> junior
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="middle"> middle
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="senior"> senior
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="lead"> lead
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="head"> head
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="director"> director
+              </label>
+              <label class="chip-checkbox">
+                <input type="checkbox" value="c_level"> c-level
+              </label>
+            </div>
+          </div>
+
+          <!-- Локация -->
+          <div class="filter-block">
+            <label class="filter-label" for="filter_location">Локация кандидата</label>
+            <select id="filter_location" class="filter-select">
+              <option value="">Любая</option>
+            </select>
+          </div>
+
+          <!-- Менеджер -->
+          <div class="filter-block">
+            <label class="filter-label" for="filter_manager">Менеджер</label>
+            <select id="filter_manager" class="filter-select">
+              <option value="">Любой</option>
+            </select>
+          </div>
+
+          <!-- Заказчик -->
+          <div class="filter-block">
+            <label class="filter-label" for="filter_customer">Заказчик</label>
+            <select id="filter_customer" class="filter-select">
+              <option value="">Любой</option>
+            </select>
+          </div>
+
+          <!-- specializations -->
+          <div class="filter-block">
+            <label class="filter-label">Специализации</label>
+
+            <input id="filter_specializations" type="hidden">
+
+            <div class="multi-dropdown" id="spec_dropdown">
+              <div class="multi-dropdown-control" id="spec_dropdown_control">
+                <div class="multi-dropdown-values" id="spec_selected_values">
+                  <span class="multi-dropdown-placeholder">
+                    Искать специализации
+                  </span>
+                </div>
+                <div class="multi-dropdown-arrow">▾</div>
+              </div>
+              <div class="multi-dropdown-menu" id="spec_dropdown_menu">
+                <div class="multi-dropdown-search">
+                  <input type="text" id="spec_search_input" placeholder="Искать специализации">
+                </div>
+                <div class="multi-dropdown-list" id="spec_list">
+                  <div class="multi-dropdown-empty" id="spec_empty" style="display:none;">
+                    Ничего не найдено
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="hint">Можно выбрать несколько специализаций.</div>
+          </div>
+
+          <!-- skills -->
+          <div class="filter-block">
+            <label class="filter-label">Навыки</label>
+
+            <input id="filter_skills" type="hidden">
+
+            <div class="multi-dropdown" id="skills_dropdown">
+              <div class="multi-dropdown-control" id="skills_dropdown_control">
+                <div class="multi-dropdown-values" id="skills_selected_values">
+                  <span class="multi-dropdown-placeholder">
+                    Искать навыки
+                  </span>
+                </div>
+                <div class="multi-dropdown-arrow">▾</div>
+              </div>
+              <div class="multi-dropdown-menu" id="skills_dropdown_menu">
+                <div class="multi-dropdown-search">
+                  <input type="text" id="skills_search_input" placeholder="Искать навыки">
+                </div>
+                <div class="multi-dropdown-list" id="skills_list">
+                  <div class="multi-dropdown-empty" id="skills_empty" style="display:none;">
+                    Ничего не найдено
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="hint">Можно выбрать несколько навыков.</div>
+          </div>
+
+          <!-- domains -->
+          <div class="filter-block">
+            <label class="filter-label">Сферы / домены</label>
+
+            <input id="filter_domains" type="hidden">
+
+            <div class="multi-dropdown" id="domains_dropdown">
+              <div class="multi-dropdown-control" id="domains_dropdown_control">
+                <div class="multi-dropdown-values" id="domains_selected_values">
+                  <span class="multi-dropdown-placeholder">
+                    Искать сферы
+                  </span>
+                </div>
+                <div class="multi-dropdown-arrow">▾</div>
+              </div>
+              <div class="multi-dropdown-menu" id="domains_dropdown_menu">
+                <div class="multi-dropdown-search">
+                  <input type="text" id="domains_search_input" placeholder="Искать сферы">
+                </div>
+                <div class="multi-dropdown-list" id="domains_list">
+                  <div class="multi-dropdown-empty" id="domains_empty" style="display:none;">
+                    Ничего не найдено
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="hint">Можно выбрать одну или несколько сфер.</div>
+          </div>
+
+          <div class="sidebar-actions">
+            <button type="button" class="btn-reset" id="btn_reset_filters">Сбросить</button>
+          </div>
+        </aside>
+
+        <!-- Контент с вакансиями -->
+        <main class="content">
+          <div class="vacancy-list-header">
+            <h1>Подходящие вакансии</h1>
+            <div class="vacancy-search">
+              <input
+                type="text"
+                id="search_title"
+                class="vacancy-search-input"
+                placeholder="Поиск по названию вакансии"
+              >
+            </div>
+            <div class="vacancy-counter" id="vacancy_counter">Загружаем...</div>
+          </div>
+
+          <div class="vacancy-list" id="vacancy_list"></div>
+
+          <div class="no-results" id="no_results" style="display:none;">
+            По выбранным фильтрам вакансий не найдено. Попробуйте ослабить условия.
+          </div>
+
+          <div class="vacancy-loading" id="vacancy_loading" style="display:none;">
+            Загружаем ещё вакансии...
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const VACANCY_BASE_URL = '/vacancy/';
+
+    const filters = {
+      work_format: [],
+      employment_type: [],
+      english_level: [],
+      grade: [],
+      specializations: [],
+      skills: [],
+      domains: [],
+      location: '',
+      manager: '',
+      customer: '',
+      title: '',
+      page: 1,
+      page_size: 20,
+    };
+
+    const elGradeBlock = document.getElementById('filter_grade');
+    const elWorkFormatBlock = document.getElementById('filter_work_format_group');
+    const elEmploymentTypeBlock = document.getElementById('filter_employment_type_group');
+    const elEnglishLevelBlock = document.getElementById('filter_english_level_group');
+
+    const elLocation = document.getElementById('filter_location');
+    const elManager = document.getElementById('filter_manager');
+    const elCustomer = document.getElementById('filter_customer');
+
+    const elSpecializationsHidden = document.getElementById('filter_specializations');
+    const elSkillsHidden = document.getElementById('filter_skills');
+    const elDomainsHidden = document.getElementById('filter_domains');
+
+    const elVacancyList = document.getElementById('vacancy_list');
+    const elCounter = document.getElementById('vacancy_counter');
+    const elNoResults = document.getElementById('no_results');
+    const elLoading = document.getElementById('vacancy_loading');
+    const btnResetFilters = document.getElementById('btn_reset_filters');
+    const elTitleSearch = document.getElementById('search_title');
+
+    // Специализации
+    const specDropdown = document.getElementById('spec_dropdown');
+    const specDropdownControl = document.getElementById('spec_dropdown_control');
+    const specDropdownMenu = document.getElementById('spec_dropdown_menu');
+    const specSearchInput = document.getElementById('spec_search_input');
+    const specList = document.getElementById('spec_list');
+    const specEmpty = document.getElementById('spec_empty');
+    const specSelectedValues = document.getElementById('spec_selected_values');
+
+    // Навыки
+    const skillsDropdown = document.getElementById('skills_dropdown');
+    const skillsDropdownControl = document.getElementById('skills_dropdown_control');
+    const skillsDropdownMenu = document.getElementById('skills_dropdown_menu');
+    const skillsSearchInput = document.getElementById('skills_search_input');
+    const skillsList = document.getElementById('skills_list');
+    const skillsEmpty = document.getElementById('skills_empty');
+    const skillsSelectedValues = document.getElementById('skills_selected_values');
+
+    // Домены
+    const domainsDropdown = document.getElementById('domains_dropdown');
+    const domainsDropdownControl = document.getElementById('domains_dropdown_control');
+    const domainsDropdownMenu = document.getElementById('domains_dropdown_menu');
+    const domainsSearchInput = document.getElementById('domains_search_input');
+    const domainsList = document.getElementById('domains_list');
+    const domainsEmpty = document.getElementById('domains_empty');
+    const domainsSelectedValues = document.getElementById('domains_selected_values');
+
+    let allSpecializations = [];
+    let selectedSpecializations = [];
+
+    let allSkills = [];
+    let selectedSkills = [];
+
+    let allDomains = [];
+    let selectedDomains = [];
+
+    let isLoading = false;
+    let hasMore = true;
+    let totalGlobal = 0;
+
+    function debounce(fn, delay) {
+      let t;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    function triggerSearch(resetPage = true) {
+      if (resetPage) {
+        filters.page = 1;
+        hasMore = true;
+      }
+      collectFiltersFromUI();
+      loadVacancies(filters.page === 1 ? false : true);
+    }
+
+    // обработка чипов (универсальная)
+    function setupChipGroup(container, onChange) {
+      container.addEventListener('click', (e) => {
+        const label = e.target.closest('.chip-checkbox');
+        if (!label) return;
+        const input = label.querySelector('input[type=checkbox]');
+        input.checked = !input.checked;
+        label.classList.toggle('active', input.checked);
+        onChange();
+      });
+    }
+
+    setupChipGroup(elGradeBlock, () => triggerSearch(true));
+    setupChipGroup(elWorkFormatBlock, () => triggerSearch(true));
+    setupChipGroup(elEmploymentTypeBlock, () => triggerSearch(true));
+    setupChipGroup(elEnglishLevelBlock, () => triggerSearch(true));
+
+    elLocation.addEventListener('change', () => triggerSearch(true));
+    elManager.addEventListener('change', () => triggerSearch(true));
+    elCustomer.addEventListener('change', () => triggerSearch(true));
+
+    elTitleSearch.addEventListener('input', debounce(() => {
+      filters.title = elTitleSearch.value.trim();
+      triggerSearch(true);
+    }, 300));
+
+    btnResetFilters.addEventListener('click', () => {
+      resetFiltersUI();
+      triggerSearch(true);
+    });
+
+    function resetFiltersUI() {
+      // сброс чипов
+      [elGradeBlock, elWorkFormatBlock, elEmploymentTypeBlock, elEnglishLevelBlock].forEach(block => {
+        block.querySelectorAll('.chip-checkbox').forEach(lbl => {
+          const input = lbl.querySelector('input[type=checkbox]');
+          input.checked = false;
+          lbl.classList.remove('active');
+        });
+      });
+
+      elLocation.value = '';
+      elManager.value = '';
+      elCustomer.value = '';
+      elTitleSearch.value = '';
+
+      selectedSpecializations = [];
+      selectedSkills = [];
+      selectedDomains = [];
+      updateSpecUI();
+      updateSkillsUI();
+      updateDomainsUI();
+    }
+
+    function collectFiltersFromUI() {
+      const getCheckedValues = (block) => {
+        const vals = [];
+        block.querySelectorAll('input[type=checkbox]:checked').forEach(ch => vals.push(ch.value));
+        return vals;
+      };
+
+      filters.work_format = getCheckedValues(elWorkFormatBlock);
+      filters.employment_type = getCheckedValues(elEmploymentTypeBlock);
+      filters.english_level = getCheckedValues(elEnglishLevelBlock);
+      filters.grade = getCheckedValues(elGradeBlock);
+
+      filters.specializations = [...selectedSpecializations];
+      elSpecializationsHidden.value = selectedSpecializations.join(',');
+
+      filters.skills = [...selectedSkills];
+      elSkillsHidden.value = selectedSkills.join(',');
+
+      filters.domains = [...selectedDomains];
+      elDomainsHidden.value = selectedDomains.join(',');
+
+      filters.location = elLocation.value || '';
+      filters.manager = elManager.value || '';
+      filters.customer = elCustomer.value || '';
+
+      filters.title = elTitleSearch.value.trim();
+    }
+
+    async function loadVacancies(append = false) {
+      if (isLoading || (!hasMore && append)) return;
+
+      isLoading = true;
+      elLoading.style.display = append ? 'block' : 'none';
+      if (!append) {
+        elVacancyList.innerHTML = '';
+        elCounter.textContent = 'Загружаем...';
+        elNoResults.style.display = 'none';
+      }
+
+      const params = new URLSearchParams();
+      if (filters.work_format.length) params.set('work_format', filters.work_format.join(','));
+      if (filters.employment_type.length) params.set('employment_type', filters.employment_type.join(','));
+      if (filters.english_level.length) params.set('english_level', filters.english_level.join(','));
+      if (filters.grade.length) params.set('grade', filters.grade.join(','));
+      if (filters.specializations.length) params.set('specializations', filters.specializations.join(','));
+      if (filters.skills.length) params.set('skills', filters.skills.join(','));
+      if (filters.domains.length) params.set('domains', filters.domains.join(','));
+      if (filters.location) params.set('location', filters.location);
+      if (filters.manager) params.set('manager', filters.manager);
+      if (filters.customer) params.set('customer', filters.customer);
+      if (filters.title) params.set('title', filters.title);
+
+      params.set('page', String(filters.page));
+      params.set('page_size', String(filters.page_size));
+
+      const url = `/vacancies/search?${params.toString()}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const items = data.items || data.vacancies || [];
+        const total = data.total ?? items.length;
+        const more = data.has_more ?? (items.length === filters.page_size);
+
+        if (!append) {
+          totalGlobal = total;
+          elCounter.textContent = `${totalGlobal} вакансий найдено`;
+          elVacancyList.innerHTML = '';
+        }
+
+        if (!items.length && !append) {
+          elCounter.textContent = '0 вакансий';
+          elNoResults.style.display = 'block';
+          hasMore = false;
+          return;
+        }
+
+        renderVacancies(items, append);
+        hasMore = more;
+        if (!hasMore) elLoading.style.display = 'none';
+      } catch (e) {
+        console.error('Ошибка загрузки вакансий', e);
+        if (!append) elCounter.textContent = 'Ошибка загрузки';
+      } finally {
+        isLoading = false;
+        elLoading.style.display = 'none';
+      }
+    }
+
+    function renderVacancies(vacancies, append) {
+      if (!append) {
+        elVacancyList.innerHTML = '';
+      }
+      vacancies.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'vacancy-card';
+
+        card.addEventListener('click', () => {
+          const link = VACANCY_BASE_URL + encodeURIComponent(v.vacancy_id);
+          window.open(link, '_blank');
+        });
+
+        const metaTags = [];
+        if (v.work_format) metaTags.push(v.work_format);
+        if (v.company_type) metaTags.push(v.company_type);
+        if (v.employment_type) metaTags.push(v.employment_type);
+        if (v.grade) metaTags.push(v.grade);
+
+        const skills = Array.isArray(v.skills) ? v.skills : [];
+
+        let specsArr = [];
+        if (Array.isArray(v.specializations)) {
+          specsArr = v.specializations.filter(Boolean);
+        } else if (typeof v.specializations === 'string' && v.specializations.trim()) {
+          specsArr = v.specializations
+            .split(/[;,/|]/)
+            .map(s => s.trim())
+            .filter(Boolean);
+        }
+
+        const specsHtml = specsArr.length
+          ? `<div class="vacancy-specializations">
+               <strong>Специализации:</strong> ${specsArr.join(', ')}
+             </div>`
+          : '';
+
+        card.innerHTML = `
+          <div class="vacancy-top-row">
+            <div class="vacancy-meta-tags">
+              ${metaTags.map(t => `<span class="meta-pill">${t}</span>`).join('')}
+            </div>
+            <div class="vacancy-age"></div>
+          </div>
+          <div class="vacancy-title-row">
+            <h3 class="vacancy-title">${v.title || ''}</h3>
+            <span class="vacancy-id">#${v.vacancy_id || ''}</span>
+          </div>
+          ${specsHtml}
+          <div class="skills-row">
+            ${skills.map(s => `<span class="skill-pill">${s}</span>`).join('')}
+          </div>
+        `;
+
+        elVacancyList.appendChild(card);
+      });
+    }
+
+    // инфинит-скролл
+    window.addEventListener('scroll', () => {
+      if (!hasMore || isLoading) return;
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const threshold = document.body.offsetHeight - 400;
+      if (scrollPosition >= threshold) {
+        filters.page += 1;
+        loadVacancies(true);
+      }
+    });
+
+    // ====== мульти-дропдауны (универсальные вспомогалки) ======
+
+    function createRemovablePill(text, type) {
+      const pill = document.createElement('span');
+      pill.className = 'multi-pill';
+      const label = document.createElement('span');
+      label.textContent = text;
+      const close = document.createElement('span');
+      close.className = 'multi-pill-close';
+      close.textContent = '×';
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (type === 'spec') toggleSpec(text, false);
+        if (type === 'skill') toggleSkill(text, false);
+        if (type === 'domain') toggleDomain(text, false);
+        triggerSearch(true);
+      });
+      pill.appendChild(label);
+      pill.appendChild(close);
+      return pill;
+    }
+
+    // Открытие/закрытие
+    specDropdownControl.addEventListener('click', () => {
+      const isOpen = specDropdownMenu.classList.contains('open');
+      closeAllDropdowns();
+      if (!isOpen) {
+        specDropdownMenu.classList.add('open');
+        specSearchInput.focus();
+        fetchSpecializations(specSearchInput.value);
+      }
+    });
+
+    skillsDropdownControl.addEventListener('click', () => {
+      const isOpen = skillsDropdownMenu.classList.contains('open');
+      closeAllDropdowns();
+      if (!isOpen) {
+        skillsDropdownMenu.classList.add('open');
+        skillsSearchInput.focus();
+        fetchSkills(skillsSearchInput.value);
+      }
+    });
+
+    domainsDropdownControl.addEventListener('click', () => {
+      const isOpen = domainsDropdownMenu.classList.contains('open');
+      closeAllDropdowns();
+      if (!isOpen) {
+        domainsDropdownMenu.classList.add('open');
+        domainsSearchInput.focus();
+        fetchDomains(domainsSearchInput.value);
+      }
+    });
+
+    function closeAllDropdowns() {
+      specDropdownMenu.classList.remove('open');
+      skillsDropdownMenu.classList.remove('open');
+      domainsDropdownMenu.classList.remove('open');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!specDropdown.contains(e.target) &&
+          !skillsDropdown.contains(e.target) &&
+          !domainsDropdown.contains(e.target)) {
+        closeAllDropdowns();
+      }
+    });
+
+    specSearchInput.addEventListener('input', debounce(() => {
+      fetchSpecializations(specSearchInput.value);
+    }, 250));
+
+    skillsSearchInput.addEventListener('input', debounce(() => {
+      fetchSkills(skillsSearchInput.value);
+    }, 250));
+
+    domainsSearchInput.addEventListener('input', debounce(() => {
+      fetchDomains(domainsSearchInput.value);
+    }, 250));
+
+    // ===== СПЕЦИАЛИЗАЦИИ =====
+
+    async function fetchSpecializations(query = '') {
+      try {
+        const params = new URLSearchParams();
+        if (query) params.set('q', query);
+        params.set('limit', '50');
+        const res = await fetch('/dropdown/specializations?' + params.toString());
+        const data = await res.json();
+        allSpecializations = Array.isArray(data)
+          ? data
+          : [];
+        renderSpecList(query);
+      } catch (e) {
+        console.error('Ошибка загрузки специализаций', e);
+      }
+    }
+
+    function renderSpecList(searchValue = '') {
+      const q = (searchValue || '').toLowerCase();
+      specList.innerHTML = '';
+      let count = 0;
+
+      allSpecializations.forEach(sp => {
+        const val = sp;
+        if (!val) return;
+        if (q && !val.toLowerCase().includes(q)) return;
+        count += 1;
+
+        const item = document.createElement('div');
+        item.className = 'multi-dropdown-item' + (selectedSpecializations.includes(val) ? ' selected' : '');
+        item.dataset.value = val;
+        item.innerHTML = `
+          <span>${val}</span>
+          ${selectedSpecializations.includes(val) ? '<span class="badge-small">✓</span>' : ''}
+        `;
+        item.addEventListener('click', () => {
+          toggleSpec(val, true);
+        });
+        specList.appendChild(item);
+      });
+
+      specEmpty.style.display = count === 0 ? 'block' : 'none';
+    }
+
+    function toggleSpec(sp, fromList) {
+      const idx = selectedSpecializations.indexOf(sp);
+      if (idx === -1) selectedSpecializations.push(sp);
+      else selectedSpecializations.splice(idx, 1);
+
+      updateSpecUI();
+      if (fromList) triggerSearch(true);
+    }
+
+    function updateSpecUI() {
+      specSelectedValues.innerHTML = '';
+      if (!selectedSpecializations.length) {
+        const span = document.createElement('span');
+        span.className = 'multi-dropdown-placeholder';
+        span.textContent = 'Искать специализации';
+        specSelectedValues.appendChild(span);
+      } else {
+        selectedSpecializations.forEach(sp => {
+          const pill = createRemovablePill(sp, 'spec');
+          specSelectedValues.appendChild(pill);
+        });
+      }
+      elSpecializationsHidden.value = selectedSpecializations.join(',');
+      filters.specializations = [...selectedSpecializations];
+      renderSpecList(specSearchInput.value);
+    }
+
+    // ===== НАВЫКИ =====
+
+    async function fetchSkills(query = '') {
+      try {
+        const params = new URLSearchParams();
+        if (query) params.set('q', query);
+        params.set('limit', '50');
+        const res = await fetch('/dropdown/skills?' + params.toString());
+        const data = await res.json();
+        allSkills = Array.isArray(data)
+          ? data
+          : [];
+        renderSkillsList(query);
+      } catch (e) {
+        console.error('Ошибка загрузки навыков', e);
+      }
+    }
+
+    function renderSkillsList(searchValue = '') {
+      const q = (searchValue || '').toLowerCase();
+      skillsList.innerHTML = '';
+      let count = 0;
+
+      allSkills.forEach(skill => {
+        const val = skill;
+        if (!val) return;
+        if (q && !val.toLowerCase().includes(q)) return;
+        count += 1;
+
+        const item = document.createElement('div');
+        item.className = 'multi-dropdown-item' + (selectedSkills.includes(val) ? ' selected' : '');
+        item.dataset.value = val;
+        item.innerHTML = `
+          <span>${val}</span>
+          ${selectedSkills.includes(val) ? '<span class="badge-small">✓</span>' : ''}
+        `;
+        item.addEventListener('click', () => {
+          toggleSkill(val, true);
+        });
+        skillsList.appendChild(item);
+      });
+
+      skillsEmpty.style.display = count === 0 ? 'block' : 'none';
+    }
+
+    function toggleSkill(skill, fromList) {
+      const idx = selectedSkills.indexOf(skill);
+      if (idx === -1) selectedSkills.push(skill);
+      else selectedSkills.splice(idx, 1);
+
+      updateSkillsUI();
+      if (fromList) triggerSearch(true);
+    }
+
+    function updateSkillsUI() {
+      skillsSelectedValues.innerHTML = '';
+      if (!selectedSkills.length) {
+        const span = document.createElement('span');
+        span.className = 'multi-dropdown-placeholder';
+        span.textContent = 'Искать навыки';
+        skillsSelectedValues.appendChild(span);
+      } else {
+        selectedSkills.forEach(sk => {
+          const pill = createRemovablePill(sk, 'skill');
+          skillsSelectedValues.appendChild(pill);
+        });
+      }
+      elSkillsHidden.value = selectedSkills.join(',');
+      filters.skills = [...selectedSkills];
+      renderSkillsList(skillsSearchInput.value);
+    }
+
+    // ===== ДОМЕНЫ =====
+
+    async function fetchDomains(query = '') {
+      try {
+        const params = new URLSearchParams();
+        if (query) params.set('q', query);
+        params.set('limit', '50');
+        const res = await fetch('/dropdown/domains?' + params.toString());
+        const data = await res.json();
+        allDomains = Array.isArray(data)
+          ? data
+          : [];
+        renderDomainsList(query);
+      } catch (e) {
+        console.error('Ошибка загрузки доменов', e);
+      }
+    }
+
+    function renderDomainsList(searchValue = '') {
+      const q = (searchValue || '').toLowerCase();
+      domainsList.innerHTML = '';
+      let count = 0;
+
+      allDomains.forEach(domain => {
+        const val = domain;
+        if (!val) return;
+        if (q && !val.toLowerCase().includes(q)) return;
+        count += 1;
+
+        const item = document.createElement('div');
+        item.className = 'multi-dropdown-item' + (selectedDomains.includes(val) ? ' selected' : '');
+        item.dataset.value = val;
+        item.innerHTML = `
+          <span>${val}</span>
+          ${selectedDomains.includes(val) ? '<span class="badge-small">✓</span>' : ''}
+        `;
+        item.addEventListener('click', () => {
+          toggleDomain(val, true);
+        });
+        domainsList.appendChild(item);
+      });
+
+      domainsEmpty.style.display = count === 0 ? 'block' : 'none';
+    }
+
+    function toggleDomain(domain, fromList) {
+      const idx = selectedDomains.indexOf(domain);
+      if (idx === -1) selectedDomains.push(domain);
+      else selectedDomains.splice(idx, 1);
+
+      updateDomainsUI();
+      if (fromList) triggerSearch(true);
+    }
+
+    function updateDomainsUI() {
+      domainsSelectedValues.innerHTML = '';
+      if (!selectedDomains.length) {
+        const span = document.createElement('span');
+        span.className = 'multi-dropdown-placeholder';
+        span.textContent = 'Искать сферы';
+        domainsSelectedValues.appendChild(span);
+      } else {
+        selectedDomains.forEach(d => {
+          const pill = createRemovablePill(d, 'domain');
+          domainsSelectedValues.appendChild(pill);
+        });
+      }
+      elDomainsHidden.value = selectedDomains.join(',');
+      filters.domains = [...selectedDomains];
+      renderDomainsList(domainsSearchInput.value);
+    }
+
+    // ====== ДРОПДАУНЫ location / manager / customer из БД ======
+
+    function fillSelectOptions(selectEl, items, placeholderText) {
+      selectEl.innerHTML = '';
+      const baseOpt = document.createElement('option');
+      baseOpt.value = '';
+      baseOpt.textContent = placeholderText;
+      selectEl.appendChild(baseOpt);
+
+      (items || []).forEach(val => {
+        if (!val) return;
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        selectEl.appendChild(opt);
+      });
+    }
+
+    async function fetchLocationsOptions() {
+      try {
+        const res = await fetch('/dropdown/locations');
+        const data = await res.json();
+        const items = Array.isArray(data) ? data : [];
+        fillSelectOptions(elLocation, items, 'Любая');
+      } catch (e) {
+        console.error('Ошибка загрузки локаций', e);
+      }
+    }
+
+    async function fetchManagersOptions() {
+      try {
+        const res = await fetch('/dropdown/managers');
+        const data = await res.json();
+        const items = Array.isArray(data) ? data : [];
+        fillSelectOptions(elManager, items, 'Любой');
+      } catch (e) {
+        console.error('Ошибка загрузки менеджеров', e);
+      }
+    }
+
+    async function fetchCustomersOptions() {
+      try {
+        const res = await fetch('/dropdown/customers');
+        const data = await res.json();
+        const items = Array.isArray(data) ? data : [];
+        fillSelectOptions(elCustomer, items, 'Любой');
+      } catch (e) {
+        console.error('Ошибка загрузки заказчиков', e);
+      }
+    }
+
+    // старт
+    (async function initPage() {
+      await Promise.all([
+        fetchLocationsOptions(),
+        fetchManagersOptions(),
+        fetchCustomersOptions(),
+      ]);
+
+      resetFiltersUI();
+      collectFiltersFromUI();
+      loadVacancies(false);
+    })();
+  </script>
+</body>
+</html>

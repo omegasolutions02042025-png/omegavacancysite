@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{{ vacancy.title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+  <link rel="icon" type="image/png"
+        href="{{ url_for('static', path='img/omega-logo.png') }}">
+  <style>
+    body {
+      background: radial-gradient(circle at top, #eef2ff 0, #f9fafb 45%, #f3f4f6 100%);
+    }
+
+    .vacancy-wrapper {
+      max-width: 1100px;
+      margin: 40px auto;
+    }
+
+    .vacancy-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 32px 32px 40px;
+      box-shadow: 0 22px 60px rgba(15, 23, 42, 0.12);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    .vacancy-top-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    .vacancy-company {
+      font-weight: 600;
+      color: #4b5563;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4f46e5;
+      font-size: 0.75rem;
+      font-weight: 500;
+      gap: 4px;
+    }
+
+    .vacancy-title-block {
+      margin-bottom: 20px;
+    }
+
+    .vacancy-title {
+      margin: 0;
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .vacancy-submeta {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #4b5563;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+    }
+
+    .vacancy-submeta span strong {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .tags-row {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      font-size: 0.8rem;
+      color: #374151;
+      background: #f9fafb;
+    }
+
+    .tag-skill {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .tag-domain {
+      background: #fffbeb;
+      border-color: #fed7aa;
+      color: #c05621;
+    }
+
+    .vacancy-actions {
+      margin-top: 24px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      border-radius: 999px;
+      padding: 11px 22px;
+      border: none;
+      background: linear-gradient(135deg, #facc15, #f97316);
+      color: #1f2937;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(248, 181, 0, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      border-radius: 999px;
+      padding: 10px 18px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      color: #4b5563;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn-outline:hover {
+      background: #f9fafb;
+    }
+
+    .vacancy-section-title {
+      margin: 28px 0 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .vacancy-text-box {
+      background: #f9fafb;
+      border-radius: 16px;
+      padding: 18px 20px;
+      border: 1px solid #e5e7eb;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      color: #111827;
+      max-height: 700px;
+      overflow-y: auto;
+    }
+
+    .meta-line {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+
+    @media (max-width: 768px) {
+      .vacancy-card {
+        padding: 20px 16px 24px;
+        border-radius: 20px;
+      }
+
+      .vacancy-title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% include "auth/header_auth.html" %}
+
+  <div class="vacancy-wrapper">
+
+    <div class="vacancy-card">
+      <div class="vacancy-top-line">
+        <div>
+          {% if vacancy.company_type and vacancy.company_type != 'unspecified' %}
+            <span class="vacancy-company">{{ vacancy.company_type }}</span>
+          {% else %}
+            <span class="vacancy-company">OmegaVac — вакансия</span>
+          {% endif %}
+        </div>
+        <div class="badge-pill">
+          🆔 {{ vacancy.vacancy_id }}
+        </div>
+      </div>
+
+      <div class="vacancy-title-block">
+        <h1 class="vacancy-title">{{ vacancy.title }}</h1>
+
+        <div class="vacancy-submeta">
+          {% if vacancy.work_format %}
+            <span><strong>Формат работы:</strong> {{ vacancy.work_format }}</span>
+          {% endif %}
+          {% if vacancy.employment_type %}
+            <span><strong>Тип работы:</strong> {{ vacancy.employment_type }}</span>
+          {% endif %}
+          {% if vacancy.grade %}
+            <span><strong>Грейд:</strong> {{ vacancy.grade }}</span>
+          {% endif %}
+          {% if vacancy.english_level and vacancy.english_level|upper != 'UNSPECIFIED' %}
+            <span><strong>Английский:</strong> {{ vacancy.english_level }}</span>
+          {% endif %}
+        </div>
+
+        {% if specializations %}
+          <div class="tags-row" style="margin-top:16px;">
+            {% for s in specializations %}
+              <span class="tag">{{ s }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      {% if skills %}
+        <h2 class="vacancy-section-title">Ключевые навыки</h2>
+        <div class="tags-row">
+          {% for s in skills %}
+            <span class="tag tag-skill">{{ s }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if domains %}
+        <h2 class="vacancy-section-title">Сферы / домены</h2>
+        <div class="tags-row">
+          {% for d in domains %}
+            <span class="tag tag-domain">{{ d }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="vacancy-actions">
+        <a class="btn-primary" href="/sverka?vacancy_id={{ vacancy.vacancy_id }}">
+          🌟 Начать сверку
+        </a>
+        <a class="btn-outline" href="/vacancy">
+          ← Назад к списку вакансий
+        </a>
+      </div>
+
+      {% if vacancy.vacancy_text %}
+        <h2 class="vacancy-section-title">Описание вакансии</h2>
+        <div class="vacancy-text-box">
+          {{ vacancy.vacancy_text }}
+        </div>
+      {% endif %}
+
+      <div class="meta-line">
+        3 дня назад · OmegaVac
+      </div>
+    </div>
+  </div>
+</body>
+</html>

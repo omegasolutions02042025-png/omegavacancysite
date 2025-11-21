@@ -1,0 +1,488 @@
+<header class="topbar">
+  <style>
+    .topbar {
+      background:#020617;
+      color:#e5e7eb;
+      padding:10px 24px;
+      box-shadow:0 6px 18px rgba(15,23,42,.45);
+      position:sticky;
+      top:0;
+      z-index:50;
+    }
+    .topbar-inner{
+      max-width:1240px;
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+    }
+
+    .topbar-left{
+      display:flex;
+      align-items:center;
+      gap:18px;
+    }
+
+    .topbar-brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:700;
+      letter-spacing:.08em;
+      font-size:.95rem;
+      text-transform:uppercase;
+      color:#fbbf24;
+      text-decoration:none;
+    }
+    .topbar-brand img{
+      height:26px;
+      width:26px;
+      border-radius:999px;
+      object-fit:contain;
+      background:transparent;
+    }
+
+    .topbar-section-vacancy{
+      padding:7px 18px;
+      border-radius:10px;
+      background:linear-gradient(135deg,#facc15,#f97316);
+      color:#111827;
+      font-size:.9rem;
+      font-weight:700;
+      text-decoration:none;
+      box-shadow:0 8px 18px rgba(248,181,0,.45);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      white-space:nowrap;
+    }
+    .topbar-section-vacancy:hover{
+      filter:brightness(1.06);
+      transform:translateY(-1px);
+    }
+
+    .topbar-nav{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .topbar-link{
+      font-size:.9rem;
+      color:#e5e7eb;
+      text-decoration:none;
+    }
+    .topbar-btn{
+      padding:7px 16px;
+      border-radius:999px;
+      border:none;
+      background:linear-gradient(135deg,#facc15,#f97316);
+      color:#111827;
+      font-size:.9rem;
+      font-weight:600;
+      cursor:pointer;
+      text-decoration:none;
+      box-shadow:0 8px 18px rgba(248,181,0,.45);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+    }
+    .topbar-btn:hover{
+      filter:brightness(1.06);
+      transform:translateY(-1px);
+    }
+
+    .topbar-btn.secondary{
+      background:linear-gradient(135deg,#38bdf8,#0ea5e9);
+      box-shadow:0 8px 18px rgba(56,189,248,.45);
+      color:#0b1120;
+    }
+
+    .notif-wrapper{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .notif-bell{
+      position:relative;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.6);
+      background:rgba(15,23,42,.9);
+      color:#e5e7eb;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1rem;
+    }
+    .notif-bell:hover{
+      background:#020617;
+      box-shadow:0 6px 18px rgba(15,23,42,.6);
+      transform:translateY(-1px);
+    }
+    .notif-badge{
+      position:absolute;
+      top:-4px;
+      right:-2px;
+      min-width:16px;
+      height:16px;
+      border-radius:999px;
+      background:#ef4444;
+      color:#f9fafb;
+      font-size:10px;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0 4px;
+    }
+
+    .notif-dropdown{
+      position:absolute;
+      right:0;
+      top:120%;
+      width:320px;
+      max-height:340px;
+      overflow-y:auto;
+      background:#020617;
+      border:1px solid rgba(148,163,184,.45);
+      border-radius:12px;
+      box-shadow:0 16px 35px rgba(15,23,42,.85);
+      padding:8px 0;
+      display:none;
+    }
+    .notif-dropdown.open{
+      display:block;
+    }
+    .notif-header{
+      padding:6px 12px 4px;
+      font-size:.8rem;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:#9ca3af;
+      border-bottom:1px solid rgba(31,41,55,.85);
+    }
+    .notif-empty{
+      padding:10px 12px;
+      font-size:.85rem;
+      color:#9ca3af;
+    }
+    .notif-list{
+      list-style:none;
+      margin:0;
+      padding:0;
+    }
+    .notif-item{
+      display:flex;
+      align-items:flex-start;
+      gap:8px;
+      padding:8px 12px;
+      border-bottom:1px solid rgba(31,41,55,.85);
+      font-size:.85rem;
+      color:#e5e7eb;
+    }
+    .notif-item:last-child{
+      border-bottom:none;
+    }
+    .notif-item-text{
+      flex:1;
+      line-height:1.4;
+      cursor:pointer;
+    }
+    .notif-item-text:hover{
+      text-decoration:underline;
+    }
+    .notif-close{
+      border:none;
+      background:transparent;
+      color:#9ca3af;
+      cursor:pointer;
+      font-size:.8rem;
+      padding:2px;
+    }
+    .notif-close:hover{
+      color:#f87171;
+    }
+
+    .notif-toast{
+      position:fixed;
+      left:20px;
+      bottom:20px;
+      max-width:360px;
+      background:rgba(15,23,42,0.96);
+      color:#f9fafb;
+      padding:10px 14px;
+      border-radius:10px;
+      box-shadow:0 12px 25px rgba(15,23,42,.75);
+      font-size:.9rem;
+      line-height:1.4;
+      opacity:0;
+      transform:translateY(10px);
+      pointer-events:none;
+      transition:opacity .25s ease, transform .25s ease;
+      z-index:9999;
+    }
+    .notif-toast-visible{
+      opacity:1;
+      transform:translateY(0);
+      pointer-events:auto;
+    }
+
+    @media (max-width:640px){
+      .topbar-inner{padding-inline:4px;}
+      .topbar-brand span{font-size:.8rem;}
+      .topbar-left{gap:10px;}
+      .topbar-section-vacancy{padding:6px 12px;font-size:.8rem;}
+      .notif-dropdown{
+        width:260px;
+        right:-40px;
+      }
+      .notif-toast{
+        left:10px;
+        right:10px;
+        max-width:none;
+      }
+    }
+  </style>
+
+  <audio id="notif-sound" src="/static/sounds/notification.wav" preload="auto"></audio>
+
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <a href="/" class="topbar-brand">
+        <img src="/static/img/omega-logo.png" alt="OmegaSolutions">
+        <span>OMEGASOLUTIONS</span>
+      </a>
+      <a href="/vacancy" class="topbar-section-vacancy">Вакансии</a>
+    </div>
+
+    <nav class="topbar-nav">
+      {% if user_email %}
+        <div class="notif-wrapper">
+          <button type="button" class="notif-bell" id="notif-bell" title="Уведомления">
+            🔔
+            <span class="notif-badge" id="notif-badge" style="display:none;">0</span>
+          </button>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-header">Уведомления</div>
+            <div class="notif-empty" id="notif-empty">Уведомлений нет</div>
+            <ul class="notif-list" id="notif-list"></ul>
+          </div>
+        </div>
+
+        <span class="topbar-link">{{ user_email }}</span>
+        <a href="/auth/profile" class="topbar-btn">Профиль</a>
+      {% else %}
+        <a href="/auth/login" class="topbar-btn">Войти</a>
+      {% endif %}
+    </nav>
+  </div>
+
+  {% if user_email %}
+  <div id="notif-toast" class="notif-toast"></div>
+
+  <script>
+    (function(){
+      const bell      = document.getElementById("notif-bell");
+      const badge     = document.getElementById("notif-badge");
+      const dropdown  = document.getElementById("notif-dropdown");
+      const listEl    = document.getElementById("notif-list");
+      const emptyEl   = document.getElementById("notif-empty");
+      const toastEl   = document.getElementById("notif-toast");
+      const soundEl   = document.getElementById("notif-sound");
+
+      if (!bell || !badge || !dropdown || !listEl || !emptyEl || !toastEl) {
+        return;
+      }
+
+      let notifCache = [];
+      let toastTimer = null;
+
+      async function loadNotifications(){
+        try{
+          const resp = await fetch("/api/get_notif", {cache:"no-store"});
+          if(!resp.ok){
+            console.warn("get_notif status", resp.status);
+            return;
+          }
+          const data = await resp.json();
+          notifCache = Array.isArray(data) ? data : [];
+          renderNotifications();
+        }catch(e){
+          console.error("get_notif error", e);
+        }
+      }
+
+      async function deleteNotification(notificationText){
+        try{
+          const resp = await fetch("/api/del_notif",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({notification: notificationText})
+          });
+          if(!resp.ok){
+            console.warn("del_notif status", resp.status);
+            return;
+          }
+          notifCache = notifCache.filter(function(n){
+            return n.notification !== notificationText;
+          });
+          renderNotifications();
+        }catch(e){
+          console.error("del_notif error", e);
+        }
+      }
+
+      function renderNotifications(){
+        listEl.innerHTML = "";
+        if(!notifCache.length){
+          emptyEl.style.display = "block";
+          badge.style.display   = "none";
+          return;
+        }
+        emptyEl.style.display = "none";
+        badge.style.display   = "flex";
+        badge.textContent     = notifCache.length > 9 ? "9+" : String(notifCache.length);
+
+        notifCache.forEach(function(n){
+          const li = document.createElement("li");
+          li.className = "notif-item";
+
+          const textDiv = document.createElement("div");
+          textDiv.className = "notif-item-text";
+          textDiv.textContent = n.notification || "";
+
+          // URL теперь приходит напрямую с бэка в n.url
+          const url = (n.url && typeof n.url === "string" && n.url.trim() !== "") ? n.url : null;
+          if (url){
+            textDiv.style.textDecoration = "underline";
+            textDiv.title = url;
+            textDiv.addEventListener("click", function(){
+              window.open(url, "_blank");
+            });
+          }
+
+          const btn = document.createElement("button");
+          btn.className = "notif-close";
+          btn.type = "button";
+          btn.innerHTML = "✕";
+          btn.addEventListener("click", function(ev){
+            ev.stopPropagation();
+            deleteNotification(n.notification);
+          });
+
+          li.appendChild(textDiv);
+          li.appendChild(btn);
+          listEl.appendChild(li);
+        });
+      }
+
+      function showToast(notification){
+        if(!toastEl) return;
+
+        if(toastTimer){
+          clearTimeout(toastTimer);
+          toastTimer = null;
+        }
+
+        const candidate = notification && notification.candidate_fullname
+          ? notification.candidate_fullname
+          : "кандидата";
+
+        const vacancy  = notification && notification.vacancy_id
+          ? notification.vacancy_id
+          : "";
+
+        let text;
+
+        if (notification && notification.candidate_fullname && notification.vacancy_id){
+          text = "Сообщение от кандидата " + candidate + " по вакансии " + vacancy;
+        } else if (notification && notification.message){
+          text = notification.message;
+        } else if (notification && notification.notification){
+          text = notification.notification;
+        } else {
+          text = "Новое уведомление";
+        }
+
+        toastEl.textContent = text;
+        toastEl.classList.add("notif-toast-visible");
+
+        toastTimer = setTimeout(function(){
+          toastEl.classList.remove("notif-toast-visible");
+        }, 5000);
+      }
+
+      function playSound(){
+        if (!soundEl) return;
+        try{
+          soundEl.currentTime = 0;
+          soundEl.play().catch(function(e){
+            console.warn("cannot play sound", e);
+          });
+        }catch(e){
+          console.warn("cannot play sound", e);
+        }
+      }
+
+      bell.addEventListener("click", async function(e){
+        e.stopPropagation();
+        const isOpen = dropdown.classList.contains("open");
+        if(!isOpen){
+          await loadNotifications();
+          dropdown.classList.add("open");
+        }else{
+          dropdown.classList.remove("open");
+        }
+      });
+
+      document.addEventListener("click", function(e){
+        if(!dropdown.contains(e.target) && !bell.contains(e.target)){
+          dropdown.classList.remove("open");
+        }
+      });
+
+      const USER_ID_RAW = "{{ user_id }}";
+      const USER_ID = Number(USER_ID_RAW || "0") || 0;
+
+      if (USER_ID > 0) {
+        try{
+          const proto = (window.location.protocol === "https:") ? "wss://" : "ws://";
+          const wsUrl = proto + window.location.host + "/ws/notifications?user_id=" + encodeURIComponent(USER_ID);
+          const ws = new WebSocket(wsUrl);
+
+          ws.onopen = function(){
+            console.log("WS notifications connected");
+          };
+          ws.onclose = function(){
+            console.log("WS notifications closed");
+          };
+          ws.onerror = function(ev){
+            console.error("WS notifications error", ev);
+          };
+          ws.onmessage = async function(event){
+            try{
+              const data = JSON.parse(event.data);
+              console.log("[notify] from WS:", data);
+
+              // данные по WS: после прихода обновляем список
+              await loadNotifications();
+              showToast(data);
+              playSound();
+            }catch(e){
+              console.error("WS notifications parse error", e);
+            }
+          };
+        }catch(e){
+          console.error("WS notifications init error", e);
+        }
+      }
+
+      loadNotifications();
+    })();
+  </script>
+  {% endif %}
+</header>

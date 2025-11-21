@@ -1,0 +1,336 @@
+First parse error: N/A
+Fixed error (e2): Expecting ',' delimiter: line 9 column 46 (char 288)
+Final error (e4): Expecting ',' delimiter: line 9 column 46 (char 288)
+Error position: 288
+Original response length: 11727
+Cleaned string length: 11727
+Fixed string length: 11671
+
+Original problematic JSON (first 5000 chars):
+{
+  "vacancy": {
+    "position_id": "SA-10379",
+    "position_name": "Системный аналитик (Senior)",
+    "grade": "Senior",
+    "location_requirements": {
+      "location": "РФ, Регионы (все, кроме Москвы и Питера)",
+      "citizenship": "РФ",
+      "timezone": "Нет (требуется уточнение)"
+    },
+    "work_format": "remote",
+    "tech_stack": [
+      "микросервисная архитектура",
+      "API",
+      "очереди сообщений",
+      "шины данных",
+      "REST API",
+      "Kafka",
+      "RabbitMQ",
+      "Artemis"
+    ],
+    "requirements": {
+      "must_have": [
+        "Опыт работы в качестве системного аналитика в IT-компаниях (банки, интеграторы, финтех, платежные сервисы) от 4 лет",
+        "Опыт управления требованиями в крупных проектах с большим количеством источников требований и вовлеченных стейкхолдеров",
+        "Знание современного стека IT-технологий на уровне, достаточном для понимания технических особенностей реализации продуктов (микросервисная архитектура, API, очереди сообщений, шины данных)",
+        "Уверенные навыки построения бизнес-процессов (BPMN), системного моделирования (UML), работы с SQL",
+        "Опыт проведения технического анализа и функционального тестирования, написания тест-кейсов",
+        "Опыт проектирования и интеграции со сложными корпоративными системами",
+        "Навыки работы с протоколами и технологиями интеграции: REST API, Kafka, RabbitMQ, Artemis",
+        "Знание и опыт применения требований по защите ПДн, банковской тайны, конфиденциальной информации, умение закладывать их в требования",
+        "Опыт взаимодействия с архитекторами, разработчиками и тестировщиками на всех стадиях проекта",
+        "Понимание жизненного цикла кредитных продуктов и процессов в сегменте КИБ"
+      ],
+      "nice_to_have": []
+    },
+    "special_conditions": {
+      "nda": "Нет (требуется уточнение)",
+      "sim_card": "Нет (требуется уточнение)",
+      "rate": "1500 RUB/час (Gross)",
+      "deadlines": "ASAP"
+    },
+    "manager_telegram_nickname": "@amt2809"
+  },
+  "candidate": {
+    "full_name": "Михаил Харчеуник (Kharcheunikau)",
+    "birth_date": {
+      "date": "Нет (требуется уточнение)",
+      "age": "Нет (требуется уточнение)"
+    },
+    "location": {
+      "city": "Нет (требуется уточнение)",
+      "country": "Нет (требуется уточнение)"
+    },
+    "grade_and_position": "Solutions Architect, Engineering Manager",
+    "full_experience": "15+ лет",
+    "experience": [
+      {
+        "company_name": "SYBERRY",
+        "role": "LEAD SOFTWARE ENGINEER",
+        "domain": "Нет (требуется уточнение)",
+        "period": "OCT 2024 - PRESENT",
+        "projects": [
+          {
+            "project_description": "Architecture and hands-on development of a mission-critical background check and compliance platform for the United States market.",
+            "responsibilities": [
+              "designing and implementing a secure, role -based authorization system.",
+              "designed complex BPMN models for business processes",
+              "data audit & compliance"
+            ],
+            "technologies_used": [
+              ".NET Core",
+              "EF",
+              "Camunda",
+              "Azure",
+              "React",
+              "TypeScript"
+            ]
+          }
+        ]
+      },
+      {
+        "company_name": "REPLY/FDH",
+        "role": "ENGINEERING MANAGER/ SOLUTION ARCHITECT",
+        "domain": "Нет (требуется уточнение)",
+        "period": "DEC 2022 – OCT 2024",
+        "projects": [
+          {
+            "project_description": "Designing, implementing, and managing Modern Workplace solutions including Microsoft 365(SharePoint, MS Teams) and Azure. Architecture and delivery for the project on digitizing printed materials for travel company, including internal web system and mobile application with offline access for 5K+ users.",
+            "responsibilities": [
+              "Team management, resource planning, business development including processes & policies (onboarding, personal development, hiring etc.).",
+              "Designing, implementing, and managing Modern Workplace solutions including Microsoft 365(SharePoint, MS Teams) and Azure.",
+              "Architecture and delivery for the project on digitizing printed materials for travel company, including internal web system and mobile application with offline access for 5K+ users."
+            ],
+            "technologies_used": [
+              "Azure",
+              "ASP.NET Core",
+              "React",
+              "TypeScript",
+              "Microsoft 365",
+              "Microsoft Grap Api",
+              "React Native",
+              "Expo"
+            ]
+          }
+        ]
+      },
+      {
+        "company_name": "REPLY",
+        "role": "HEAD OF WEB DEPARTMENT /SOLUTION ARCHITECT",
+        "domain": "Нет (требуется уточнение)",
+        "period": "OCT 2017 – DEC 2022",
+        "projects": [
+          {
+            "project_description": "Web department management (50+ developers inc
+
+After fixes (first 5000 chars):
+{
+  "vacancy": {
+    "position_id": "SA-10379",
+    "position_name": "Системный аналитик (Senior)",
+    "grade": "Senior",
+    "location_requirements": {
+      "location": "РФ, Регионы (все, кроме Москвы и Питера)",
+      "citizenship": "РФ",
+      "timezone": "Нет (требуется уточнение)":  },
+    "work_format": "remote",
+    "tech_stack": [
+      "микросервисная архитектура",
+      "API",
+      "очереди сообщений",
+      "шины данных",
+      "REST API",
+      "Kafka",
+      "RabbitMQ",
+      "Artemis":  ],
+    "requirements": {
+      "must_have": [
+        "Опыт работы в качестве системного аналитика в IT-компаниях (банки, интеграторы, финтех, платежные сервисы) от 4 лет",
+        "Опыт управления требованиями в крупных проектах с большим количеством источников требований и вовлеченных стейкхолдеров",
+        "Знание современного стека IT-технологий на уровне, достаточном для понимания технических особенностей реализации продуктов (микросервисная архитектура, API, очереди сообщений, шины данных)",
+        "Уверенные навыки построения бизнес-процессов (BPMN), системного моделирования (UML), работы с SQL",
+        "Опыт проведения технического анализа и функционального тестирования, написания тест-кейсов",
+        "Опыт проектирования и интеграции со сложными корпоративными системами",
+        "Навыки работы с протоколами и технологиями интеграции: REST API, Kafka, RabbitMQ, Artemis",
+        "Знание и опыт применения требований по защите ПДн, банковской тайны, конфиденциальной информации, умение закладывать их в требования",
+        "Опыт взаимодействия с архитекторами, разработчиками и тестировщиками на всех стадиях проекта",
+        "Понимание жизненного цикла кредитных продуктов и процессов в сегменте КИБ":  ],
+      "nice_to_have": []
+    },
+    "special_conditions": {
+      "nda": "Нет (требуется уточнение)",
+      "sim_card": "Нет (требуется уточнение)",
+      "rate": "1500 RUB/час (Gross)",
+      "deadlines": "ASAP":  },
+    "manager_telegram_nickname": "@amt2809":  },
+  "candidate": {
+    "full_name": "Михаил Харчеуник (Kharcheunikau)",
+    "birth_date": {
+      "date": "Нет (требуется уточнение)",
+      "age": "Нет (требуется уточнение)":  },
+    "location": {
+      "city": "Нет (требуется уточнение)",
+      "country": "Нет (требуется уточнение)":  },
+    "grade_and_position": "Solutions Architect, Engineering Manager",
+    "full_experience": "15+ лет",
+    "experience": [
+      {
+        "company_name": "SYBERRY",
+        "role": "LEAD SOFTWARE ENGINEER",
+        "domain": "Нет (требуется уточнение)",
+        "period": "OCT 2024 - PRESENT",
+        "projects": [
+          {
+            "project_description": "Architecture and hands-on development of a mission-critical background check and compliance platform for the United States market.",
+            "responsibilities": [
+              "designing and implementing a secure, role -based authorization system.",
+              "designed complex BPMN models for business processes",
+              "data audit & compliance":  ],
+            "technologies_used": [
+              ".NET Core",
+              "EF",
+              "Camunda",
+              "Azure",
+              "React",
+              "TypeScript":  ]
+          }
+        ]
+      },
+      {
+        "company_name": "REPLY/FDH",
+        "role": "ENGINEERING MANAGER/ SOLUTION ARCHITECT",
+        "domain": "Нет (требуется уточнение)",
+        "period": "DEC 2022 – OCT 2024",
+        "projects": [
+          {
+            "project_description": "Designing, implementing, and managing Modern Workplace solutions including Microsoft 365(SharePoint, MS Teams) and Azure. Architecture and delivery for the project on digitizing printed materials for travel company, including internal web system and mobile application with offline access for 5K+ users.",
+            "responsibilities": [
+              "Team management, resource planning, business development including processes & policies (onboarding, personal development, hiring etc.).",
+              "Designing, implementing, and managing Modern Workplace solutions including Microsoft 365(SharePoint, MS Teams) and Azure.",
+              "Architecture and delivery for the project on digitizing printed materials for travel company, including internal web system and mobile application with offline access for 5K+ users.":  ],
+            "technologies_used": [
+              "Azure",
+              "ASP.NET Core",
+              "React",
+              "TypeScript",
+              "Microsoft 365",
+              "Microsoft Grap Api",
+              "React Native",
+              "Expo":  ]
+          }
+        ]
+      },
+      {
+        "company_name": "REPLY",
+        "role": "HEAD OF WEB DEPARTMENT /SOLUTION ARCHITECT",
+        "domain": "Нет (требуется уточнение)",
+        "period": "OCT 2017 – DEC 2022",
+        "projects": [
+          {
+            "project_description": "Web department management (50+ developers including FE, BE, QA, DevOps): people management, hiring 
+
+Attempted final fix (first 5000 chars):
+{
+  "vacancy": {
+    "position_id": "SA-10379",
+    "position_name": "Системный аналитик (Senior)",
+    "grade": "Senior",
+    "location_requirements": {
+      "location": "РФ, Регионы (все, кроме Москвы и Питера)",
+      "citizenship": "РФ",
+      "timezone": "Нет (требуется уточнение)":  },
+    "work_format": "remote",
+    "tech_stack": [
+      "микросервисная архитектура",
+      "API",
+      "очереди сообщений",
+      "шины данных",
+      "REST API",
+      "Kafka",
+      "RabbitMQ",
+      "Artemis":  ],
+    "requirements": {
+      "must_have": [
+        "Опыт работы в качестве системного аналитика в IT-компаниях (банки, интеграторы, финтех, платежные сервисы) от 4 лет",
+        "Опыт управления требованиями в крупных проектах с большим количеством источников требований и вовлеченных стейкхолдеров",
+        "Знание современного стека IT-технологий на уровне, достаточном для понимания технических особенностей реализации продуктов (микросервисная архитектура, API, очереди сообщений, шины данных)",
+        "Уверенные навыки построения бизнес-процессов (BPMN), системного моделирования (UML), работы с SQL",
+        "Опыт проведения технического анализа и функционального тестирования, написания тест-кейсов",
+        "Опыт проектирования и интеграции со сложными корпоративными системами",
+        "Навыки работы с протоколами и технологиями интеграции: REST API, Kafka, RabbitMQ, Artemis",
+        "Знание и опыт применения требований по защите ПДн, банковской тайны, конфиденциальной информации, умение закладывать их в требования",
+        "Опыт взаимодействия с архитекторами, разработчиками и тестировщиками на всех стадиях проекта",
+        "Понимание жизненного цикла кредитных продуктов и процессов в сегменте КИБ":  ],
+      "nice_to_have": []
+    },
+    "special_conditions": {
+      "nda": "Нет (требуется уточнение)",
+      "sim_card": "Нет (требуется уточнение)",
+      "rate": "1500 RUB/час (Gross)",
+      "deadlines": "ASAP":  },
+    "manager_telegram_nickname": "@amt2809":  },
+  "candidate": {
+    "full_name": "Михаил Харчеуник (Kharcheunikau)",
+    "birth_date": {
+      "date": "Нет (требуется уточнение)",
+      "age": "Нет (требуется уточнение)":  },
+    "location": {
+      "city": "Нет (требуется уточнение)",
+      "country": "Нет (требуется уточнение)":  },
+    "grade_and_position": "Solutions Architect, Engineering Manager",
+    "full_experience": "15+ лет",
+    "experience": [
+      {
+        "company_name": "SYBERRY",
+        "role": "LEAD SOFTWARE ENGINEER",
+        "domain": "Нет (требуется уточнение)",
+        "period": "OCT 2024 - PRESENT",
+        "projects": [
+          {
+            "project_description": "Architecture and hands-on development of a mission-critical background check and compliance platform for the United States market.",
+            "responsibilities": [
+              "designing and implementing a secure, role -based authorization system.",
+              "designed complex BPMN models for business processes",
+              "data audit & compliance":  ],
+            "technologies_used": [
+              ".NET Core",
+              "EF",
+              "Camunda",
+              "Azure",
+              "React",
+              "TypeScript":  ]
+          }
+        ]
+      },
+      {
+        "company_name": "REPLY/FDH",
+        "role": "ENGINEERING MANAGER/ SOLUTION ARCHITECT",
+        "domain": "Нет (требуется уточнение)",
+        "period": "DEC 2022 – OCT 2024",
+        "projects": [
+          {
+            "project_description": "Designing, implementing, and managing Modern Workplace solutions including Microsoft 365(SharePoint, MS Teams) and Azure. Architecture and delivery for the project on digitizing printed materials for travel company, including internal web system and mobile application with offline access for 5K+ users.",
+            "responsibilities": [
+              "Team management, resource planning, business development including processes & policies (onboarding, personal development, hiring etc.).",
+              "Designing, implementing, and managing Modern Workplace solutions including Microsoft 365(SharePoint, MS Teams) and Azure.",
+              "Architecture and delivery for the project on digitizing printed materials for travel company, including internal web system and mobile application with offline access for 5K+ users.":  ],
+            "technologies_used": [
+              "Azure",
+              "ASP.NET Core",
+              "React",
+              "TypeScript",
+              "Microsoft 365",
+              "Microsoft Grap Api",
+              "React Native",
+              "Expo":  ]
+          }
+        ]
+      },
+      {
+        "company_name": "REPLY",
+        "role": "HEAD OF WEB DEPARTMENT /SOLUTION ARCHITECT",
+        "domain": "Нет (требуется уточнение)",
+        "period": "OCT 2017 – DEC 2022",
+        "projects": [
+          {
+            "project_description": "Web department management (50+ developers including FE, BE, QA, DevOps): people management, hiring 

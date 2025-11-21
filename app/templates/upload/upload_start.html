@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Загрузка файла</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>📤 Загрузка и обработка файлов</h1>
+      <p class="subtitle">Загрузите документ для автоматической обработки с помощью ИИ<br>
+      Поддерживаемые форматы — PDF, DOCX, TXT. Максимальный размер — 10 МБ.</p>
+
+      {% if error %}
+        <div class="alert alert-danger">
+          ❌ {{ error }}
+        </div>
+      {% endif %}
+
+      <form action="/upload" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="file">📄 Выберите файл для загрузки:</label>
+          <input type="file" id="file" name="file" accept=".pdf,.docx,.txt" required>
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">🚀 Загрузить и обработать</button>
+        </div>
+      </form>
+      
+      <div class="navigation">
+        <a href="/">🏠 Главная</a>
+        <a href="/sverka">🎯 Сверка резюме</a>
+        <a href="/upload">📤 Загрузка</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

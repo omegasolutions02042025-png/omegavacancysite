@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Сверка в процессе...</title>
+    <link rel="stylesheet" href="/static/css/modern-style.css">
+    <link rel="icon" type="image/png"
+        href="{{ url_for('static', path='img/omega-logo.png') }}">
+    <script>
+        // каждые 3 секунды проверяем статус
+        const intervalId = setInterval(function() {
+            console.log("Проверяем статус сверки...");
+            fetch("/sverka/status/{{ task_id }}")
+                .then(resp => resp.json())
+                .then(data => {
+                    console.log("Статус:", data.status);
+                    
+                    if (data.status === "completed" || data.status === "error") {
+                        clearInterval(intervalId);
+                        console.log("Результат готов, переходим на страницу результата");
+                        // просто переходим на готовую страницу
+                        window.location.href = "/sverka/result/{{ task_id }}";
+                    }
+                })
+                .catch(err => {
+                    console.error("Ошибка проверки статуса:", err);
+                });
+        }, 3000);
+    </script>
+</head>
+<body>
+    {% include "auth/header_auth.html" %}
+    <div class="container">
+        <div class="card">
+            <h1>⏳ Сверка в процессе</h1>
+            <p class="subtitle">ИИ анализирует соответствие резюме требованиям вакансии</p>
+            
+            <div class="progress-container">
+                <div class="spinner"></div>
+                <h3>🤖 Анализируем данные...</h3>
+                <p>Это может занять некоторое время. Результат появится автоматически.</p>
+                <span class="status-badge status-processing">Обработка</span>
+            </div>
+            
+        </div>
+    </div>
+</body>
+</html>

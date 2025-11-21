@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Обработка...</title>
+    <link rel="stylesheet" href="/static/css/modern-style.css">
+    <script>
+        // каждые 3 секунды проверяем статус
+        const intervalId = setInterval(function() {
+            console.log("Проверяем статус обработки...");
+            fetch("/status/{{ task_id }}")
+                .then(resp => resp.json())
+                .then(data => {
+                    console.log("Статус:", data.status);
+                    
+                    if (data.status === "completed" || data.status === "error") {
+                        clearInterval(intervalId);
+                        console.log("Результат готов, загружаем страницу результата");
+                        
+                        // Загружаем HTML страницу результата
+                        fetch("/result/{{ task_id }}")
+                            .then(resp => resp.text())
+                            .then(html => {
+                                // Создаем временный элемент для парсинга HTML
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = html;
+                                
+                                // Находим body в полученном HTML
+                                const newBody = tempDiv.querySelector('body');
+                                if (newBody) {
+                                    document.body.innerHTML = newBody.innerHTML;
+                                } else {
+                                    document.body.innerHTML = html;
+                                }
+                                
+                                // Обновляем title страницы
+                                const titleElement = tempDiv.querySelector('title');
+                                if (titleElement) {
+                                    document.title = titleElement.textContent;
+                                }
+                            })
+                            .catch(err => console.error("Ошибка загрузки результата:", err));
+                    }
+                })
+                .catch(err => {
+                    console.error("Ошибка проверки статуса:", err);
+                });
+        }, 3000);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>⚙️ Обработка файла</h1>
+            <p class="subtitle">ИИ анализирует загруженный документ</p>
+            
+            <div class="progress-container">
+                <div class="spinner"></div>
+                <h3>🤖 Обрабатываем данные...</h3>
+                <p>Это может занять некоторое время. Результат появится автоматически.</p>
+                <span class="status-badge status-processing">Обработка</span>
+            </div>
+            
+            <div class="navigation">
+                <a href="/upload">📤 Новая загрузка</a>
+                
+            </div>
+        </div>
+    </div>
+</body>
+</html>

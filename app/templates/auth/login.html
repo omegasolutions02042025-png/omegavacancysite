@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Вход</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+  <link rel="icon" type="image/png"
+        href="{{ url_for('static', path='img/omega-logo.png') }}">
+
+  <style>
+    body{
+      background:#f3f4f6;
+      font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .auth-page{
+      min-height:calc(100vh - 64px);
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+    }
+    .auth-wrapper{
+      width:100%;
+      max-width:420px;
+      margin:60px auto;
+      padding:0 16px;
+    }
+    .auth-card{
+      background:#ffffff;
+      padding:28px 30px 26px;
+      border-radius:18px;
+      box-shadow:0 12px 35px rgba(15,23,42,.12);
+      border:1px solid rgba(148,163,184,0.35);
+    }
+    .auth-card h1{
+      margin:0 0 14px;
+      font-size:1.7rem;
+      font-weight:700;
+      color:#4f46e5;
+      text-align:center;
+    }
+    .subtitle{
+      margin-bottom:22px;
+      color:#64748b;
+      font-size:0.9rem;
+      text-align:center;
+    }
+    .auth-form{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .auth-card .form-input{
+      display:block;
+      width:100%;
+      box-sizing:border-box;
+      padding:11px 14px;
+      border-radius:12px;
+      border:1px solid #cbd5e1;
+      background:#f9fafb;
+      font-size:1rem;
+      outline:none;
+      transition:border-color .15s, box-shadow .15s, background .15s;
+    }
+    .auth-card .form-input:focus{
+      border-color:#6366f1;
+      box-shadow:0 0 0 1px rgba(99,102,241,.4);
+      background:#ffffff;
+    }
+    .btn-primary{
+      width:100%;
+      border:none;
+      border-radius:12px;
+      padding:12px 0;
+      background:linear-gradient(135deg,#facc15,#f97316);
+      color:#111827;
+      font-size:1rem;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(248,181,0,.45);
+      transition:filter .15s, transform .1s;
+    }
+    .btn-primary:hover{
+      filter:brightness(1.05);
+      transform:translateY(-1px);
+    }
+    .auth-footer{
+      margin-top:16px;
+      text-align:center;
+      font-size:0.9rem;
+      color:#475569;
+    }
+    .auth-footer a{
+      color:#2563eb;
+      font-weight:600;
+      text-decoration:none;
+    }
+    .auth-footer a:hover{text-decoration:underline;}
+  </style>
+</head>
+<body>
+
+  {% include "auth/header_auth.html" %}
+
+  <main class="auth-page">
+    <div class="auth-wrapper">
+      <div class="auth-card">
+        <h1>Вход</h1>
+        <p class="subtitle">Добро пожаловать в систему OmegaSolutions</p>
+
+        <form id="login_form" class="auth-form">
+          <input name="email" type="text" placeholder="Email" class="form-input" required>
+          <input name="password" type="password" placeholder="Пароль" class="form-input" required>
+
+          <button type="submit" class="btn-primary">Войти</button>
+        </form>
+
+        <div class="auth-footer">
+          Нет аккаунта? <a href="/auth/register">Создать</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById("login_form");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(form);
+
+      const resp = await fetch("/auth/login", {
+        method: "POST",
+        body: formData
+      });
+
+      if (resp.redirected) {
+        window.location.href = resp.url;
+        return;
+      }
+
+      let data;
+      try { data = await resp.json(); } catch { alert("Ошибка входа"); return; }
+
+      if (data.access_token) {
+        document.cookie = `access_token=${data.access_token}; path=/;`;
+        window.location.href = "/profile";
+      } else {
+        alert("Ошибка входа");
+      }
+    });
+  </script>
+</body>
+</html>

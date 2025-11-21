@@ -1,0 +1,135 @@
+{# templates/auth_account.html #}
+{% extends "base.html" %}
+
+{% block title %}Аккаунт — OmegaVac{% endblock %}
+
+{% block content %}
+<div class="card" style="background:#fff;border-radius:16px;padding:24px;box-shadow:0 12px 35px rgba(15,23,42,.08);max-width:700px;margin:0 auto;">
+  <h1 style="margin-top:0;font-size:1.4rem;">Аккаунт</h1>
+  <p style="color:#6b7280;font-size:0.9rem;margin-bottom:18px;">
+    Управление рабочими настройками интеграций: Telegram и e-mail.
+  </p>
+
+  <div id="acc_loading" style="font-size:0.9rem;color:#6b7280;">Загружаем профиль…</div>
+  <form id="account_form" style="display:none;">
+    <div class="form-group">
+      <label>Логин (username)</label>
+      <input type="text" id="acc_username" disabled
+             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;background:#f3f4f6;">
+    </div>
+
+    <h3 style="margin-top:18px;font-size:1rem;">Telegram</h3>
+    <div class="form-group" style="margin-top:6px;">
+      <label for="work_telegram">Рабочий Telegram (@username)</label>
+      <input type="text" id="work_telegram" name="work_telegram"
+             placeholder="@DmitriyOmega"
+             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;">
+    </div>
+    <div class="form-group" style="margin-top:6px;">
+      <label for="work_telegram_session_name">Имя файла сессии Telegram</label>
+      <input type="text" id="work_telegram_session_name" name="work_telegram_session_name"
+             placeholder="omega_session"
+             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;">
+    </div>
+
+    <h3 style="margin-top:18px;font-size:1rem;">E-mail</h3>
+    <div class="form-group" style="margin-top:6px;">
+      <label for="work_email">Рабочий e-mail</label>
+      <input type="email" id="work_email" name="work_email"
+             placeholder="cv@omega-solutions.ru"
+             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;">
+    </div>
+    <div class="form-group" style="margin-top:6px;">
+      <label for="work_email_app_pass">Пароль приложения e-mail</label>
+      <input type="password" id="work_email_app_pass" name="work_email_app_pass"
+             placeholder="••••••••"
+             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;">
+    </div>
+
+    <button type="submit" style="margin-top:18px;width:100%;padding:10px 14px;border:none;border-radius:999px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:600;cursor:pointer;">
+      Сохранить настройки
+    </button>
+    <p id="acc_message" style="margin-top:10px;font-size:0.85rem;color:#6b7280;"></p>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+  const TOKEN_KEY = 'omega_access_token';
+  function getToken() { return window.localStorage.getItem(TOKEN_KEY); }
+
+  async function loadAccount() {
+    const token = getToken();
+    const loadingEl = document.getElementById('acc_loading');
+    const formEl = document.getElementById('account_form');
+    const msgEl = document.getElementById('acc_message');
+
+    if (!token) {
+      loadingEl.textContent = 'Вы не авторизованы. Пожалуйста, войдите.';
+      return;
+    }
+
+    try {
+      const res = await fetch('/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!res.ok) {
+        loadingEl.textContent = 'Ошибка загрузки профиля (' + res.status + ').';
+        if (res.status === 401) {
+          window.localStorage.removeItem(TOKEN_KEY);
+          setTimeout(() => { window.location.href = '/auth/login-page'; }, 800);
+        }
+        return;
+      }
+      const data = await res.json();
+      loadingEl.style.display = 'none';
+      formEl.style.display = 'block';
+
+      document.getElementById('acc_username').value = data.username || '';
+      document.getElementById('work_telegram').value = data.work_telegram || '';
+      document.getElementById('work_telegram_session_name').value = data.work_telegram_session_name || '';
+      document.getElementById('work_email').value = data.work_email || '';
+      document.getElementById('work_email_app_pass').value = data.work_email_app_pass || '';
+
+      formEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        msgEl.textContent = 'Сохраняем...';
+        try {
+          const payload = {
+            work_telegram: document.getElementById('work_telegram').value || null,
+            work_telegram_session_name: document.getElementById('work_telegram_session_name').value || null,
+            work_email: document.getElementById('work_email').value || null,
+            work_email_app_pass: document.getElementById('work_email_app_pass').value || null,
+          };
+          const resUpd = await fetch('/auth/me', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+          const updData = await resUpd.json();
+          if (!resUpd.ok) {
+            msgEl.style.color = '#dc2626';
+            msgEl.textContent = updData.detail || 'Ошибка сохранения';
+            return;
+          }
+          msgEl.style.color = '#16a34a';
+          msgEl.textContent = 'Настройки сохранены';
+        } catch (e) {
+          msgEl.style.color = '#dc2626';
+          msgEl.textContent = 'Ошибка: ' + e.message;
+        }
+      });
+
+    } catch (e) {
+      loadingEl.textContent = 'Ошибка: ' + e.message;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadAccount);
+</script>
+{% endblock %}

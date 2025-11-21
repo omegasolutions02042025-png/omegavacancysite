@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Профиль — OmegaSolutions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+  <link rel="icon" type="image/png"
+        href="{{ url_for('static', path='img/omega-logo.png') }}">
+
+  <style>
+    body{
+      background:#f3f4f6;
+      font-family:system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    .profile-page{
+      max-width:1100px;
+      margin:32px auto;
+      padding:0 16px;
+      display:flex;
+      gap:20px;
+      align-items:flex-start;
+    }
+    .profile-sidebar{
+      width:230px;
+      background:#0f172a;
+      color:#e5e7eb;
+      border-radius:18px;
+      padding:18px 16px;
+      box-shadow:0 10px 30px rgba(15,23,42,.45);
+    }
+    .sidebar-title{
+      font-size:0.95rem;
+      font-weight:600;
+      margin-bottom:10px;
+      color:#facc15;
+    }
+    .sidebar-menu{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-top:8px;
+    }
+    .sidebar-link{
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:0.9rem;
+      color:#e5e7eb;
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+    }
+    .sidebar-link:hover{
+      background:rgba(148,163,184,.2);
+    }
+    .sidebar-link span.icon{
+      font-size:1.1rem;
+    }
+
+    .profile-main{
+      flex:1;
+    }
+    .profile-card{
+      background:#ffffff;
+      border-radius:22px;
+      padding:28px 30px 26px;
+      box-shadow:0 12px 35px rgba(15,23,42,.12);
+      border:1px solid rgba(148,163,184,0.35);
+      text-align:center;
+    }
+    .profile-title{
+      margin:0 0 10px;
+      font-size:1.6rem;
+      font-weight:700;
+      color:#0f172a;
+    }
+    .profile-email{
+      font-size:1rem;
+      color:#111827;
+      font-weight:600;
+      margin-bottom:8px;
+    }
+    .profile-sub{
+      font-size:0.9rem;
+      color:#64748b;
+      margin-bottom:18px;
+    }
+    .profile-actions{
+      display:flex;
+      justify-content:center;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:10px;
+    }
+    .btn-outline{
+      padding:10px 18px;
+      border-radius:999px;
+      border:1px solid #2563eb;
+      background:#eff6ff;
+      color:#1d4ed8;
+      font-size:0.9rem;
+      font-weight:600;
+      cursor:pointer;
+      text-decoration:none;
+    }
+    .btn-outline:hover{
+      background:#dbeafe;
+    }
+    .btn-logout{
+      margin-top:22px;
+      padding:9px 16px;
+      border-radius:999px;
+      border:none;
+      background:#ef4444;
+      color:#ffffff;
+      font-size:0.9rem;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .btn-logout:hover{
+      filter:brightness(1.05);
+    }
+
+    .tg-linked{
+      font-size:0.85rem;
+      margin-top:12px;
+      color:#16a34a;
+    }
+    .tg-linked-missing{
+      color:#9ca3af;
+    }
+
+    @media (max-width:768px){
+      .profile-page{
+        flex-direction:column;
+      }
+      .profile-sidebar{
+        width:100%;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+      }
+    }
+
+    /* ========= ОБЩИЕ СТИЛИ МОДАЛОК ========= */
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.80);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:1000;
+    }
+    .modal-card{
+      width:100%;
+      max-width:420px;
+      background:#020617;
+      color:#e5e7eb;
+      border-radius:20px;
+      padding:24px 22px 20px;
+      box-shadow:0 18px 45px rgba(0,0,0,.9);
+      border:1px solid rgba(148,163,184,.7);
+    }
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    .modal-title{
+      font-size:1.1rem;
+      font-weight:600;
+      color:#facc15;
+    }
+    .modal-close{
+      background:none;
+      border:none;
+      color:#9ca3af;
+      font-size:1.3rem;
+      cursor:pointer;
+    }
+    .modal-card p{
+      font-size:0.85rem;
+      color:#9ca3af;
+      margin-bottom:10px;
+    }
+    .modal-field{
+      text-align:left;
+      margin-bottom:10px;
+    }
+    .modal-label{
+      display:block;
+      font-size:0.8rem;
+      margin-bottom:4px;
+      color:#e5e7eb;
+    }
+    .modal-input{
+      width:100%;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid #4b5563 !important;
+      background:#020617 !important;
+      color:#f9fafb !important;
+      font-size:0.9rem;
+      box-shadow:none !important;
+    }
+    .modal-input::placeholder,
+    .modal-input::-webkit-input-placeholder,
+    .modal-input::-moz-placeholder,
+    .modal-input:-ms-input-placeholder,
+    .modal-input::-ms-input-placeholder{
+      color:#9ca3af !important;
+      opacity:1 !important;
+    }
+    .modal-input:focus{
+      outline:none;
+      border-color:#3b82f6 !important;
+      box-shadow:none !important;
+    }
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:12px;
+    }
+    .modal-btn{
+      padding:8px 14px;
+      border-radius:999px;
+      border:none;
+      font-size:0.85rem;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .modal-btn-primary{
+      background:linear-gradient(135deg,#3b82f6,#2563eb);
+      color:#e5e7eb;
+    }
+    .modal-btn-secondary{
+      background:#111827;
+      color:#e5e7eb;
+      border:1px solid #4b5563;
+    }
+    .modal-status{
+      margin-top:8px;
+      font-size:0.8rem;
+      min-height:1em;
+    }
+    .modal-status-error{
+      color:#fca5a5;
+    }
+    .modal-status-ok{
+      color:#bbf7d0;
+    }
+  </style>
+</head>
+<body>
+
+  {% include "auth/header_auth.html" %}
+
+  <main class="profile-page">
+    <aside class="profile-sidebar">
+      <div>
+        <div class="sidebar-title">Личный кабинет</div>
+        <nav class="sidebar-menu">
+          <a href="/sverka/history" class="sidebar-link">
+            <span class="icon">📂</span>
+            <span>История сверки</span>
+          </a>
+          <a href="/dialogs" class="sidebar-link">
+            <span class="icon">💬</span>
+            <span>Переписка с кандидатами</span>
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <section class="profile-main">
+      <div class="profile-card">
+        <h1 class="profile-title">Ваш профиль</h1>
+        <div class="profile-email">
+          {{ user_email or "email не найден" }}
+        </div>
+        <p class="profile-sub">
+          Используйте аккаунт, чтобы запускать сверку вакансий и вести переписку с кандидатами.
+        </p>
+
+        {% if telegram_username %}
+          <div class="tg-linked">
+            Привязанный Telegram: @{{ telegram_username }}
+          </div>
+        {% else %}
+          <div class="tg-linked tg-linked-missing">
+            Telegram ещё не привязан.
+          </div>
+        {% endif %}
+
+        {% if linked_email %}
+          <div class="tg-linked">
+            Привязанный e-mail: {{ linked_email }}
+          </div>
+        {% else %}
+          <div class="tg-linked tg-linked-missing">
+            E-mail ещё не привязан.
+          </div>
+        {% endif %}
+
+        <div class="profile-actions">
+          {% if telegram_username %}
+            <button type="button" class="btn-outline" onclick="unlinkTelegram()">
+              ❌ Отвязать Telegram
+            </button>
+          {% else %}
+            <button type="button" class="btn-outline" onclick="openTelegramModal()">
+              🔗 Привязать Telegram
+            </button>
+          {% endif %}
+
+          {% if linked_email %}
+            <button type="button" class="btn-outline" onclick="unlinkEmail()">
+              ❌ Отвязать e-mail
+            </button>
+          {% else %}
+            <button type="button" class="btn-outline" onclick="openEmailModal()">
+              📧 Привязать e-mail
+            </button>
+          {% endif %}
+        </div>
+
+        <button class="btn-logout" onclick="logout()">Выйти</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========= МОДАЛКА TELEGRAM ========= -->
+  <div id="tg-modal-root" style="display:none;">
+    <div class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title">Привязка Telegram</div>
+          <button class="modal-close" type="button" onclick="closeTelegramModal()">×</button>
+        </div>
+        <p>Укажите номер телефона Telegram, затем код из Telegram. Если включена 2FA — потребуется облачный пароль.</p>
+
+        <!-- Шаг 1 — телефон -->
+        <form id="tg-step-phone" onsubmit="sendTelegramCode(event)">
+          <div class="modal-field">
+            <label class="modal-label">Номер телефона</label>
+            <input class="modal-input" type="text" name="phone" placeholder="+375XXXXXXXXX" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" onclick="closeTelegramModal()">Отмена</button>
+            <button type="submit" class="modal-btn modal-btn-primary">Отправить код</button>
+          </div>
+        </form>
+
+        <!-- Шаг 2 — код -->
+        <form id="tg-step-code" onsubmit="confirmTelegramCode(event)" style="display:none;">
+          <div class="modal-field">
+            <label class="modal-label">Номер телефона</label>
+            <input class="modal-input" type="text" name="phone" readonly>
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Код из Telegram</label>
+            <input class="modal-input" type="text" name="code" placeholder="12345" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" onclick="backToPhoneStep()">Назад</button>
+            <button type="submit" class="modal-btn modal-btn-primary">Подтвердить код</button>
+          </div>
+        </form>
+
+        <!-- Шаг 3 — облачный пароль -->
+        <form id="tg-step-password" onsubmit="confirmTelegramPassword(event)" style="display:none;">
+          <div class="modal-field">
+            <label class="modal-label">Номер телефона</label>
+            <input class="modal-input" type="text" name="phone" readonly>
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Облачный пароль (2FA)</label>
+            <input class="modal-input" type="password" name="password" placeholder="Ваш облачный пароль Telegram" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" onclick="backToCodeStep()">Назад</button>
+            <button type="submit" class="modal-btn modal-btn-primary">Подтвердить пароль</button>
+          </div>
+        </form>
+
+        <div id="tg-status" class="modal-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= МОДАЛКА E-MAIL ========= -->
+  <div id="email-modal-root" style="display:none;">
+    <div class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title">Привязка e-mail</div>
+          <button class="modal-close" type="button" onclick="closeEmailModal()">×</button>
+        </div>
+        <p>Сначала укажите ваш e-mail, затем пароль приложения почтового сервиса (IMAP/SMTP).</p>
+
+        <!-- Шаг 1 — e-mail -->
+        <form id="email-step-address" onsubmit="sendEmailInit(event)">
+          <div class="modal-field">
+            <label class="modal-label">E-mail</label>
+            <input class="modal-input" type="email" name="email" placeholder="you@example.com" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" onclick="closeEmailModal()">Отмена</button>
+            <button type="submit" class="modal-btn modal-btn-primary">Продолжить</button>
+          </div>
+        </form>
+
+        <!-- Шаг 2 — пароль приложения -->
+        <form id="email-step-password" onsubmit="confirmEmailPassword(event)" style="display:none;">
+          <div class="modal-field">
+            <label class="modal-label">E-mail</label>
+            <input class="modal-input" type="email" name="email" readonly>
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Пароль приложения</label>
+            <input class="modal-input" type="password" name="app_password" placeholder="Пароль приложения (16 символов и т.п.)" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" onclick="backToEmailStep()">Назад</button>
+            <button type="submit" class="modal-btn modal-btn-primary">Подтвердить</button>
+          </div>
+        </form>
+
+        <div id="email-status" class="modal-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function logout(){
+        window.location.href = "/auth/logout";
+    }
+
+    /* ===== TELEGRAM ===== */
+
+    function openTelegramModal(){
+      const root = document.getElementById('tg-modal-root');
+      const s1 = document.getElementById('tg-step-phone');
+      const s2 = document.getElementById('tg-step-code');
+      const s3 = document.getElementById('tg-step-password');
+      const statusEl = document.getElementById('tg-status');
+
+      s1.style.display = 'block';
+      s2.style.display = 'none';
+      s3.style.display = 'none';
+      statusEl.textContent = '';
+      statusEl.className = 'modal-status';
+
+      root.style.display = 'block';
+    }
+
+    function closeTelegramModal(){
+      document.getElementById('tg-modal-root').style.display = 'none';
+    }
+
+    function backToPhoneStep(){
+      document.getElementById('tg-step-phone').style.display = 'block';
+      document.getElementById('tg-step-code').style.display = 'none';
+      document.getElementById('tg-step-password').style.display = 'none';
+    }
+
+    function backToCodeStep(){
+      document.getElementById('tg-step-phone').style.display = 'none';
+      document.getElementById('tg-step-code').style.display = 'block';
+      document.getElementById('tg-step-password').style.display = 'none';
+    }
+
+    async function sendTelegramCode(event){
+      event.preventDefault();
+      const form = document.getElementById('tg-step-phone');
+      const phone = form.phone.value.trim();
+      const statusEl = document.getElementById('tg-status');
+
+      statusEl.textContent = 'Отправляем код...';
+      statusEl.className = 'modal-status';
+
+      try{
+        const resp = await fetch('/telegram/send-code', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({ phone })
+        });
+        const data = await resp.json();
+
+        if (resp.ok && data.ok){
+          statusEl.textContent = data.message || 'Код отправлен. Проверьте Telegram.';
+          statusEl.className = 'modal-status modal-status-ok';
+
+          const stepCode = document.getElementById('tg-step-code');
+          stepCode.phone.value = phone;
+          form.style.display = 'none';
+          stepCode.style.display = 'block';
+        } else {
+          statusEl.textContent = data.detail || data.message || 'Ошибка при отправке кода';
+          statusEl.className = 'modal-status modal-status-error';
+        }
+      } catch(e){
+        statusEl.textContent = 'Сетевая ошибка: ' + e;
+        statusEl.className = 'modal-status modal-status-error';
+      }
+    }
+
+    async function confirmTelegramCode(event){
+      event.preventDefault();
+      const form = document.getElementById('tg-step-code');
+      const phone = form.phone.value.trim();
+      const code = form.code.value.trim();
+      const statusEl = document.getElementById('tg-status');
+
+      statusEl.textContent = 'Проверяем код...';
+      statusEl.className = 'modal-status';
+
+      try{
+        const resp = await fetch('/telegram/confirm-code', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({ phone, code })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok){
+          statusEl.textContent = data.detail || 'Ошибка при подтверждении кода';
+          statusEl.className = 'modal-status modal-status-error';
+          return;
+        }
+
+        if (data.need_password){
+          statusEl.textContent = data.message || 'Для этого аккаунта включён облачный пароль, введите его.';
+          statusEl.className = 'modal-status';
+
+          const stepPwd = document.getElementById('tg-step-password');
+          stepPwd.phone.value = phone;
+
+          form.style.display = 'none';
+          stepPwd.style.display = 'block';
+        } else {
+          statusEl.textContent = data.message || 'Telegram успешно привязан.';
+          statusEl.className = 'modal-status modal-status-ok';
+          setTimeout(() => location.reload(), 800);
+        }
+      } catch(e){
+        statusEl.textContent = 'Сетевая ошибка: ' + e;
+        statusEl.className = 'modal-status modal-status-error';
+      }
+    }
+
+    async function confirmTelegramPassword(event){
+      event.preventDefault();
+      const form = document.getElementById('tg-step-password');
+      const phone = form.phone.value.trim();
+      const password = form.password.value.trim();
+      const statusEl = document.getElementById('tg-status');
+
+      statusEl.textContent = 'Подтверждаем пароль...';
+      statusEl.className = 'modal-status';
+
+      try{
+        const resp = await fetch('/telegram/password', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({ phone, password })
+        });
+        const data = await resp.json();
+
+        if (resp.ok && data.ok){
+          statusEl.textContent = data.message || 'Telegram успешно привязан.';
+          statusEl.className = 'modal-status modal-status-ok';
+          setTimeout(() => location.reload(), 800);
+        } else {
+          statusEl.textContent = data.detail || data.message || 'Ошибка при подтверждении пароля';
+          statusEl.className = 'modal-status modal-status-error';
+        }
+      } catch(e){
+        statusEl.textContent = 'Сетевая ошибка: ' + e;
+        statusEl.className = 'modal-status modal-status-error';
+      }
+    }
+
+    async function unlinkTelegram(){
+      if (!confirm('Точно отвязать Telegram от профиля?')){
+        return;
+      }
+      const statusEl = document.getElementById('tg-status') || {textContent:'', className:''};
+
+      try{
+        const resp = await fetch('/telegram/unlink', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({})
+        });
+        const data = await resp.json();
+
+        if (resp.ok && data.ok){
+          statusEl.textContent = data.message || 'Telegram отвязан.';
+          statusEl.className = 'modal-status modal-status-ok';
+          setTimeout(() => location.reload(), 500);
+        } else {
+          statusEl.textContent = data.detail || data.message || 'Ошибка при отвязке Telegram';
+          statusEl.className = 'modal-status modal-status-error';
+        }
+      } catch(e){
+        statusEl.textContent = 'Сетевая ошибка: ' + e;
+        statusEl.className = 'modal-status modal-status-error';
+      }
+    }
+
+    /* ===== E-MAIL ===== */
+
+    function openEmailModal(){
+      const root = document.getElementById('email-modal-root');
+      const s1 = document.getElementById('email-step-address');
+      const s2 = document.getElementById('email-step-password');
+      const statusEl = document.getElementById('email-status');
+
+      s1.style.display = 'block';
+      s2.style.display = 'none';
+      statusEl.textContent = '';
+      statusEl.className = 'modal-status';
+
+      root.style.display = 'block';
+    }
+
+    function closeEmailModal(){
+      document.getElementById('email-modal-root').style.display = 'none';
+    }
+
+    function backToEmailStep(){
+      document.getElementById('email-step-address').style.display = 'block';
+      document.getElementById('email-step-password').style.display = 'none';
+    }
+
+    async function sendEmailInit(event){
+      event.preventDefault();
+      const form = document.getElementById('email-step-address');
+      const email = form.email.value.trim();
+      const statusEl = document.getElementById('email-status');
+
+      statusEl.textContent = 'Проверяем e-mail...';
+      statusEl.className = 'modal-status';
+
+      try{
+        const resp = await fetch('/email/connect', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({ email })
+        });
+        const data = await resp.json();
+
+        if (resp.ok && data.ok){
+          statusEl.textContent = data.message || 'E-mail принят. Введите пароль приложения.';
+          statusEl.className = 'modal-status modal-status-ok';
+
+          const stepPwd = document.getElementById('email-step-password');
+          stepPwd.email.value = email;
+          form.style.display = 'none';
+          stepPwd.style.display = 'block';
+        } else {
+          statusEl.textContent = data.detail || data.message || 'Ошибка при проверке e-mail';
+          statusEl.className = 'modal-status modal-status-error';
+        }
+      } catch(e){
+        statusEl.textContent = 'Сетевая ошибка: ' + e;
+        statusEl.className = 'modal-status modal-status-error';
+      }
+    }
+
+    async function confirmEmailPassword(event){
+      event.preventDefault();
+      const form = document.getElementById('email-step-password');
+      const email = form.email.value.trim();
+      const appPassword = form.app_password.value.trim();
+      const statusEl = document.getElementById('email-status');
+
+      statusEl.textContent = 'Проверяем соединение с почтой...';
+      statusEl.className = 'modal-status';
+
+      try{
+        const resp = await fetch('/email/password', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({ email, password: appPassword })
+        });
+        const data = await resp.json();
+
+        if (resp.ok && data.ok){
+          statusEl.textContent = data.message || 'E-mail успешно привязан.';
+          statusEl.className = 'modal-status modal-status-ok';
+          setTimeout(() => location.reload(), 800);
+        } else {
+          statusEl.textContent = data.detail || data.message || 'Ошибка при привязке e-mail';
+          statusEl.className = 'modal-status modal-status-error';
+        }
+      } catch(e){
+        statusEl.textContent = 'Сетевая ошибка: ' + e;
+        statusEl.className = 'modal-status modal-status-error';
+      }
+    }
+
+    async function unlinkEmail(){
+      if (!confirm('Точно отвязать e-mail от профиля?')){
+        return;
+      }
+      const statusEl = document.getElementById('email-status') || {textContent:'', className:''};
+
+      try{
+        const resp = await fetch('/email/unlink', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({})
+        });
+        const data = await resp.json();
+
+        if (resp.ok && data.ok){
+          statusEl.textContent = data.message || 'E-mail отвязан.';
+          statusEl.className = 'modal-status modal-status-ok';
+          setTimeout(() => location.reload(), 500);
+        } else {
+          statusEl.textContent = data.detail || data.message || 'Ошибка при отвязке e-mail';
+          statusEl.className = 'modal-status modal-status-error';
+        }
+      } catch(e){
+        statusEl.textContent = 'Сетевая ошибка: ' + e;
+        statusEl.className = 'modal-status modal-status-error';
+      }
+    }
+  </script>
+
+</body>
+</html>
