@@ -108,6 +108,18 @@
     .btn-outline:hover{
       background:#dbeafe;
     }
+
+    /* выделенная кнопка "Мои кандидаты" */
+    .btn-primary-link{
+      border: none;
+      background:linear-gradient(135deg,#facc15,#f97316);
+      color:#111827;
+      box-shadow:0 8px 18px rgba(248,181,0,.45);
+    }
+    .btn-primary-link:hover{
+      filter:brightness(1.06);
+    }
+
     .btn-logout{
       margin-top:22px;
       padding:9px 16px;
@@ -269,9 +281,9 @@
             <span class="icon">📂</span>
             <span>История сверки</span>
           </a>
-          <a href="/dialogs" class="sidebar-link">
-            <span class="icon">💬</span>
-            <span>Переписка с кандидатами</span>
+          <a href="/candidate" class="sidebar-link">
+            <span class="icon">👥</span>
+            <span>Мои кандидаты</span>
           </a>
         </nav>
       </div>
@@ -308,6 +320,9 @@
         {% endif %}
 
         <div class="profile-actions">
+          <!-- новая кнопка "Мои кандидаты" -->
+         
+
           {% if telegram_username %}
             <button type="button" class="btn-outline" onclick="unlinkTelegram()">
               ❌ Отвязать Telegram
@@ -401,7 +416,9 @@
           <div class="modal-title">Привязка e-mail</div>
           <button class="modal-close" type="button" onclick="closeEmailModal()">×</button>
         </div>
-        <p>Сначала укажите ваш e-mail, затем пароль приложения почтового сервиса (IMAP/SMTP).</p>
+        <p>Сначала укажите ваш e-mail, затем пароль приложения почтового сервиса (IMAP/SMTP).Вот ссылка как его создать:
+          <a href = 'https://support.google.com/accounts/answer/185833'>Перейти</a>
+        </p>
 
         <!-- Шаг 1 — e-mail -->
         <form id="email-step-address" onsubmit="sendEmailInit(event)">
@@ -423,7 +440,7 @@
           </div>
           <div class="modal-field">
             <label class="modal-label">Пароль приложения</label>
-            <input class="modal-input" type="password" name="app_password" placeholder="Пароль приложения (16 символов и т.п.)" required>
+            <input class="modal-input" type="password" name="app_password" placeholder="Пароль приложения почтового сервиса (IMAP/SMTP)" required>
           </div>
           <div class="modal-actions">
             <button type="button" class="modal-btn modal-btn-secondary" onclick="backToEmailStep()">Назад</button>

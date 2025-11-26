@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Результаты импорта кандидатов — OmegaSolutions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+  <style>
+    .result-complete {
+      background:#dcfce7;
+      border-bottom:1px solid #bbf7d0;
+    }
+    .result-incomplete {
+      background:#fef9c3;
+      border-bottom:1px solid #facc15;
+    }
+  </style>
+</head>
+<body>
+  {% include "auth/header_auth.html" %}
+
+  <main class="create-page" style="max-width:960px;margin:32px auto 40px;padding:0 16px 40px;">
+    <h1 class="create-title" style="text-align:center;font-size:2rem;font-weight:700;color:#111827;margin-bottom:10px;">
+      Результаты импорта кандидатов
+    </h1>
+    <p class="create-subtitle" style="text-align:center;font-size:1rem;color:#6b7280;margin-bottom:28px;">
+      Ниже список резюме, которые были обработаны. Нажмите на кандидата, чтобы перейти к его карточке.
+    </p>
+
+    <section class="card" style="background:#ffffff;border-radius:16px;padding:20px 24px;box-shadow:0 12px 30px rgba(15,23,42,.06);border:1px solid rgba(209,213,219,.9);">
+      {% if results %}
+        <div class="card-title" style="font-size:1rem;font-weight:650;margin:0 0 12px;letter-spacing:.04em;text-transform:uppercase;color:#111827;">
+          Успешно созданные кандидаты
+        </div>
+        <ul style="list-style:none;padding:0;margin:0 0 16px;">
+          {% for item in results %}
+            {% set row_class = "" %}
+            {% if item.completeness == "complete" %}
+              {% set row_class = "result-complete" %}
+            {% elif item.completeness == "incomplete" %}
+              {% set row_class = "result-incomplete" %}
+            {% endif %}
+            <li class="{{ row_class }}" style="padding:10px 0;border-bottom:1px solid #e5e7eb;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <div style="font-weight:600;color:#111827;">
+                    {{ item.full_name or "Без имени" }}
+                    {% if item.title %}<span style="color:#6b7280;">— {{ item.title }}</span>{% endif %}
+                  </div>
+                  <div style="font-size:0.85rem;color:#6b7280;">
+                    Файл: {{ item.filename }} • ID: {{ item.candidate_id }}
+                    {% if item.completeness == "complete" %}
+                      • <span style="color:#166534;font-weight:600;">Все поля профиля заполнены</span>
+                    {% elif item.completeness == "incomplete" %}
+                      • <span style="color:#854d0e;font-weight:600;">Есть незаполненные поля (None) в профиле</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <a href="/candidate/edit/{{ item.candidate_id }}"
+                   class="btn-secondary"
+                   style="padding:6px 14px;border-radius:999px;border:1px solid #d1d5db;background:#ffffff;font-size:0.85rem;font-weight:500;color:#111827;text-decoration:none;">
+                  Открыть карточку
+                </a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="color:#6b7280;margin:0 0 16px;">Не удалось создать ни одного кандидата.</p>
+      {% endif %}
+
+      {% if errors %}
+        <div class="card-title" style="font-size:0.95rem;font-weight:650;margin:16px 0 8px;letter-spacing:.04em;text-transform:uppercase;color:#b91c1c;">
+          Ошибки при обработке файлов
+        </div>
+        <ul style="list-style:none;padding:0;margin:0;">
+          {% for err in errors %}
+            <li style="padding:8px 0;border-bottom:1px solid #fee2e2;">
+              <div style="font-size:0.9rem;color:#991b1b;font-weight:600;">
+                {{ err.filename }}
+              </div>
+              <div style="font-size:0.85rem;color:#b91c1c;">
+                {{ err.error }}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
+        <a href="/candidate" class="btn-secondary"
+           style="padding:9px 16px;border-radius:999px;border:1px solid #d1d5db;background:#ffffff;font-size:0.9rem;font-weight:500;color:#111827;text-decoration:none;">
+          Вернуться к списку кандидатов
+        </a>
+        <a href="/candidate/add" class="btn-secondary"
+           style="padding:9px 16px;border-radius:999px;border:1px solid #d1d5db;background:#ffffff;font-size:0.9rem;font-weight:500;color:#111827;text-decoration:none;">
+          Добавить ещё кандидатов
+        </a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+
+

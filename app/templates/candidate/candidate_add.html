@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Добавить кандидата — OmegaSolutions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+  <link rel="icon" type="image/png"
+        href="{{ url_for('static', path='img/omega-logo.png') }}">
+
+  <style>
+    body{
+      background:#f3f4f6;
+      font-family:system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    .create-page{
+      max-width:960px;
+      margin:32px auto 40px;
+      padding:0 16px 40px;
+    }
+
+    .create-title{
+      text-align:center;
+      font-size:2rem;
+      font-weight:700;
+      color:#111827;
+      margin-bottom:10px;
+    }
+    .create-subtitle{
+      text-align:center;
+      font-size:1rem;
+      color:#6b7280;
+      margin-bottom:28px;
+    }
+
+    .create-top-row{
+      display:flex;
+      gap:18px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-bottom:28px;
+    }
+    .create-top-card{
+      flex:1 1 260px;
+      max-width:320px;
+      background:#ffffff;
+      border-radius:22px;
+      padding:20px 20px 18px;
+      box-shadow:0 14px 35px rgba(15,23,42,.10);
+      border:1px solid #e5e7eb;
+      text-align:center;
+    }
+    .create-top-icon{
+      width:60px;
+      height:60px;
+      border-radius:18px;
+      margin:0 auto 14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.6rem;
+      background:#eef2ff;
+      color:#4f46e5;
+    }
+    .create-top-title{
+      font-size:1rem;
+      font-weight:600;
+      color:#111827;
+      margin-bottom:6px;
+    }
+    .create-top-text{
+      font-size:0.9rem;
+      color:#6b7280;
+    }
+
+    .create-tabs{
+      margin-top:30px;
+      background:#ffffff;
+      border-radius:22px;
+      box-shadow:0 14px 35px rgba(15,23,42,.10);
+      border:1px solid #e5e7eb;
+      padding:0 0 22px;
+    }
+
+    .create-tab-header{
+      display:flex;
+      border-bottom:1px solid #e5e7eb;
+    }
+    .create-tab-btn{
+      flex:1;
+      padding:12px 18px;
+      text-align:center;
+      font-size:0.95rem;
+      font-weight:600;
+      cursor:pointer;
+      background:#f9fafb;
+      color:#4b5563;
+      border:none;
+      border-bottom:2px solid transparent;
+    }
+    .create-tab-btn-active{
+      background:#ffffff;
+      color:#111827;
+      border-bottom-color:#111827;
+    }
+
+    .create-tab-body{
+      padding:26px 26px 18px;
+    }
+
+    /* блок «из файла» */
+
+    .upload-dropzone{
+      border:2px dashed #d1d5db;
+      border-radius:18px;
+      background:#f9fafb;
+      padding:36px 20px 32px;
+      text-align:center;
+      cursor:pointer;
+      transition:background .15s ease, border-color .15s ease;
+    }
+    .upload-dropzone:hover{
+      background:#f3f4ff;
+      border-color:#9ca3af;
+    }
+    .upload-icon{
+      font-size:2.2rem;
+      margin-bottom:14px;
+      color:#6b7280;
+    }
+    .upload-title{
+      font-size:1rem;
+      font-weight:600;
+      color:#111827;
+      margin-bottom:6px;
+    }
+    .upload-sub{
+      font-size:0.9rem;
+      color:#6b7280;
+      margin-bottom:6px;
+    }
+    .upload-hint{
+      font-size:0.8rem;
+      color:#9ca3af;
+    }
+    .upload-input{
+      display:none;
+    }
+    .upload-file-name{
+      margin-top:10px;
+      font-size:0.85rem;
+      color:#4b5563;
+      text-align:center;
+    }
+
+    /* блок «из текста» */
+
+    .text-label{
+      display:block;
+      font-size:0.9rem;
+      color:#4b5563;
+      margin-bottom:6px;
+    }
+    .text-area{
+      width:100%;
+      min-height:230px;
+      resize:vertical;
+      border-radius:14px;
+      border:1px solid #d1d5db;
+      padding:10px 12px;
+      font-size:0.9rem;
+      font-family:inherit;
+      box-sizing:border-box;
+    }
+    .text-area:focus{
+      outline:none;
+      border-color:#4f46e5;
+      box-shadow:0 0 0 1px rgba(79,70,229,.35);
+    }
+
+    .create-actions{
+      margin-top:18px;
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .btn-secondary{
+      padding:9px 16px;
+      border-radius:999px;
+      border:1px solid #d1d5db;
+      background:#ffffff;
+      font-size:0.9rem;
+      font-weight:500;
+      cursor:pointer;
+      color:#111827;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .btn-secondary:hover{
+      background:#f9fafb;
+    }
+    .btn-submit{
+      padding:9px 18px;
+      border-radius:999px;
+      border:none;
+      background:#111827;
+      color:#f9fafb;
+      font-size:0.9rem;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(15,23,42,.45);
+    }
+    .btn-submit:hover{
+      filter:brightness(1.05);
+      transform:translateY(-1px);
+    }
+
+    @media (max-width:640px){
+      .create-tab-body{
+        padding-inline:16px;
+      }
+    }
+
+    /* Оверлей загрузки */
+
+    .loading-overlay{
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      font-family:inherit;
+    }
+    .loading-backdrop{
+      position:absolute;
+      inset:0;
+      background:rgba(15,23,42,.45);
+      backdrop-filter:blur(2px);
+    }
+    .loading-box{
+      position:relative;
+      z-index:1;
+      background:#ffffff;
+      border-radius:18px;
+      padding:18px 22px 16px;
+      box-shadow:0 18px 45px rgba(15,23,42,.35);
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:260px;
+    }
+    .loading-spinner{
+      width:28px;
+      height:28px;
+      border-radius:999px;
+      border:3px solid #e5e7eb;
+      border-top-color:#111827;
+      animation:spin .8s linear infinite;
+      flex-shrink:0;
+    }
+    .loading-text{
+      font-size:0.95rem;
+      color:#111827;
+      font-weight:500;
+    }
+    @keyframes spin{
+      to{
+        transform:rotate(360deg);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  {% include "auth/header_auth.html" %}
+
+  <main class="create-page">
+    <h1 class="create-title">Добавить кандидата</h1>
+    <p class="create-subtitle">
+      Загрузите резюме кандидата — мы создадим карточку автоматически.
+    </p>
+
+    <div class="create-top-row">
+      <div class="create-top-card">
+        <div class="create-top-icon">📄</div>
+        <div class="create-top-title">Импорт из файла</div>
+        <div class="create-top-text">
+          Загрузите PDF/DOCX резюме кандидата, чтобы быстро создать профиль.
+        </div>
+      </div>
+      <div class="create-top-card">
+        <div class="create-top-icon">✏️</div>
+        <div class="create-top-title">Импорт из текста</div>
+        <div class="create-top-text">
+          Вставьте текст резюме — мы автоматически выделим ключевые поля.
+        </div>
+      </div>
+    </div>
+
+    <section class="create-tabs">
+      <header class="create-tab-header">
+        <button type="button"
+                id="tab-btn-file"
+                class="create-tab-btn create-tab-btn-active"
+                onclick="switchTab('file')">
+          Из файла
+        </button>
+        <button type="button"
+                id="tab-btn-text"
+                class="create-tab-btn"
+                onclick="switchTab('text')">
+          Из текста
+        </button>
+      </header>
+
+      <!-- TAB: ИЗ ФАЙЛА -->
+      <div id="tab-file" class="create-tab-body">
+        <form action="/candidate/upload" method="post" enctype="multipart/form-data">
+          <label class="upload-dropzone" for="candidate-file-input">
+            <div class="upload-icon">📎</div>
+            <div class="upload-title">Перетащите резюме кандидата сюда</div>
+            <div class="upload-sub">
+              или нажмите, чтобы выбрать один или несколько файлов (PDF, DOCX, DOC, RTF)
+            </div>
+            <div class="upload-hint">
+              Каждый файл будет обработан как отдельный кандидат. Максимальный размер файла, например, 10&nbsp;МБ.
+            </div>
+          </label>
+
+          <input id="candidate-file-input"
+                 class="upload-input"
+                 type="file"
+                 name="files"
+                 multiple
+                 accept=".pdf,.doc,.docx,.rtf"
+                 required>
+
+          <p id="candidate-file-name" class="upload-file-name"></p>
+
+          <div class="create-actions">
+            <a href="/candidate" class="btn-secondary">Отмена</a>
+            <button type="submit" class="btn-submit">Создать кандидата</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- TAB: ИЗ ТЕКСТА -->
+      <div id="tab-text" class="create-tab-body" style="display:none;">
+        <form action="/candidate/from-text" method="post">
+          <label class="text-label" for="candidate-text">
+            Вставьте сюда полное резюме кандидата (на любом языке)
+          </label>
+          <textarea id="candidate-text"
+                    name="resume_text"
+                    class="text-area"
+            placeholder="Скопируйте и вставьте сюда резюме кандидата…"
+            required></textarea>
+
+          <div class="create-actions">
+            <a href="/candidate" class="btn-secondary">Отмена</a>
+            <button type="submit" class="btn-submit">Создать кандидата</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- LOADING OVERLAY -->
+  <div id="loading-overlay" class="loading-overlay" style="display:none;">
+    <div class="loading-backdrop"></div>
+    <div class="loading-box">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Создаём кандидата…</div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab){
+      const tabFileBody = document.getElementById("tab-file");
+      const tabTextBody = document.getElementById("tab-text");
+      const btnFile = document.getElementById("tab-btn-file");
+      const btnText = document.getElementById("tab-btn-text");
+
+      if (tab === "file"){
+        tabFileBody.style.display = "block";
+        tabTextBody.style.display = "none";
+        btnFile.classList.add("create-tab-btn-active");
+        btnText.classList.remove("create-tab-btn-active");
+      }else{
+        tabFileBody.style.display = "none";
+        tabTextBody.style.display = "block";
+        btnFile.classList.remove("create-tab-btn-active");
+        btnText.classList.add("create-tab-btn-active");
+      }
+    }
+
+    function showLoading(){
+      const overlay = document.getElementById("loading-overlay");
+      if (overlay){
+        overlay.style.display = "flex";
+      }
+    }
+
+    function hideLoading(){
+      const overlay = document.getElementById("loading-overlay");
+      if (overlay){
+        overlay.style.display = "none";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function(){
+      const dz = document.querySelector(".upload-dropzone");
+      const input = document.getElementById("candidate-file-input");
+      const info = document.getElementById("candidate-file-name");
+
+      // Используем стандартное поведение <label for="..."> для открытия диалога выбора файлов,
+      // и просто показываем список/количество выбранных резюме.
+      if (dz && input){
+        input.addEventListener("change", function(){
+          if (!info) return;
+          if (input.files && input.files.length > 0){
+            if (input.files.length === 1){
+              info.textContent = "Выбран файл: " + input.files[0].name;
+            } else {
+              const names = Array.from(input.files).map(f => f.name);
+              info.textContent = "Выбрано файлов: " + input.files.length + " (" + names.join(", ") + ")";
+            }
+          }else{
+            info.textContent = "";
+          }
+        });
+      }
+
+      const forms = document.querySelectorAll(
+        'form[action="/candidate/upload"], form[action="/candidate/from-text"]'
+      );
+
+      forms.forEach(function(form){
+        form.addEventListener("submit", async function(e){
+          e.preventDefault();
+
+          if (form.dataset.submitting === "1"){
+            return;
+          }
+          form.dataset.submitting = "1";
+
+          const submitBtn = form.querySelector(".btn-submit");
+          if (submitBtn){
+            submitBtn.disabled = true;
+          }
+
+          showLoading();
+
+          const formData = new FormData(form);
+
+          try{
+            const response = await fetch(form.action, {
+              method: (form.method || "post").toUpperCase(),
+              body: formData,
+              headers: { "Accept": "application/json" },
+              redirect: "follow"
+            });
+
+            if (response.redirected){
+              window.location.href = response.url;
+              return;
+            }
+
+            let data = null;
+            const ct = response.headers.get("content-type") || "";
+            if (ct.includes("application/json")){
+              data = await response.json().catch(() => null);
+            }
+
+            if (data && data.candidate_id){
+              window.location.href = "/candidate/edit/" + data.candidate_id;
+              return;
+            }
+
+            hideLoading();
+            if (submitBtn){
+              submitBtn.disabled = false;
+            }
+            form.dataset.submitting = "0";
+            alert("Не удалось создать кандидата. Проверьте данные и попробуйте ещё раз.");
+          }catch(err){
+            console.error("Ошибка при создании кандидата:", err);
+            hideLoading();
+            if (submitBtn){
+              submitBtn.disabled = false;
+            }
+            form.dataset.submitting = "0";
+            alert("Произошла ошибка при создании кандидата. Попробуйте ещё раз.");
+          }
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>

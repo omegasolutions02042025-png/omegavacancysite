@@ -305,3 +305,68 @@ async def send_message_by_username(username: str, text: str, client: TelegramCli
         except Exception as e:
             print(f"❌ Ошибка при отправке @{username}: {e}")
             return False
+
+
+import json
+from typing import Any, Dict, List
+from pydantic import ValidationError
+from app.database.candidate_db import CandidateProfileDB
+
+import json
+from typing import Any, Dict
+
+
+def parse_gpt_candidate_profile(gpt_raw: str | Dict[str, Any]) -> CandidateProfileDB:
+    # 1. JSON → dict
+    if isinstance(gpt_raw, str):
+        try:
+            data = json.loads(gpt_raw)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"GPT вернул невалидный JSON: {e}") from e
+    else:
+        data = gpt_raw
+
+    # 2. Валидация всей структуры одной моделью
+    gpt_model = GPTCandidateProfile(**data)
+
+    # 3. Сборка CandidateProfileDB (user_id и number_for_user задашь снаружи)
+    db_obj = CandidateProfileDB(
+        # personal
+        full_name=gpt_model.personal.full_name,
+        title=gpt_model.personal.title,
+        email=gpt_model.personal.email,
+        telegram=gpt_model.personal.telegram,
+        whatsapp=gpt_model.personal.whatsapp,
+        linkedin=gpt_model.personal.linkedin,
+        github=gpt_model.personal.github,
+        portfolio=gpt_model.personal.portfolio,
+        about=gpt_model.personal.about,
+
+        # main
+        salary_usd=gpt_model.main.salary_usd,
+        currencies=gpt_model.main.currencies,
+        grade=gpt_model.main.grade,
+        work_format=gpt_model.main.work_format,
+        employment_type=gpt_model.main.employment_type,
+        company_types=gpt_model.main.company_types,
+        specializations=gpt_model.main.specializations,
+        skills=gpt_model.main.skills,
+
+        # location
+        city=gpt_model.location.city,
+        timezone=gpt_model.location.timezone,
+        regions=gpt_model.location.regions,
+        countries=gpt_model.location.countries,
+        relocation=gpt_model.location.relocation,
+
+        # списки — в БД лучше складывать уже dict'ы
+        experience=[e.dict(exclude_none=True) for e in gpt_model.experience] or None,
+        education=[e.dict(exclude_none=True) for e in gpt_model.education] or None,
+        courses=[c.dict(exclude_none=True) for c in gpt_model.courses] or None,
+        projects=[p.dict(exclude_none=True) for p in gpt_model.projects] or None,
+
+        english_level=gpt_model.english_level,
+    )
+
+    return db_obj
+

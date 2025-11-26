@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .database import engine, User, UserComunication, UserNotification
+from .database import engine, User, UserComunication, UserNotification, Sverka
 from ..core.passwords import hash_password, verify_password
 
 
@@ -224,3 +224,36 @@ class UserRepository:
             return res.scalars().first()
 
 
+
+    async def get_sverka_history(self, user_id: int) -> list[dict]:
+        async with AsyncSession(self.engine) as session:
+            # берём именно объекты Sverka, а не Row
+            res = await session.execute(
+                select(Sverka).where(Sverka.user_id == user_id)
+            )
+            rows: list[Sverka] = res.scalars().all()
+
+            unic: dict[str, dict] = {}
+
+            for s in rows:
+                # s — это экземпляр модели Sverka
+                data = s.sverka_json or {}
+                vacancy_block = data.get("vacancy") or {}
+                print(vacancy_block)
+                title = vacancy_block.get("position_name") or "Вакансия"
+
+                # чтобы по одному разу на странице
+                if s.vacancy_id not in unic:
+                    unic[s.vacancy_id] = {
+                        "vacancy_id": s.vacancy_id,
+                        "title": title,
+                    }
+
+            return list(unic.values())
+
+    async def get_sverka_by_vac_id_and_slug(self, user_id: int, vacancy_id: str, slug: str) -> Optional[Sverka]:
+        async with AsyncSession(self.engine) as session:
+            res = await session.execute(
+                select(Sverka).where(Sverka.user_id == user_id, Sverka.vacancy_id == vacancy_id, Sverka.slug == slug)
+            )
+            return res.scalars().first()

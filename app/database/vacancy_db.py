@@ -123,6 +123,7 @@ class VacancyRepository:
     async def add_sverka(
         self,
         sverka_json: Dict[str, Any],
+        slug : str,
         vacancy_id: str,
         candidate_fullname: str,
         user_id: int,
@@ -131,6 +132,7 @@ class VacancyRepository:
 
             sverka = Sverka(
                 sverka_json=sverka_json,
+                slug = slug,
                 vacancy_id=vacancy_id,
                 candidate_fullname=candidate_fullname,
                 user_id=user_id,
@@ -324,3 +326,12 @@ class VacancyRepository:
                 "total": total,
                 "has_more": has_more,
             }
+    async def get_sverka_history_by_user_and_vacancy(self, user_id: int, vacancy_id: str):
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(
+                select(Sverka).where(
+                    Sverka.user_id == user_id,
+                    Sverka.vacancy_id == vacancy_id,
+                )
+            )
+            return result.scalars().all()

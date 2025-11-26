@@ -11,6 +11,8 @@ from app.core.current_user import get_current_user_from_cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi import HTTPException
 import re
+from app.database.candidate_db import CandidateRepository
+from fastapi.responses import JSONResponse
 
 vacancy_repository = VacancyRepository()
 dropdown_options = DropdownOptions()
@@ -112,7 +114,29 @@ async def vacancy_detail(request: Request, vacancy_id: str, current_user=Depends
     )
 
 
+@router.get("/vacancy/{vacancy_id}/matching-candidates", response_class=JSONResponse)
+async def get_matching_candidates(
+    vacancy_id: str,
+    current_user=Depends(get_current_user_from_cookie),
+):
+    """
+    Вернуть кандидатов, которые:
+    - 100% совпадают по локации / формату / типу занятости / грейду / английскому
+    - ≥80% совпадения по skills и specializations
+    """
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
+    user_repo = CandidateRepository()
+
+    matches = await user_repo.get_matching_candidates_for_vacancy(
+        vacancy_id=vacancy_id,
+        owner_user_id=current_user.id,   # или None, если нужно смотреть всех
+        skills_threshold=2.0,
+        specs_threshold=2.0,
+    )
+    print(matches)
+    return JSONResponse(content=matches)
 
 
 

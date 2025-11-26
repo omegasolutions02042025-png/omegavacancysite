@@ -69,6 +69,7 @@ async def profile(
 ):
     if not current_user:
         return RedirectResponse("/auth/login", status_code=303)
+    print('Telegram username:', current_user.work_telegram)
     
     return templates.TemplateResponse(
         "auth/profile.html",
@@ -101,3 +102,4 @@ async def logout():
     # ВАЖНО: то же имя и path, что и при установке
     resp.delete_cookie("access_token", path="/")
     return resp
+    

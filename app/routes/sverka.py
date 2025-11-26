@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Form, Request, Query, Depends
+from fastapi import APIRouter, UploadFile, File, Form, Request, Query, Depends, Body, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path as PathlibPath
@@ -23,11 +23,20 @@ from app.core.gpt import gpt_generator
 from app.core.current_user import get_current_user_from_cookie
 from app.database.vacancy_db import VacancyRepository
 from app.models.vacancy import ClarificationsMail
+from app.models.candidate import SverkaFromCandidateRequest
+from app.database.candidate_db import CandidateRepository
+from app.database.user_db import UserRepository
+import string
+import random
+
+
 
 router = APIRouter(tags=["sverka"])
 
 templates = Jinja2Templates(directory="templates")
 vacancy_repository = VacancyRepository()
+candidate_repository = CandidateRepository()
+user_repository = UserRepository()
 
 TYPES = ["pdf", "docx", "txt", "rtf"]
 
@@ -92,13 +101,16 @@ async def process_sverka_task(
     try:
         tasks = []
         for item in resumes:
+            print("Processing resume:", item["filename"])
+            
             tasks.append(
-                gpt_generator.generate_sverka(
-                    vacancy_text,
-                    item["text"],
-                    item["filename"],
+                    gpt_generator.generate_sverka(
+                        vacancy_text,
+                        item["text"],
+                        item["filename"],
+                    )
                 )
-            )
+            
         gpt_results = await asyncio.gather(*tasks)
 
         results: list[dict] = []
@@ -152,6 +164,7 @@ async def process_sverka_task(
             },
         )
     except Exception as e:
+        print(f"[sverka] Ошибка при обработке задачи {task_id}: {e}")
         await set_task(
             task_id,
             {
@@ -300,12 +313,10 @@ async def sverka_result_list(request: Request, task_id: str, current_user=Depend
         return RedirectResponse("/auth/login", status_code=303)
     task = await get_task(task_id)
     if not task:
-        topics = await vacancy_repository.get_topics()
         return templates.TemplateResponse(
             "sverka/sverka_start.html",
             {
                 "request": request,
-                "topics": topics,
                 "error": "Задача не найдена.",
                 "user_email": current_user.email,
                 "user_id" : current_user.id,
@@ -320,12 +331,10 @@ async def sverka_result_list(request: Request, task_id: str, current_user=Depend
             {"request": request, "task_id": task_id, "status": "processing"},
         )
     if task["status"] == "error":
-        topics = await vacancy_repository.get_topics()
         return templates.TemplateResponse(
             "sverka/sverka_start.html",
             {
                 "request": request,
-                "topics": topics,
                 "error": f"Ошибка при обработке: {task['error']}",
                 "user_email": current_user.email,
                 "user_id" : current_user.id,
@@ -367,12 +376,10 @@ async def sverka_result_one(
         return RedirectResponse("/auth/login", status_code=303)
     task = await get_task(task_id)
     if not task:
-        topics = await vacancy_repository.get_topics()
         return templates.TemplateResponse(
             "sverka/sverka_start.html",
             {
                 "request": request,
-                "topics": topics,
                 "error": "Задача не найдена.",
                 "user_email": current_user.email,
                 "user_id": current_user.id,
@@ -416,8 +423,13 @@ async def sverka_result_one(
 
     # сохраняем в БД сверку (если надо по каждой)
     contacts = resume_json.get("candidate", {}).get("contacts", {})
+    def slug6() -> str:
+        chars = string.ascii_lowercase + string.digits
+        return ''.join(random.choice(chars) for _ in range(6))
+    slug = slug6()
     await vacancy_repository.add_sverka(
         resume_json,
+        slug,
         vac_id,
         candidate_fullname,
         current_user.id,
@@ -582,3 +594,201 @@ async def generate_wl_resume_post(data: ClarificationsMail, current_user=Depends
             "filename": filename,
         }
     )
+
+
+
+
+
+@router.post("/api/sverka/from-candidate")
+async def sverka_from_candidate(
+    request: Request,
+    payload: SverkaFromCandidateRequest,
+    current_user=Depends(get_current_user_from_cookie),
+    
+):
+    """
+    Запуск сверки по одному или нескольким кандидатам из базы.
+    candidate_ids — список ID кандидатов.
+    """
+    if not current_user:
+        return RedirectResponse("/auth/login", status_code=303)
+    print("RAW payload in /api/sverka/from-candidate:", payload) 
+    vacancy_id = payload.vacancy_id
+    candidate_ids = payload.candidate_numbers or []
+
+    if not candidate_ids:
+        raise HTTPException(status_code=401, detail="Не переданы candidate_ids")
+
+    tg_username = norm_tg(current_user.work_telegram or "")
+    print("TG username:", tg_username)
+    if not tg_username:
+        raise HTTPException(status_code=401, detail="Не переданы tg_username")
+    vacancy = await vacancy_repository.get_vacancy_by_vacancy_id(vacancy_id)
+    if not vacancy:
+        raise HTTPException(status_code=404, detail="Вакансия не найдена")
+
+    resumes_to_process: list[dict] = []
+
+    # 2. достаём всех кандидатов и собираем тексты резюме
+    for cid in candidate_ids:
+        candidate = await candidate_repository.get_candidate_by_id_and_user_id(cid, current_user.id)
+        if not candidate:
+            # можно пропустить или упасть — здесь мягко пропускаем
+            continue
+        
+        
+
+        resumes_to_process.append(
+            {
+                "text": candidate.model_dump_json(),
+                "filename": candidate.full_name + "_" + str(candidate.salary_usd)+"_"+str(candidate.currencies),
+            }
+        )
+    print("Resumes to process:", resumes_to_process)
+    if not resumes_to_process:
+        raise HTTPException(
+            status_code=400,
+            detail="Ни по одному кандидату не найден текст резюме",
+        )
+
+    # 3. создаём задачу в Redis
+    task_id = str(uuid.uuid4())
+    print("Task ID:", task_id)
+
+    await set_task(task_id, {"status": "processing"})
+
+    # 4. запускаем асинхронную сверку
+    asyncio.create_task(
+        process_sverka_task(
+            vacancy_text=vacancy.vacancy_text,
+            resumes=resumes_to_process,
+            task_id=task_id,
+            vacancy_id=vacancy.vacancy_id,
+            tg_username=tg_username,
+        )
+    )
+    
+    return JSONResponse({"task_id": task_id})
+
+
+@router.get("/sverka/history")
+async def sverka_history(request: Request, current_user=Depends(get_current_user_from_cookie)):
+    if not current_user:
+        return RedirectResponse("/auth/login", status_code=303)
+    history = await user_repository.get_sverka_history(current_user.id)
+
+
+    return templates.TemplateResponse(
+        "sverka/sverka_history.html",
+        {
+            "request": request,
+            "items": history,
+            "user_email": current_user.email,
+            "user_id": current_user.id,
+            "telegram_username": current_user.work_telegram,
+        },
+    )
+    
+@router.get("/sverka/history/detail", response_class=HTMLResponse)
+async def sverka_history_detail(
+    request: Request,
+    vacancy_id: str = Query(...),
+    current_user = Depends(get_current_user_from_cookie),
+):
+    """
+    Берёт ВСЕ сверки по user_id + vacancy_id
+    и отдаёт их в шаблон sverka_result_list.html.
+    """
+    if not current_user:
+        return RedirectResponse("/auth/login", status_code=303)
+
+    rows = await vacancy_repository.get_sverka_history_by_user_and_vacancy(
+        user_id=current_user.id,
+        vacancy_id=vacancy_id,
+    )
+
+    # приводим к формату, как у тебя в /sverka/result/{task_id}
+    results: list[dict] = []
+    for row in rows:
+        results.append(
+            {
+                "resume_json": row.sverka_json,
+                "filename": row.candidate_fullname or f"candidate_{row.id}",
+                "candidate_fullname": row.candidate_fullname,
+                'slug': row.slug,
+            }
+        )
+
+    tg_username = norm_tg(current_user.work_telegram or "")
+    task_id = f"history-{vacancy_id}"
+
+    return templates.TemplateResponse(
+        "sverka/sverka_history_result.html",
+        {
+            "request": request,
+            "task_id": task_id,
+            "vacancy_id": vacancy_id,
+            "results": results,
+            "tg_username": tg_username,
+            "user_email": current_user.email,
+            "user_id": current_user.id,
+        },
+    )
+
+
+@router.get("/sverka/history/result-{vacancy_id}/{slug}", response_class=HTMLResponse)
+async def sverka_result_history_one(
+    request: Request,
+    vacancy_id: str,
+    slug: str,
+    tg_username: Annotated[str, Query(...)],
+    current_user = Depends(get_current_user_from_cookie),
+):
+    """
+    Показать ОДНУ уже сохранённую сверку из истории:
+    - vacancy_id берём из URL (history-DO10493 → DO10493),
+    - index — номер сверки по этой вакансии для текущего пользователя.
+    НИКАКОЙ новой сверки, только подставляем сохранённый JSON в шаблон.
+    """
+    if not current_user:
+        return RedirectResponse("/auth/login", status_code=303)
+
+    # 1. Достаём все сверки по вакансии и пользователю
+    sverkas = await user_repository.get_sverka_by_vac_id_and_slug(
+        vacancy_id=vacancy_id,
+        user_id=current_user.id,
+        slug=slug,
+    )
+
+    if not sverkas:
+        raise HTTPException(status_code=404, detail="Сверки по этой вакансии не найдены")
+
+
+    # 2. Берём нужную запись
+    resume_json = sverkas.sverka_json or {}
+    candidate_fullname = sverkas.candidate_fullname or "Кандидат"
+
+    # 3. Формируем HTML анализа из УЖЕ сохранённого JSON
+    ai_text = display_analysis(resume_json)
+
+    # 4. Контакты для блока и кнопок
+    contacts = resume_json.get("candidate", {}).get("contacts", {})
+
+    # 5. Просто рендерим твой sverka_result.html
+    return templates.TemplateResponse(
+        "sverka/sverka_result.html",
+        {
+            "request": request,
+            "task_id": f"history-{vacancy_id}",  # для шаблона можно что-то подставить
+            "ai_text": ai_text,
+            "vacancy_id": vacancy_id,
+            "candidate_fullname": candidate_fullname,
+            "contacts": contacts,
+            "tg_username": tg_username,
+            "user_email": current_user.email,
+            "user_id": current_user.id,
+        },
+    )
+
+
+    

@@ -5,13 +5,25 @@ import re
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .database import engine, SkillDropdown, SpecializationDropdown, DomainDropdown, CustomerDropdown, ManagerDropdown, LocationDropdown
+from .database import (
+    engine,
+    SkillDropdown,
+    SpecializationDropdown,
+    DomainDropdown,
+    CustomerDropdown,
+    ManagerDropdown,
+    LocationDropdown,
+)
 from ..models.vacancy import VacancyIn
 
-from rapidfuzz import fuzz, process
+# УБИРАЕМ rapidfuzz
+# from rapidfuzz import fuzz, process
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
-SIM_THRESHOLD = 85  # порог похожести 0–100
+SIM_THRESHOLD = 85  # порог похожести в процентах (0–100)
 
 
 class DropdownOptions:
@@ -32,17 +44,41 @@ class DropdownOptions:
     @staticmethod
     def _find_similar(name: str, existing: Set[str]) -> str | None:
         """
-        Ищем наиболее похожее значение среди existing.
-        Если похожесть >= SIM_THRESHOLD — считаем, что это дубль.
+        Ищем наиболее похожее значение среди existing по TF-IDF + cosine similarity.
+        Если похожесть*100 >= SIM_THRESHOLD — считаем, что это дубль.
         """
         if not existing:
             return None
-        best = process.extractOne(name, existing, scorer=fuzz.ratio)
-        if not best:
+
+        # корпус: существующие значения + новое имя
+        corpus = list(existing)
+        target = name
+
+        try:
+            vectorizer = TfidfVectorizer()
+            # последняя строка — это target
+            X = vectorizer.fit_transform(corpus + [target])
+        except Exception:
+            # например, если всё состоит из стоп-слов и словарь пустой
             return None
-        candidate, score, _ = best
-        if score >= SIM_THRESHOLD:
-            return candidate
+
+        # вектор target
+        target_vec = X[-1]
+        existing_vecs = X[:-1]
+
+        if existing_vecs.shape[0] == 0:
+            return None
+
+        sims = cosine_similarity(target_vec, existing_vecs)[0]  # array shape=(N,)
+        if sims.size == 0:
+            return None
+
+        best_idx = sims.argmax()
+        best_score = float(sims[best_idx] * 100.0)  # в процентах 0–100
+
+        if best_score >= SIM_THRESHOLD:
+            return corpus[best_idx]
+
         return None
 
     @staticmethod
@@ -91,7 +127,6 @@ class DropdownOptions:
             all_skill_names: set[str] = set()
 
             for vac in data:
-                # !!! главное изменение
                 skill_list = self._extract_list(getattr(vac, "skills", None))
                 for name in skill_list:
                     norm = self._normalize_name(name)
@@ -213,7 +248,7 @@ class DropdownOptions:
                     await session.refresh(d)
 
             return existing_objs + new_domains
-    
+
     async def add_customer(self, data: Sequence[VacancyIn]) -> list[CustomerDropdown]:
         async with AsyncSession(self.engine) as session:
             all_customer_names: set[str] = set()
@@ -255,12 +290,11 @@ class DropdownOptions:
 
             return existing_objs + new_customers
 
-
     async def add_manager(self, data: Sequence[VacancyIn]) -> list[ManagerDropdown]:
         async with AsyncSession(self.engine) as session:
             all_manager_name: set[str] = set()
 
-            for vac in data: 
+            for vac in data:
                 man_name = self._extract_list(getattr(vac, "manager_username", None))
                 for name in man_name:
                     norm = self._normalize_name(name)
@@ -339,3 +373,9 @@ class DropdownOptions:
             return existing_objs + new_locations
 
 
+    async def get_specializations(self) -> list[str]:
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(select(SpecializationDropdown.specialization_name))
+            spec = result.scalars().all()
+            print(spec)
+            return spec

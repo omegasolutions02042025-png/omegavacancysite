@@ -1,0 +1,1294 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Профиль кандидата</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+
+  <style>
+    html{
+      scroll-behavior:smooth;
+    }
+    body{
+      background:#f3f4f6;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:#111827;
+    }
+
+    .page-wrapper{
+      max-width:1120px;
+      margin:24px auto 40px;
+      padding:0 16px;
+    }
+    .profile-header{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:20px;
+    }
+    .profile-header h1{
+      font-size:1.8rem;
+      margin:0;
+      font-weight:700;
+      letter-spacing:.02em;
+    }
+
+    /* ===== ЛЕЙАУТ: САЙДБАР + КОНТЕНТ ===== */
+
+    .profile-layout{
+      display:flex;
+      align-items:flex-start;
+      gap:20px;
+    }
+
+    .profile-menu{
+      width:240px;
+      flex-shrink:0;
+      position:sticky;
+      top:16px;
+      align-self:flex-start;
+    }
+
+    .profile-steps{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding:10px;
+      border-radius:18px;
+      background:#e5e7eb;
+    }
+    .profile-step{
+      display:block;
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:.85rem;
+      text-decoration:none;
+      color:#4b5563;
+      white-space:nowrap;
+      cursor:pointer;
+      transition:background .15s ease,color .15s ease;
+    }
+    .profile-step:hover{
+      background:rgba(15,23,42,.15);
+      color:#111827;
+    }
+    .profile-step.active{
+      background:#111827;
+      color:#f9fafb;
+    }
+
+    .profile-content{
+      flex:1;
+      min-width:0;
+    }
+
+    .profile-grid{
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .card{
+      background:#ffffff;
+      border-radius:16px;
+      padding:20px 24px;
+      box-shadow:0 12px 30px rgba(15,23,42,.06);
+      border:1px solid rgba(209,213,219,.9);
+      transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+
+    .card-title{
+      font-size:1rem;
+      font-weight:650;
+      margin:0 0 8px;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      color:#111827;
+    }
+    .card-subtitle{
+      font-size:.85rem;
+      color:#6b7280;
+      margin:0 0 18px;
+    }
+
+    .subsection-title{
+      font-size:.82rem;
+      font-weight:600;
+      margin:10px 0 6px;
+      color:#4b5563;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .field-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px;
+      margin-bottom:16px;
+    }
+    .field{
+      flex:1 1 220px;
+      min-width:0;
+      transition:color .15s ease;
+    }
+    .field label{
+      display:block;
+      font-size:.8rem;
+      font-weight:500;
+      margin-bottom:4px;
+      color:#4b5563;
+      transition:color .15s ease;
+    }
+    .field input,
+    .field select,
+    .field textarea{
+      width:100%;
+      border-radius:10px;
+      border:1px solid #d1d5db;
+      padding:8px 10px;
+      font-size:.9rem;
+      outline:none;
+      background:#f9fafb;
+      box-sizing:border-box;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    .field textarea{
+      min-height:120px;
+      resize:vertical;
+      line-height:1.5;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus{
+      border-color:#6366f1;
+      box-shadow:0 0 0 1px rgba(99,102,241,.4);
+      background:#ffffff;
+    }
+
+    /* ===== ЧИПЫ ===== */
+
+    .chips-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:4px;
+      transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    .chip{
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid #d1d5db;
+      background:#f9fafb;
+      font-size:.85rem;
+      cursor:pointer;
+      user-select:none;
+      transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+    }
+    .chip-selected{
+      background:#facc15;
+      border-color:#facc15;
+      color:#111827;
+      box-shadow:0 2px 6px rgba(15,23,42,.25);
+    }
+
+    /* ===== Блоки опыта / проектов / образования ===== */
+
+    .item-block{
+      border-radius:14px;
+      border:1px solid #e5e7eb;
+      padding:12px 14px 10px;
+      margin-bottom:12px;
+      background:linear-gradient(135deg,#f9fafb,#ffffff);
+      box-shadow:0 4px 10px rgba(15,23,42,.04);
+    }
+    .item-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:8px;
+    }
+    .item-title{
+      font-size:.9rem;
+      font-weight:600;
+      color:#111827;
+    }
+    .item-index{
+      font-size:.75rem;
+      color:#9ca3af;
+      text-transform:uppercase;
+      letter-spacing:.09em;
+    }
+
+    .section-footer{
+      display:flex;
+      justify-content:flex-end;
+      margin-top:18px;
+    }
+    .btn-primary{
+      border:none;
+      border-radius:999px;
+      background:#111827;
+      color:#f9fafb;
+      padding:8px 18px;
+      font-size:.9rem;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .btn-primary:hover{
+      background:#020617;
+    }
+
+    .btn-secondary{
+      border:none;
+      border-radius:999px;
+      background:#e5e7eb;
+      color:#111827;
+      padding:6px 14px;
+      font-size:.8rem;
+      font-weight:500;
+      cursor:pointer;
+      margin-top:4px;
+    }
+    .btn-secondary:hover{
+      background:#d1d5db;
+    }
+
+    /* ===== ТОСТ «Профиль сохранён» ===== */
+
+    .save-notice{
+      position:fixed;
+      right:24px;
+      bottom:24px;
+      padding:10px 16px;
+      border-radius:999px;
+      background:#16a34a;
+      color:#f9fafb;
+      font-size:0.9rem;
+      font-weight:500;
+      box-shadow:0 10px 25px rgba(22,163,74,.45);
+      opacity:0;
+      transform:translateY(10px);
+      pointer-events:none;
+      transition:opacity .2s ease, transform .2s ease;
+      z-index:60;
+    }
+    .save-notice.visible{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    /* ===== Ошибки / обязательные поля ===== */
+
+    .field-error label{
+      color:#b91c1c;
+    }
+    .field-error input,
+    .field-error textarea,
+    .field-error select{
+      border-color:#ef4444 !important;
+      background:#fef2f2;
+      box-shadow:0 0 0 1px rgba(239,68,68,.4);
+    }
+
+    .chips-error .chip{
+      border-color:#ef4444 !important;
+      box-shadow:0 0 0 1px rgba(239,68,68,.6);
+      background:#fef2f2;
+    }
+
+    .card-error{
+      border-color:#ef4444 !important;
+      box-shadow:0 0 0 1px rgba(239,68,68,.6);
+      background:linear-gradient(135deg,#fef2f2,#ffffff);
+    }
+
+    @media (max-width:900px){
+      .profile-layout{
+        flex-direction:column;
+      }
+      .profile-menu{
+        position:static;
+        width:100%;
+      }
+      .profile-steps{
+        flex-direction:row;
+        flex-wrap:wrap;
+      }
+      .profile-step{
+        flex:1 1 auto;
+        text-align:center;
+      }
+    }
+
+    @media (max-width:768px){
+      .card{
+        padding:16px 14px;
+      }
+    }
+  </style>
+</head>
+<body data-candidate-id="{{ candidate_id }}">
+  {% include "auth/header_auth.html" %}
+
+  <!-- тост -->
+  <div id="save-notice" class="save-notice">Профиль сохранён</div>
+
+  <main class="page-wrapper">
+    <header class="profile-header">
+      <h1>Карточка кандидата</h1>
+    </header>
+
+    <div class="profile-layout">
+      <!-- ЛЕВОЕ МЕНЮ -->
+      <aside class="profile-menu">
+        <nav class="profile-steps">
+          <a href="#personal"   class="profile-step active">Персональная информация</a>
+          <a href="#main"       class="profile-step">Основная информация</a>
+          <a href="#location"   class="profile-step">Локация и таймзона</a>
+          <a href="#experience" class="profile-step">Опыт работы</a>
+          <a href="#education"  class="profile-step">Образование</a>
+          <a href="#courses"    class="profile-step">Курсы и сертификаты</a>
+          <a href="#projects"   class="profile-step">Проекты</a>
+          <a href="#english"    class="profile-step">Английский язык</a>
+        </nav>
+      </aside>
+
+      <!-- ПРАВАЯ ЧАСТЬ: СЕКЦИИ -->
+      <div class="profile-content">
+        <form id="candidate-form">
+          <div class="profile-grid">
+
+            <!-- Персональная информация -->
+            <section id="personal" class="card">
+              <div class="card-title">Персональная информация</div>
+              <div class="card-subtitle">Контакты и краткое описание кандидата</div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Фамилия</label>
+                  <input type="text" name="last_name" placeholder="Например: Немцов">
+                </div>
+                <div class="field">
+                  <label>Имя</label>
+                  <input type="text" name="first_name" placeholder="Например: Игорь">
+                </div>
+                <div class="field">
+                  <label>Отчество</label>
+                  <input type="text" name="middle_name" placeholder="Например: Сергеевич">
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Должность</label>
+                  <input type="text" name="title" placeholder="Например: Tech Lead Java/GO Backend">
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Email</label>
+                  <input type="email" name="email" placeholder="Например: name@company.com">
+                </div>
+                <div class="field">
+                  <label>Telegram (@username)</label>
+                  <input type="text" name="telegram" placeholder="Например: @username">
+                </div>
+                <div class="field">
+                  <label>Номер телефона (WhatsApp / мобильный)</label>
+                  <input type="text" name="phone" placeholder="Например: +375291234567">
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>LinkedIn</label>
+                  <input type="url" name="linkedin" placeholder="Например: https://linkedin.com/in/...">
+                </div>
+                <div class="field">
+                  <label>GitHub</label>
+                  <input type="url" name="github" placeholder="Например: https://github.com/...">
+                </div>
+                <div class="field">
+                  <label>Портфолио / сайт</label>
+                  <input type="url" name="portfolio" placeholder="Например: https://my-portfolio.com">
+                </div>
+              </div>
+
+              <div class="field-row" style="margin-bottom:0;">
+                <div class="field">
+                  <label>О себе</label>
+                  <textarea name="about" placeholder="Например: краткое описание опыта, сильных сторон и интересующих задач..."></textarea>
+                </div>
+              </div>
+            </section>
+
+            <!-- Основная информация -->
+            <section id="main" class="card">
+              <div class="card-title">Основная информация</div>
+              <div class="card-subtitle">Специализация, грейд, формат работы и предпочтения</div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Желаемая зарплата в USD</label>
+                  <input type="number" name="salary_usd" placeholder="Например: 6000">
+                </div>
+                <div class="field">
+                  <label>Рассматриваемые валюты</label>
+                  <div class="chips-row" data-group="currencies">
+                    <button type="button" class="chip" data-value="RUB">RUB</button>
+                    <button type="button" class="chip" data-value="USD">USD</button>
+                    <button type="button" class="chip" data-value="EUR">EUR</button>
+                    <button type="button" class="chip" data-value="Крипта">Крипта</button>
+                  </div>
+                  <input type="hidden" name="currencies">
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Грейд</label>
+                  <div class="chips-row" data-group="grade">
+                    <button type="button" class="chip" data-value="trainee">trainee</button>
+                    <button type="button" class="chip" data-value="junior">junior</button>
+                    <button type="button" class="chip" data-value="middle">middle</button>
+                    <button type="button" class="chip" data-value="senior">senior</button>
+                    <button type="button" class="chip" data-value="lead">lead</button>
+                    <button type="button" class="chip" data-value="head">head</button>
+                    <button type="button" class="chip" data-value="director">director</button>
+                    <button type="button" class="chip" data-value="c-level">c-level</button>
+                  </div>
+                  <input type="hidden" name="grade">
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Формат работы</label>
+                  <div class="chips-row" data-group="work_format">
+                    <button type="button" class="chip" data-value="office">office</button>
+                    <button type="button" class="chip" data-value="remote">remote</button>
+                    <button type="button" class="chip" data-value="hybrid">hybrid</button>
+                  </div>
+                  <input type="hidden" name="work_format">
+                </div>
+                <div class="field">
+                  <label>Тип занятости</label>
+                  <div class="chips-row" data-group="employment_type">
+                    <button type="button" class="chip" data-value="full-time">full-time</button>
+                    <button type="button" class="chip" data-value="part-time">part-time</button>
+                    <button type="button" class="chip" data-value="project">project</button>
+                    <button type="button" class="chip" data-value="internship">internship</button>
+                  </div>
+                  <input type="hidden" name="employment_type">
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Предпочитаемые типы компаний</label>
+                  <input type="text" name="company_types" placeholder="Например: Стартап, Продуктовая компания">
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Специализации</label>
+                  <input type="text" name="specializations" placeholder="Например: Backend_dev, Data Engineer">
+                </div>
+              </div>
+
+              <div class="field-row" style="margin-bottom:0%;">
+                <div class="field">
+                  <label>Навыки</label>
+                  <textarea name="skills" placeholder="Например: Java, Go, Spring Boot, Kafka, PostgreSQL"></textarea>
+                </div>
+              </div>
+            </section>
+
+            <!-- Локация и таймзона -->
+            <section id="location" class="card">
+              <div class="card-title">Локация и таймзона</div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Город</label>
+                  <input type="text" name="city" placeholder="Например: Varna">
+                </div>
+                <div class="field">
+                  <label>Страна</label>
+                  <input type="text" name="countries" placeholder="Например: Bulgaria">
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Часовой пояс</label>
+                  <input type="text" name="timezone" placeholder="Например: GMT+3 или Europe/Sofia">
+                </div>
+                <div class="field">
+                  <label>Предпочитаемые регионы</label>
+                  <input type="text" name="regions" placeholder="Например: Европа, США, MENA">
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label>Предпочитаемые страны</label>
+                  <input type="text" name="preferred_countries" placeholder="Например: Германия, Нидерланды, Канада">
+                </div>
+              </div>
+
+              <div class="field-row" style="margin-bottom:0%;">
+                <div class="field">
+                  <label>Готовность к релокации</label>
+                  <input type="text" name="relocation" placeholder="Например: Готов к релокации в ЕС">
+                </div>
+              </div>
+            </section>
+
+            <!-- Опыт работы — все записи -->
+            <section id="experience" class="card">
+              <div class="card-title">Опыт работы</div>
+              <div class="card-subtitle">Все места работы из резюме (от последнего к более ранним)</div>
+              <div id="experience-list"></div>
+            </section>
+
+            <!-- Образование — все записи -->
+            <section id="education" class="card">
+              <div class="card-title">Образование</div>
+              <div class="card-subtitle">Все учебные заведения и программы обучения</div>
+              <div id="education-list"></div>
+            </section>
+
+            <!-- Курсы и сертификаты — все записи -->
+            <section id="courses" class="card">
+              <div class="card-title">Курсы и сертификации</div>
+              <div class="card-subtitle">Онлайн-курсы, сертификации и дополнительное обучение</div>
+              <div id="courses-list"></div>
+            </section>
+
+            <!-- Проекты — все записи -->
+            <section id="projects" class="card">
+              <div class="card-title">Проекты</div>
+              <div class="card-subtitle">Все ключевые проекты кандидата</div>
+              <div id="projects-list"></div>
+            </section>
+
+            <!-- Английский язык -->
+            <section id="english" class="card">
+              <div class="card-title">Английский язык</div>
+
+              <div class="field-row" style="margin-bottom:0%;">
+                <div class="field">
+                  <label>Уровень английского</label>
+                  <div class="chips-row" data-group="english_level">
+                    <button type="button" class="chip" data-value="A1">A1</button>
+                    <button type="button" class="chip" data-value="A2">A2</button>
+                    <button type="button" class="chip" data-value="B1">B1</button>
+                    <button type="button" class="chip" data-value="B2">B2</button>
+                    <button type="button" class="chip" data-value="C1">C1</button>
+                    <button type="button" class="chip" data-value="C2">C2</button>
+                  </div>
+                  <input type="hidden" name="english_level">
+                </div>
+              </div>
+
+              <div class="section-footer">
+                <button type="button" id="save-btn" class="btn-primary">Сохранить</button>
+              </div>
+            </section>
+
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const candidateId = document.body.dataset.candidateId;
+
+      const menuLinks = Array.from(document.querySelectorAll(".profile-step"));
+      const sections  = Array.from(document.querySelectorAll("section[id]"));
+      const chips     = Array.from(document.querySelectorAll(".chip"));
+      const saveNotice = document.getElementById("save-notice");
+
+      // какие поля считаем обязательными
+      const REQUIRED_FIELDS = [
+        "last_name",
+        "first_name",
+        "middle_name",
+        "email",
+        "telegram",
+        "phone",
+        "salary_usd",
+        "currencies",
+        "grade",
+        "work_format",
+        "employment_type",
+        "specializations",
+        "skills",
+        "countries",
+        "english_level"
+      ];
+
+      /* ===== helpers ===== */
+
+      const setValue = (name, value) => {
+        if (value === null || value === undefined) return;
+        const el = document.querySelector('[name="' + name + '"]');
+        if (el) el.value = value;
+      };
+
+      const getValue = (name) => {
+        const el = document.querySelector('[name="' + name + '"]');
+        return el ? el.value.trim() : "";
+      };
+
+      const setChipGroup = (group, value) => {
+        const groupRow = document.querySelector('.chips-row[data-group="' + group + '"]');
+        if (!groupRow) return;
+        const groupChips = groupRow.querySelectorAll(".chip");
+        groupChips.forEach(chip => {
+          chip.classList.toggle("chip-selected", chip.dataset.value === value);
+        });
+        const hidden = document.querySelector('input[name="' + group + '"]');
+        if (hidden) hidden.value = value || "";
+      };
+
+      const setMultiChipGroup = (group, csv) => {
+        const values = (csv || "").split(",").map(v => v.trim()).filter(Boolean);
+        const groupRow = document.querySelector('.chips-row[data-group="' + group + '"]');
+        if (!groupRow) return;
+        const groupChips = groupRow.querySelectorAll(".chip");
+        groupChips.forEach(chip => {
+          chip.classList.toggle("chip-selected", values.includes(chip.dataset.value));
+        });
+        const hidden = document.querySelector('input[name="' + group + '"]');
+        if (hidden) hidden.value = values.join(", ");
+      };
+
+      const clearErrors = () => {
+        document.querySelectorAll(".field-error").forEach(f => f.classList.remove("field-error"));
+        document.querySelectorAll(".chips-error").forEach(r => r.classList.remove("chips-error"));
+        document.querySelectorAll(".card-error").forEach(c => c.classList.remove("card-error"));
+      };
+
+      const markFieldError = (name) => {
+        const el = document.querySelector('[name="' + name + '"]');
+        if (el) {
+          const field = el.closest(".field");
+          if (field) {
+            field.classList.add("field-error");
+            const chipsRow = field.querySelector(".chips-row");
+            if (chipsRow) {
+              chipsRow.classList.add("chips-error");
+            }
+          }
+        }
+      };
+
+      // подсветка обязательных полей без блокировки сохранения
+      function highlightRequiredFields() {
+        // поля-инпуты/hidden
+        REQUIRED_FIELDS.forEach((name) => {
+          const el = document.querySelector('[name="' + name + '"]');
+          if (!el) return;
+
+          const field = el.closest(".field");
+          if (!field) return;
+
+          const value = (el.value || "").trim();
+
+          if (!value) {
+            field.classList.add("field-error");
+          } else {
+            field.classList.remove("field-error");
+          }
+        });
+
+        // опыт работы — если все блоки пустые, подсвечиваем карточку
+        const expCard = document.getElementById("experience");
+        if (expCard) {
+          const expItems = expCard.querySelectorAll(".exp-item");
+          let hasAnyExpData = false;
+
+          expItems.forEach(item => {
+            const values = Array.from(item.querySelectorAll("input, textarea"))
+              .map(el => (el.value || "").trim());
+            if (values.some(v => v)) {
+              hasAnyExpData = true;
+            }
+          });
+
+          if (!hasAnyExpData) {
+            expCard.classList.add("card-error");
+          } else {
+            expCard.classList.remove("card-error");
+          }
+        }
+
+        // образование — аналогично
+        const eduCard = document.getElementById("education");
+        if (eduCard) {
+          const eduItems = eduCard.querySelectorAll(".edu-item");
+          let hasAnyEduData = false;
+
+          eduItems.forEach(item => {
+            const values = Array.from(item.querySelectorAll("input, textarea"))
+              .map(el => (el.value || "").trim());
+            if (values.some(v => v)) {
+              hasAnyEduData = true;
+            }
+          });
+
+          if (!hasAnyEduData) {
+            eduCard.classList.add("card-error");
+          } else {
+            eduCard.classList.remove("card-error");
+          }
+        }
+      }
+
+      /* ===== конструкторы блоков ===== */
+
+      function createExperienceBlock(exp, index) {
+        const wrap = document.createElement("div");
+        wrap.className = "item-block exp-item";
+        wrap.dataset.index = index;
+
+        wrap.innerHTML = `
+          <div class="item-header">
+            <div class="item-title">${exp.title || "Опыт работы"}</div>
+            <div class="item-index">Опыт ${index + 1}</div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Должность</label>
+              <input type="text" data-field="title" placeholder="Например: Senior Backend Engineer">
+            </div>
+            <div class="field">
+              <label>Компания</label>
+              <input type="text" data-field="company" placeholder="Например: BrainStarsTech">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Город / страна</label>
+              <input type="text" data-field="location" placeholder="Например: Varna, Bulgaria">
+            </div>
+            <div class="field">
+              <label>Период работы</label>
+              <input type="text" data-field="period" placeholder="Например: октябрь 2021 — по настоящее время">
+            </div>
+          </div>
+          <div class="field-row" style="margin-bottom:0;">
+            <div class="field">
+              <label>Обязанности</label>
+              <textarea data-field="description" placeholder="Например: кратко чем занимался кандидат на позиции..."></textarea>
+            </div>
+          </div>
+        `;
+
+        wrap.querySelector('[data-field="title"]').value = exp.title || "";
+        wrap.querySelector('[data-field="company"]').value = exp.company || "";
+        wrap.querySelector('[data-field="location"]').value = exp.location || "";
+        wrap.querySelector('[data-field="period"]').value = exp.period || "";
+        wrap.querySelector('[data-field="description"]').value = exp.description || "";
+
+        return wrap;
+      }
+
+      function createEducationBlock(edu, index) {
+        const wrap = document.createElement("div");
+        wrap.className = "item-block edu-item";
+        wrap.dataset.index = index;
+
+        wrap.innerHTML = `
+          <div class="item-header">
+            <div class="item-title">${edu.university || "Образование"}</div>
+            <div class="item-index">Запись ${index + 1}</div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Учебное заведение</label>
+              <input type="text" data-field="university" placeholder="Например: Khabarovsk’s Russian State Technological University">
+            </div>
+            <div class="field">
+              <label>Степень / специальность</label>
+              <input type="text" data-field="degree" placeholder="Например: M.Sc. in Computer Science">
+            </div>
+          </div>
+          <div class="field-row" style="margin-bottom:0;">
+            <div class="field">
+              <label>Период обучения</label>
+              <input type="text" data-field="period" placeholder="Например: ноябрь 1989 — ноябрь 1995">
+            </div>
+          </div>
+        `;
+
+        wrap.querySelector('[data-field="university"]').value = edu.university || "";
+        wrap.querySelector('[data-field="degree"]').value = edu.degree || "";
+        wrap.querySelector('[data-field="period"]').value = edu.period || "";
+
+        return wrap;
+      }
+
+      function createCourseBlock(course, index) {
+        const wrap = document.createElement("div");
+        wrap.className = "item-block course-item";
+        wrap.dataset.index = index;
+
+        wrap.innerHTML = `
+          <div class="item-header">
+            <div class="item-title">${course.name || "Курс / сертификат"}</div>
+            <div class="item-index">Курс ${index + 1}</div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Курс / сертификат</label>
+              <input type="text" data-field="name" placeholder="Например: Kubernetes for Developers">
+            </div>
+            <div class="field">
+              <label>Организация</label>
+              <input type="text" data-field="organization" placeholder="Например: Coursera, Udemy, Oracle">
+            </div>
+          </div>
+          <div class="field-row" style="margin-bottom:0%;">
+            <div class="field">
+              <label>Год / период</label>
+              <input type="text" data-field="year" placeholder="Например: 2023">
+            </div>
+          </div>
+        `;
+
+        wrap.querySelector('[data-field="name"]').value = course.name || "";
+        wrap.querySelector('[data-field="organization"]').value = course.organization || "";
+        wrap.querySelector('[data-field="year"]').value = course.year || "";
+
+        return wrap;
+      }
+
+      function createProjectBlock(project, index) {
+        const wrap = document.createElement("div");
+        wrap.className = "item-block project-item";
+        wrap.dataset.index = index;
+
+        wrap.innerHTML = `
+          <div class="item-header">
+            <div class="item-title">${project.name || "Проект"}</div>
+            <div class="item-index">Проект ${index + 1}</div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Название проекта</label>
+              <input type="text" data-field="name" placeholder="Например: Платёжная система для банка">
+            </div>
+          </div>
+          <div class="field-row" style="margin-bottom:0;">
+            <div class="field">
+              <label>Описание</label>
+              <textarea data-field="description" placeholder="Например: стек, роль кандидата и ключевые достижения в проекте..."></textarea>
+            </div>
+          </div>
+        `;
+
+        wrap.querySelector('[data-field="name"]').value = project.name || "";
+        wrap.querySelector('[data-field="description"]').value = project.description || "";
+
+        return wrap;
+      }
+
+      /* ===== рендер списков ===== */
+
+      function renderExperience(list) {
+        const container = document.getElementById("experience-list");
+        if (!container) return;
+        container.innerHTML = "";
+        const items = (Array.isArray(list) && list.length) ? list : [{}];
+        items.forEach((exp, idx) => {
+          container.appendChild(createExperienceBlock(exp || {}, idx));
+        });
+      }
+
+      function renderEducation(list) {
+        const container = document.getElementById("education-list");
+        if (!container) return;
+        container.innerHTML = "";
+        const items = (Array.isArray(list) && list.length) ? list : [{}];
+        items.forEach((edu, idx) => {
+          container.appendChild(createEducationBlock(edu || {}, idx));
+        });
+      }
+
+      function renderCourses(list) {
+        const container = document.getElementById("courses-list");
+        if (!container) return;
+        container.innerHTML = "";
+        const items = (Array.isArray(list) && list.length) ? list : [{}];
+        items.forEach((course, idx) => {
+          container.appendChild(createCourseBlock(course || {}, idx));
+        });
+      }
+
+      function renderProjects(list) {
+        const container = document.getElementById("projects-list");
+        if (!container) return;
+        container.innerHTML = "";
+        const items = (Array.isArray(list) && list.length) ? list : [{}];
+        items.forEach((proj, idx) => {
+          container.appendChild(createProjectBlock(proj || {}, idx));
+        });
+      }
+
+      /* ===== клики по чипам ===== */
+
+      chips.forEach(chip => {
+        chip.addEventListener("click", () => {
+          const group = chip.closest(".chips-row").dataset.group;
+
+          if (group === "currencies") {
+            chip.classList.toggle("chip-selected");
+            const selected = Array.from(
+              chip.closest(".chips-row").querySelectorAll(".chip-selected")
+            ).map(c => c.dataset.value);
+            const hidden = document.querySelector('input[name="currencies"]');
+            if (hidden) hidden.value = selected.join(", ");
+            highlightRequiredFields();
+            return;
+          }
+
+          Array.from(chip.closest(".chips-row").querySelectorAll(".chip"))
+            .forEach(c => c.classList.remove("chip-selected"));
+          chip.classList.add("chip-selected");
+
+          const hidden = document.querySelector('input[name="' + group + '"]');
+          if (hidden) hidden.value = chip.dataset.value;
+
+          highlightRequiredFields();
+        });
+      });
+
+      // подсветка при вводе в обязательные поля
+      REQUIRED_FIELDS.forEach((name) => {
+        const el = document.querySelector('[name="' + name + '"]');
+        if (!el) return;
+        el.addEventListener("input", highlightRequiredFields);
+        el.addEventListener("change", highlightRequiredFields);
+      });
+
+      /* ===== загрузка профиля кандидата (GET /candidate/api/{id}) ===== */
+
+      async function loadCandidate() {
+        if (!candidateId) {
+          renderExperience([]);
+          renderEducation([]);
+          renderCourses([]);
+          renderProjects([]);
+          highlightRequiredFields();
+          return;
+        }
+
+        try {
+          const resp = await fetch("/candidate/api/" + candidateId, {
+            headers: { "Accept": "application/json" }
+          });
+          if (!resp.ok) {
+            console.error("Не удалось загрузить профиль кандидата");
+            renderExperience([]);
+            renderEducation([]);
+            renderCourses([]);
+            renderProjects([]);
+            highlightRequiredFields();
+            return;
+          }
+          const data = await resp.json();
+
+          // personal
+          setValue("last_name", data.last_name);
+          setValue("first_name", data.first_name);
+          setValue("middle_name", data.middle_name);
+          setValue("title", data.title);
+          setValue("email", data.email);
+          setValue("telegram", data.telegram);
+          setValue("phone", data.phone || data.whatsapp);
+          setValue("linkedin", data.linkedin);
+          setValue("github", data.github);
+          setValue("portfolio", data.portfolio);
+          setValue("about", data.about);
+
+          // main
+          setValue("salary_usd", data.salary_usd);
+          setMultiChipGroup("currencies", data.currencies);
+          setChipGroup("grade", data.grade);
+          setChipGroup("work_format", data.work_format);
+          setChipGroup("employment_type", data.employment_type);
+          setValue("company_types", data.company_types);
+          setValue("specializations", data.specializations);
+          setValue("skills", data.skills);
+
+          // location
+          setValue("city", data.city);
+          setValue("countries", data.countries);
+          setValue("timezone", data.timezone);
+          setValue("regions", data.regions);
+          setValue("preferred_countries", data.preferred_countries);
+          setValue("relocation", data.relocation);
+
+          // lists
+          renderExperience(data.experience || []);
+          renderEducation(data.education || []);
+          renderCourses(data.courses || []);
+          renderProjects(data.projects || []);
+
+          // english
+          setChipGroup("english_level", data.english_level);
+
+          highlightRequiredFields();
+
+        } catch (err) {
+          console.error("Ошибка при загрузке профиля кандидата:", err);
+          renderExperience([]);
+          renderEducation([]);
+          renderCourses([]);
+          renderProjects([]);
+          highlightRequiredFields();
+        }
+      }
+
+      /* ===== валидация обязательных полей (на будущее, сейчас не блокирует сохранение) ===== */
+
+      function validatePayload(payload) {
+        clearErrors();
+        let hasErrors = false;
+
+        if (!payload.last_name) { markFieldError("last_name"); hasErrors = true; }
+        if (!payload.first_name) { markFieldError("first_name"); hasErrors = true; }
+        if (!payload.middle_name) { markFieldError("middle_name"); hasErrors = true; }
+
+        if (!payload.email) { markFieldError("email"); hasErrors = true; }
+        if (!payload.telegram) { markFieldError("telegram"); hasErrors = true; }
+        if (!payload.phone) { markFieldError("phone"); hasErrors = true; }
+
+        if (payload.salary_usd === null || payload.salary_usd === "" || isNaN(payload.salary_usd)) {
+          markFieldError("salary_usd");
+          hasErrors = true;
+        }
+        if (!payload.currencies) { markFieldError("currencies"); hasErrors = true; }
+        if (!payload.grade) { markFieldError("grade"); hasErrors = true; }
+        if (!payload.work_format) { markFieldError("work_format"); hasErrors = true; }
+        if (!payload.employment_type) { markFieldError("employment_type"); hasErrors = true; }
+
+        if (!payload.specializations) { markFieldError("specializations"); hasErrors = true; }
+        if (!payload.skills) { markFieldError("skills"); hasErrors = true; }
+
+        if (!payload.countries) { markFieldError("countries"); hasErrors = true; }
+
+        if (!payload.english_level) { markFieldError("english_level"); hasErrors = true; }
+
+        if (!Array.isArray(payload.experience) || payload.experience.length === 0) {
+          const expCard = document.getElementById("experience");
+          if (expCard) expCard.classList.add("card-error");
+          hasErrors = true;
+        }
+
+        if (!Array.isArray(payload.education) || payload.education.length === 0) {
+          const eduCard = document.getElementById("education");
+          if (eduCard) eduCard.classList.add("card-error");
+          hasErrors = true;
+        }
+
+        return !hasErrors;
+      }
+
+      /* ===== сохранение профиля (PUT /candidate/edit/{id} или POST /candidate/create) ===== */
+
+      async function saveCandidate() {
+        highlightRequiredFields();
+
+        const payload = {
+          last_name: getValue("last_name") || null,
+          first_name: getValue("first_name") || null,
+          middle_name: getValue("middle_name") || null,
+
+          title: getValue("title") || null,
+          email: getValue("email") || null,
+          telegram: getValue("telegram") || null,
+          phone: getValue("phone") || null,
+          whatsapp: getValue("phone") || null,
+          linkedin: getValue("linkedin") || null,
+          github: getValue("github") || null,
+          portfolio: getValue("portfolio") || null,
+          about: getValue("about") || null,
+
+          salary_usd: getValue("salary_usd") ? Number(getValue("salary_usd")) : null,
+          currencies: getValue("currencies") || null,
+          grade: getValue("grade") || null,
+          work_format: getValue("work_format") || null,
+          employment_type: getValue("employment_type") || null,
+          company_types: getValue("company_types") || null,
+          specializations: getValue("specializations") || null,
+          skills: getValue("skills") || null,
+
+          city: getValue("city") || null,
+          countries: getValue("countries") || null,
+          timezone: getValue("timezone") || null,
+          regions: getValue("regions") || null,
+          preferred_countries: getValue("preferred_countries") || null,
+          relocation: getValue("relocation") || null,
+
+          experience: [],
+          education: [],
+          courses: [],
+          projects: [],
+
+          english_level: getValue("english_level") || null
+        };
+
+        // опыт — все блоки
+        const expItems = document.querySelectorAll(".exp-item");
+        expItems.forEach(item => {
+          const exp = {
+            title: (item.querySelector('[data-field="title"]')?.value || "").trim() || null,
+            company: (item.querySelector('[data-field="company"]')?.value || "").trim() || null,
+            location: (item.querySelector('[data-field="location"]')?.value || "").trim() || null,
+            period: (item.querySelector('[data-field="period"]')?.value || "").trim() || null,
+            description: (item.querySelector('[data-field="description"]')?.value || "").trim() || null,
+          };
+          if (Object.values(exp).some(v => v)) {
+            payload.experience.push(exp);
+          }
+        });
+
+        // образование — все блоки
+        const eduItems = document.querySelectorAll(".edu-item");
+        eduItems.forEach(item => {
+          const edu = {
+            university: (item.querySelector('[data-field="university"]')?.value || "").trim() || null,
+            degree: (item.querySelector('[data-field="degree"]')?.value || "").trim() || null,
+            period: (item.querySelector('[data-field="period"]')?.value || "").trim() || null,
+          };
+          if (Object.values(edu).some(v => v)) {
+            payload.education.push(edu);
+          }
+        });
+
+        // курсы — все блоки
+        const courseItems = document.querySelectorAll(".course-item");
+        courseItems.forEach(item => {
+          const course = {
+            name: (item.querySelector('[data-field="name"]')?.value || "").trim() || null,
+            organization: (item.querySelector('[data-field="organization"]')?.value || "").trim() || null,
+            year: (item.querySelector('[data-field="year"]')?.value || "").trim() || null,
+          };
+          if (Object.values(course).some(v => v)) {
+            payload.courses.push(course);
+          }
+        });
+
+        // проекты — все блоки
+        const projectItems = document.querySelectorAll(".project-item");
+        projectItems.forEach(item => {
+          const proj = {
+            name: (item.querySelector('[data-field="name"]')?.value || "").trim() || null,
+            description: (item.querySelector('[data-field="description"]')?.value || "").trim() || null,
+          };
+          if (Object.values(proj).some(v => v)) {
+            payload.projects.push(proj);
+          }
+        });
+
+        try {
+          const isEdit = Boolean(candidateId);
+          const url = isEdit
+            ? "/candidate/edit/" + candidateId
+            : "/candidate/create";
+          const method = isEdit ? "PUT" : "POST";
+
+          const resp = await fetch(url, {
+            method: method,
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!resp.ok) {
+            alert("Не удалось сохранить профиль кандидата. Попробуйте ещё раз.");
+            return;
+          }
+
+          const data = await resp.json();
+
+          if (saveNotice) {
+            saveNotice.classList.add("visible");
+          }
+
+          setTimeout(() => {
+            if (data.redirect_url) {
+              window.location.href = data.redirect_url;
+            } else {
+              window.location.href = "/candidate";
+            }
+          }, 1500);
+
+        } catch (err) {
+          console.error("Ошибка при сохранении профиля:", err);
+          alert("Произошла ошибка при сохранении. Попробуйте ещё раз.");
+        }
+      }
+
+      /* ===== scroll + подсветка меню ===== */
+
+      menuLinks.forEach(link => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = link.getAttribute("href").substring(1);
+          const target = document.getElementById(id);
+          if (!target) return;
+
+          const rect = target.getBoundingClientRect();
+          const offset = window.pageYOffset + rect.top - 10;
+          window.scrollTo({ top: offset, behavior: "smooth" });
+        });
+      });
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            menuLinks.forEach(link => {
+              if (link.getAttribute("href") === "#" + id) {
+                link.classList.add("active");
+              } else {
+                link.classList.remove("active");
+              }
+            });
+          }
+        });
+      }, {
+        root: null,
+        threshold: 0.35
+      });
+
+      sections.forEach(section => observer.observe(section));
+
+      const saveBtn = document.getElementById("save-btn");
+      if (saveBtn) {
+        saveBtn.addEventListener("click", saveCandidate);
+      }
+
+      // начальная загрузка
+      loadCandidate();
+    });
+  </script>
+
+</body>
+</html>

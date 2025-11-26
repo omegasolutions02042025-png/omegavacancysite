@@ -8,7 +8,7 @@ from fastapi import Form
 from telethon import TelegramClient
 from app.core.config import settings
 from app.models.send_mail import SendMail
-from app.core.email_send import send_email_gmail
+from app.core.email_send import send_email_smtp
 from app.database.user_db import UserRepository
 from app.core.telethon_check import manager
 
@@ -35,8 +35,9 @@ async def send_telegram(payload: SendMail, current_user = Depends(get_current_us
 
     if not await client.is_user_authorized():
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Необходима авторизация")
-    entity = await send_message_by_username('@kupitmancik',message, client)
+    entity = await send_message_by_username('@Halinakazz',message, client)
     await client.disconnect()
+
     if not entity:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Не удалось отправить сообщение")
     
@@ -55,7 +56,8 @@ async def send_telegram(payload: SendMail, current_user = Depends(get_current_us
 
 
 @router.post("/api/send/email")
-async def send_email(payload: SendMail, current_user = Depends(get_current_user_from_cookie)):
+async def send_email_api(payload: SendMail, current_user = Depends(get_current_user_from_cookie)):
+    print(current_user)
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Необходима авторизация")
     
@@ -66,18 +68,24 @@ async def send_email(payload: SendMail, current_user = Depends(get_current_user_
     print(contact)
     
     app_pass = current_user.work_email_app_pass
+
     if not app_pass:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Необходима авторизация")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Привяжите email к аккаунту")
     print(app_pass)
     subject = f"Здравствуйте, {candidate_fullname}. Я представитель компании Omega Solutions"
     work_email = current_user.work_email
     print(work_email)
-    success = await send_email_gmail(
+    success = await send_email_smtp(
         sender_email=work_email,
-        app_password=app_pass,
-        recipient_email='artursimoncik@gmail.com',
+        recipient_email='jamal.poelgovna@mail.ru',
         subject=subject,
         body=message,
+        smtp_host='mailbe07.hoster.by',    # можно mail.omega-solutions.ru
+        smtp_port=465,
+        smtp_username=work_email,
+        smtp_password=app_pass,
+        use_tls=True,
+        use_starttls=False,
         
     )
     if not success:

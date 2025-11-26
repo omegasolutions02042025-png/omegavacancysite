@@ -71,6 +71,7 @@ class Sverka(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
     vacancy_id: str = Field(default=None)
+    slug : str = Field(default=None)
     sverka_json: Dict[str, Any] = Field(sa_column=Column(JSON), default=None)
     candidate_fullname: str = Field(default=None)
     
@@ -92,12 +93,6 @@ class UserComunication(SQLModel, table=True):
     user: Optional["User"] = Relationship(back_populates="user_comunications")
 
 
-class UserCandidate(SQLModel, table=True):
-    __tablename__ = "user_candidate"
-    id: int | None = Field(default=None, primary_key=True)
-    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
-
-    user: Optional["User"] = Relationship(back_populates="user_candidates")
 
 
 class UserNotification(SQLModel, table=True):
@@ -109,6 +104,124 @@ class UserNotification(SQLModel, table=True):
 
 
     user: Optional["User"] = Relationship(back_populates="user_notifications")
+
+
+
+
+class CandidateProfileDB(SQLModel, table=True):
+    """
+    Таблица с профилями кандидатов, куда мы сохраняем распарсенный GPT-профиль.
+
+    — Простые поля (строки, числа) лежат как обычные колонки.
+    — experience / education / courses / projects храним как JSON-массивы dict'ов.
+    """
+
+    __tablename__ = "candidate_profiles"
+
+    # системные поля
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(
+        default=None,
+        foreign_key="users.id",
+        index=True,
+        description="ID пользователя / рекрутера, которому принадлежит кандидат",
+    )
+    number_for_user: Optional[int] = Field(
+        default=None,
+        index=True,
+        description="Порядковый номер кандидата внутри одного пользователя",
+    )
+
+    # personal
+    first_name: Optional[str] = Field(default=None, index=True)
+    last_name: Optional[str] = Field(default=None, index=True)
+    middle_name: Optional[str] = Field(default=None, index=True)
+    title: Optional[str] = Field(default=None, index=True)
+    email: Optional[str] = Field(default=None, index=True)
+    telegram: Optional[str] = Field(default=None, index=True)
+    phone: Optional[str] = Field(default=None)
+    linkedin: Optional[str] = Field(default=None)
+    github: Optional[str] = Field(default=None)
+    portfolio: Optional[str] = Field(default=None)
+    about: Optional[str] = Field(default=None)
+
+    # main
+    salary_usd: Optional[float] = Field(
+        default=None,
+        description="Ожидания по зарплате в USD (если удалось достать)",
+    )
+    currencies: Optional[str] = Field(
+        default=None,
+        description='Список валют, например: "RUB, USD, EUR"',
+    )
+    grade: Optional[str] = Field(default=None, description="Junior/Middle/Senior/Lead и т.п.")
+    work_format: Optional[str] = Field(
+        default=None,
+        description="Онлайн/офлайн/гибрид и т.п.",
+    )
+    employment_type: Optional[str] = Field(
+        default=None,
+        description="Full-time/Part-time/Contract",
+    )
+    company_types: Optional[str] = Field(
+        default=None,
+        description='Типы компаний, напр.: "Стартап, Продуктовая компания"',
+    )
+    specializations: Optional[str] = Field(
+        default=None,
+        description='Напр.: "Backend_dev, Full-stack_dev, Data Engineer"',
+    )
+    skills: Optional[str] = Field(
+        default=None,
+        description="Строка с основными навыками через запятую",
+    )
+
+    # location
+    city: Optional[str] = Field(default=None, index=True)
+    timezone: Optional[str] = Field(default=None)
+    regions: Optional[str] = Field(
+        default=None,
+        description='Регионы, напр.: "Европа, США"',
+    )
+    countries: Optional[str] = Field(
+        default=None,
+        description='Страны, напр.: "Германия, Нидерланды"',
+    )
+    relocation: Optional[str] = Field(
+        default=None,
+        description="Готовность/условия релокации (Yes/No/Discuss/страны)",
+    )
+    # сложные поля храним как JSON (список объектов)
+    experience: Optional[list[Dict[str, Any]]] = Field(
+        default=None,
+        sa_column=Column(JSON, nullable=True),
+        description="Список мест работы: [{'title', 'company', 'location', 'period', 'description'}, ...]",
+    )
+    education: Optional[list[Dict[str, Any]]] = Field(
+        default=None,
+        sa_column=Column(JSON, nullable=True),
+        description="Список образований: [{'university', 'degree', 'period'}, ...]",
+    )
+    courses: Optional[list[Dict[str, Any]]] = Field(
+        default=None,
+        sa_column=Column(JSON, nullable=True),
+        description="Список курсов/сертификатов: [{'name', 'organization', 'year'}, ...]",
+    )
+    projects: Optional[list[Dict[str, Any]]] = Field(
+        default=None,
+        sa_column=Column(JSON, nullable=True),
+        description="Список проектов: [{'name', 'description'}, ...]",
+    )
+
+    # только английский
+    english_level: Optional[str] = Field(
+        default=None,
+        description="Уровень английского A1–C2 или None",
+    )
+
+    # связь с пользователем
+    user: Optional["User"] = Relationship(back_populates="user_candidates")
+
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
@@ -122,8 +235,8 @@ class User(SQLModel, table=True):
     work_email_app_pass: Optional[str] = Field(default=None)
     sverkas: list[Sverka] = Relationship(back_populates="user")
     user_comunications: list[UserComunication] = Relationship(back_populates="user")
-    user_candidates: list[UserCandidate] = Relationship(back_populates="user")
     user_notifications: list[UserNotification] = Relationship(back_populates="user")
+    user_candidates: list[CandidateProfileDB] = Relationship(back_populates="user")
 
 
 

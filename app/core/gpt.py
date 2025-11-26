@@ -3,6 +3,9 @@ from .config import settings
 from .promts import create_promt
 from .generate_wl_resume import create_white_label_resume
 from  openai import OpenAI, AsyncOpenAI
+from app.database.dropdown_db import DropdownOptions
+dropdown_options = DropdownOptions()
+
 
 genai.configure(api_key=settings.gemini_api_key)
 
@@ -73,7 +76,7 @@ class GPT:
         prompt = create_promt.sverka_promt(vacancy_text=vacancy_text, resume_text=resume_text, file_name=file_name)
         # Увеличиваем max_output_tokens для больших JSON-ответов (максимум для Gemini-2.5-flash-lite)
         #return await self._generate_response_openai(prompt)
-        return await self._generate_response(self.lite_model, prompt)
+        return await self._generate_response(self.pro_model, prompt)
 
     async def create_finalist_mail(self, resume_json: dict, username: str) -> str:
         prompt = create_promt.finalist_mail_promt(json_data=resume_json, username=username)
@@ -97,10 +100,18 @@ class GPT:
                                    utochnenie=None,
                                    username = ""):
         return await create_white_label_resume(candidate_text,vacancy_text,self.pro_model,utochnenie,username)
-        
-        
-        
 
+    async def create_candidate_profile(self, text) -> str:
+        
+        specializations = await dropdown_options.get_specializations()
+        print("Specializations:", specializations)
+        
+        prompt = create_promt.candidate_profile_promt(text=text, allowed_specializations=specializations)
+        return await self._generate_response(self.flash_model, prompt)
+
+
+        
+        
 
 gpt_generator = GPT()
 

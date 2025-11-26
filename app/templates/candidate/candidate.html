@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Мои кандидаты — OmegaSolutions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+  <link rel="icon" type="image/png"
+        href="{{ url_for('static', path='img/omega-logo.png') }}">
+
+  <style>
+    body{
+      background:#f3f4f6;
+      font-family:system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    .dashboard-page{
+      max-width:1200px;
+      margin:32px auto;
+      padding:0 16px;
+      display:flex;
+      gap:20px;
+      align-items:flex-start;
+    }
+    .profile-sidebar{
+      width:230px;
+      background:#0f172a;
+      color:#e5e7eb;
+      border-radius:18px;
+      padding:18px 16px;
+      box-shadow:0 10px 30px rgba(15,23,42,.45);
+      flex-shrink:0;
+    }
+    .sidebar-title{
+      font-size:0.95rem;
+      font-weight:600;
+      margin-bottom:10px;
+      color:#facc15;
+    }
+    .sidebar-menu{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-top:8px;
+    }
+    .sidebar-link{
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:0.9rem;
+      color:#e5e7eb;
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+    }
+    .sidebar-link:hover{
+      background:rgba(148,163,184,.2);
+    }
+    .sidebar-link span.icon{
+      font-size:1.1rem;
+    }
+
+    .candidates-main{
+      flex:1;
+      min-width:0;
+    }
+
+    .candidates-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:18px;
+    }
+    .candidates-title{
+      font-size:1.6rem;
+      font-weight:700;
+      color:#0f172a;
+    }
+    .candidates-header-right{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .candidates-count{
+      font-size:0.95rem;
+      color:#6b7280;
+    }
+
+    .btn-primary{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 18px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      font-size:0.9rem;
+      font-weight:600;
+      background:#111827;
+      color:#f9fafb;
+      text-decoration:none;
+      box-shadow:0 6px 16px rgba(15,23,42,.45);
+    }
+    .btn-primary:hover{
+      filter:brightness(1.05);
+      transform:translateY(-1px);
+    }
+
+    .candidates-wrapper{
+      background:#ffffff;
+      border-radius:22px;
+      padding:18px 0 10px;
+      box-shadow:0 12px 35px rgba(15,23,42,.12);
+      border:1px solid rgba(148,163,184,0.35);
+    }
+
+    .candidate-list{
+      margin:0;
+      padding:0;
+      list-style:none;
+    }
+
+    .candidate-item{
+      padding:16px 22px;
+      border-top:1px solid #e5e7eb;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      background:#ffffff;
+    }
+    .candidate-item:first-child{
+      border-top:none;
+    }
+
+    .candidate-left{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-width:0;
+    }
+
+    .candidate-avatar{
+      width:44px;
+      height:44px;
+      border-radius:999px;
+      background:#e5e7eb;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.1rem;
+      font-weight:600;
+      color:#4b5563;
+      flex-shrink:0;
+    }
+
+    .candidate-info{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .candidate-top-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .candidate-name{
+      font-size:1rem;
+      font-weight:600;
+      color:#111827;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+      overflow:hidden;
+      max-width:420px;
+    }
+    .candidate-status{
+      font-size:0.8rem;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#e5e7eb;
+      color:#374151;
+      white-space:nowrap;
+    }
+    .candidate-position{
+      font-size:0.9rem;
+      color:#6b7280;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+      overflow:hidden;
+      max-width:520px;
+    }
+
+    .candidate-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-shrink:0;
+    }
+    .candidate-edit{
+      border-radius:999px;
+      padding:8px 14px;
+      border:1px solid #d1d5db;
+      background:#f9fafb;
+      font-size:0.85rem;
+      font-weight:500;
+      color:#111827;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      cursor:pointer;
+    }
+    .candidate-edit:hover{
+      background:#e5e7eb;
+    }
+    .candidate-delete{
+      border:none;
+      background:#fef2f2;
+      color:#b91c1c;
+      width:32px;
+      height:32px;
+      border-radius:999px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1rem;
+    }
+    .candidate-delete:hover{
+      background:#fee2e2;
+    }
+
+    .candidates-empty{
+      padding:30px 24px 26px;
+      font-size:0.95rem;
+      color:#6b7280;
+    }
+
+    @media (max-width:900px){
+      .dashboard-page{
+        flex-direction:column;
+      }
+      .profile-sidebar{
+        width:100%;
+      }
+      .candidate-item{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .candidate-actions{
+        margin-left:58px;
+      }
+    }
+
+    @media (max-width:640px){
+      .candidate-actions{
+        margin-left:0;
+        align-self:stretch;
+        justify-content:space-between;
+      }
+      .candidates-header{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  {% include "auth/header_auth.html" %}
+
+  <main class="dashboard-page">
+    <!-- Боковое меню -->
+    <aside class="profile-sidebar">
+      <div>
+        <div class="sidebar-title">Личный кабинет</div>
+        <nav class="sidebar-menu">
+          <a href="/sverka/history" class="sidebar-link">
+            <span class="icon">📂</span>
+            <span>История сверки</span>
+          </a>
+          <a href="/candidate" class="sidebar-link" style="background:rgba(148,163,184,.25);">
+            <span class="icon">👤</span>
+            <span>Мои кандидаты</span>
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Правая часть: список кандидатов -->
+    <section class="candidates-main">
+      <header class="candidates-header">
+        <h1 class="candidates-title">Мои кандидаты</h1>
+        <div class="candidates-header-right">
+          <div class="candidates-count">
+            {{ candidates|length if candidates is defined else 0 }} кандидатов
+          </div>
+          <a href="/candidate/add" class="btn-primary">Добавить кандидата</a>
+        </div>
+      </header>
+
+      <div class="candidates-wrapper">
+        {% if candidates and candidates|length > 0 %}
+          <ul class="candidate-list">
+            {% for c in candidates %}
+              <li class="candidate-item">
+                <div class="candidate-left">
+                  <div class="candidate-avatar">
+                    {# первая буква ФИО, если нет своих инициалов #}
+                    {% if c.initials %}
+                      {{ c.initials }}
+                    {% elif c.f %}
+                      {{ c.full_name[0]|upper }}
+                    {% else %}
+                      ?
+                    {% endif %}
+                  </div>
+                  <div class="candidate-info">
+                    <div class="candidate-top-row">
+                      <div class="candidate-name">
+                        {% if c.first_name and c.last_name and c.middle_name %}
+                            {% set full_name = c.first_name ~ " " ~ c.last_name ~ " " ~ c.middle_name %}
+                        {% elif c.first_name and c.last_name %}
+                            {% set full_name = c.first_name ~ " " ~ c.last_name %}
+                        {% else %}
+                            {% set full_name = c.first_name or c.last_name or "Без имени" %}
+                        {% endif %}
+                        {{ full_name }}
+                      </div>
+
+                    </div>
+                    {% if c.title %}
+                      <div class="candidate-position">
+                        {{ c.title }}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="candidate-actions">
+                  <a href="/candidate/edit/{{ c.number_for_user }}" class="candidate-edit">
+                    ✏️ <span>Редактировать</span>
+                  </a>
+                  <button class="candidate-delete"
+                          type="button"
+                          data-id="{{ c.number_for_user }}"
+                          onclick="deleteCandidate(this.dataset.id)">
+                    🗑
+                  </button>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="candidates-empty">
+            Пока ни одного кандидата нет. Нажмите «Добавить кандидата», чтобы создать первый профиль.
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+
+  <script>
+    async function deleteCandidate(id){
+      if(!id) return;
+      if(!confirm("Удалить этого кандидата?")) return;
+
+      try{
+        const resp = await fetch("/candidate/delete/" + encodeURIComponent(id), {
+          method: "DELETE",
+          headers: {"X-Requested-With":"XMLHttpRequest"}
+        });
+        if(resp.ok){
+          location.reload();
+        }else{
+          alert("Не удалось удалить кандидата");
+        }
+      }catch(e){
+        console.error(e);
+        alert("Ошибка сети при удалении кандидата");
+      }
+    }
+  </script>
+
+</body>
+</html>

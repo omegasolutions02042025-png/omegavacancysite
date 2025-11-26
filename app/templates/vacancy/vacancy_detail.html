@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/static/css/modern-style.css">
   <link rel="icon" type="image/png"
         href="{{ url_for('static', path='img/omega-logo.png') }}">
+
   <style>
     body {
       background: radial-gradient(circle at top, #eef2ff 0, #f9fafb 45%, #f3f4f6 100%);
@@ -145,6 +146,9 @@
       font-size: 0.9rem;
       cursor: pointer;
       text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .btn-outline:hover {
@@ -177,6 +181,125 @@
       color: #9ca3af;
     }
 
+    /* ===== MODAL ===== */
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+    }
+
+    .modal-overlay.is-visible {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 20px 22px 18px;
+      max-width: 760px;
+      width: 100%;
+      box-shadow: 0 20px 55px rgba(15, 23, 42, 0.35);
+      position: relative;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 12px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      border: none;
+      background: transparent;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+
+    .modal-body {
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 4px;
+      font-size: 0.9rem;
+    }
+
+    .modal-loading,
+    .modal-empty,
+    .modal-error {
+      padding: 10px 0;
+      color: #6b7280;
+    }
+
+    .cand-card {
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      padding: 10px 12px 10px;
+      margin-bottom: 8px;
+      background: #f9fafb;
+    }
+
+    .cand-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .cand-name {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .cand-title {
+      font-size: 0.85rem;
+      color: #6b7280;
+      text-align: right;
+    }
+
+    .cand-meta {
+      font-size: 0.8rem;
+      color: #4b5563;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      margin-bottom: 6px;
+    }
+
+    .cand-meta span strong {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .cand-skills {
+      font-size: 0.8rem;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .btn-small {
+      display: inline-flex;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      font-size: 0.8rem;
+      text-decoration: none;
+      color: #111827;
+      background: #ffffff;
+      cursor: pointer;
+    }
+
+    .btn-small:hover {
+      background: #e5e7eb;
+    }
+
     @media (max-width: 768px) {
       .vacancy-card {
         padding: 20px 16px 24px;
@@ -186,6 +309,10 @@
       .vacancy-title {
         font-size: 1.5rem;
       }
+
+      .modal-dialog {
+        margin: 0 12px;
+      }
     }
   </style>
 </head>
@@ -193,7 +320,6 @@
   {% include "auth/header_auth.html" %}
 
   <div class="vacancy-wrapper">
-
     <div class="vacancy-card">
       <div class="vacancy-top-line">
         <div>
@@ -212,6 +338,9 @@
         <h1 class="vacancy-title">{{ vacancy.title }}</h1>
 
         <div class="vacancy-submeta">
+          {% if vacancy.location %}
+            <span><strong>Локация:</strong> {{ vacancy.location }}</span>
+          {% endif %}
           {% if vacancy.work_format %}
             <span><strong>Формат работы:</strong> {{ vacancy.work_format }}</span>
           {% endif %}
@@ -257,6 +386,9 @@
         <a class="btn-primary" href="/sverka?vacancy_id={{ vacancy.vacancy_id }}">
           🌟 Начать сверку
         </a>
+        <button type="button" class="btn-outline" id="view-candidates-btn">
+          👀 Посмотреть в базе
+        </button>
         <a class="btn-outline" href="/vacancy">
           ← Назад к списку вакансий
         </a>
@@ -274,5 +406,182 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL -->
+  <div id="candidate-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-dialog">
+      <button class="modal-close" type="button" aria-label="Закрыть">×</button>
+      <h2 class="modal-title">Кандидаты из базы, подходящие под вакансию</h2>
+      <div id="candidate-modal-body" class="modal-body">
+        <!-- сюда прилетит список кандидатов -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const vacancyId = "{{ vacancy.vacancy_id }}";
+
+      const openBtn   = document.getElementById("view-candidates-btn");
+      const modal     = document.getElementById("candidate-modal");
+      const closeBtn  = modal ? modal.querySelector(".modal-close") : null;
+      const bodyBox   = document.getElementById("candidate-modal-body");
+
+      if (!modal || !openBtn || !bodyBox) {
+        return;
+      }
+
+      function openModal() {
+        modal.classList.add("is-visible");
+        modal.setAttribute("aria-hidden", "false");
+        loadCandidates();
+      }
+
+      function closeModal() {
+        modal.classList.remove("is-visible");
+        modal.setAttribute("aria-hidden", "true");
+      }
+
+      async function loadCandidates() {
+        bodyBox.innerHTML = '<div class="modal-loading">Загружаем кандидатов...</div>';
+
+        try {
+          const resp = await fetch(`/vacancy/${encodeURIComponent(vacancyId)}/matching-candidates`, {
+            headers: { "Accept": "application/json" }
+          });
+
+          if (!resp.ok) {
+            bodyBox.innerHTML = '<div class="modal-error">Не удалось загрузить кандидатов.</div>';
+            return;
+          }
+
+          const data = await resp.json();
+
+          // Поддержка обоих вариантов ответа:
+          // 1) просто массив: [ {...}, {...} ]
+          // 2) объект: { "candidates": [ {...}, {...} ] }
+          let list = [];
+          if (Array.isArray(data)) {
+            list = data;
+          } else if (data && Array.isArray(data.candidates)) {
+            list = data.candidates;
+          }
+
+          if (!list.length) {
+            bodyBox.innerHTML = '<div class="modal-empty">Подходящих кандидатов в базе пока нет.</div>';
+            return;
+          }
+
+          bodyBox.innerHTML = list.map(c => `
+            <div class="cand-card">
+              <div class="cand-header">
+                <div class="cand-name">${c.full_name || "Без имени"}</div>
+                <div class="cand-title">${c.title || ""}</div>
+              </div>
+              <div class="cand-meta">
+                <span><strong>Локация:</strong> ${c.location || c.city || "—"}</span>
+                <span><strong>Формат:</strong> ${c.work_format || "—"}</span>
+                <span><strong>Тип:</strong> ${c.employment_type || "—"}</span>
+                <span><strong>Грейд:</strong> ${c.grade || "—"}</span>
+                <span><strong>Английский:</strong> ${c.english_level || "—"}</span>
+              </div>
+              ${c.skills ? `<div class="cand-skills"><strong>Навыки:</strong> ${c.skills}</div>` : ""}
+              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+                <!-- тут тоже number_for_user -->
+                <a href="/candidate/edit/${c.number_for_user}" class="btn-small">Открыть профиль</a>
+                <button type="button"
+                        class="btn-small btn-sverka"
+                        data-candidate-number="${c.number_for_user}">
+                  🌟 Начать сверку
+                </button>
+              </div>
+            </div>
+          `).join("");
+        } catch (e) {
+          console.error(e);
+          bodyBox.innerHTML = '<div class="modal-error">Ошибка при загрузке кандидатов.</div>';
+        }
+      }
+
+      async function startSverkaForCandidate(candidateNumberRaw) {
+        const num = Number(candidateNumberRaw);
+
+        if (!Number.isFinite(num) || num <= 0) {
+          alert("Не удалось определить номер кандидата (number_for_user).");
+          return;
+        }
+
+        try {
+          const resp = await fetch("/api/sverka/from-candidate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              vacancy_id: vacancyId,
+              candidate_numbers: [num]
+            })
+          });
+
+          // 👇 если не залогинен — уходим на /auth/login
+          if (resp.status === 401) {
+            window.location.href = "/auth/login";
+            return;
+          }
+
+          const data = await resp.json();
+
+          if (!resp.ok || data.error) {
+            console.error("Ошибка запуска сверки:", data.error || resp.statusText);
+            alert(data.error || "Не удалось запустить сверку.");
+            return;
+          }
+
+          if (data.task_id) {
+            window.location.href = `/sverka/result/${encodeURIComponent(data.task_id)}`;
+          } else {
+            alert("Не удалось получить идентификатор задачи сверки.");
+          }
+        } catch (e) {
+          console.error(e);
+          alert("Ошибка при запросе к API сверки.");
+        }
+      }
+
+
+            // открываем модалку по кнопке
+            openBtn.addEventListener("click", openModal);
+
+            // закрытие по крестику
+            if (closeBtn) {
+              closeBtn.addEventListener("click", closeModal);
+            }
+
+            // делегирование кликов внутри модалки:
+            // — клик по фону ⇒ закрыть
+            // — клик по .btn-sverka ⇒ запуск сверки
+            modal.addEventListener("click", function (e) {
+              if (e.target === modal) {
+                closeModal();
+                return;
+              }
+
+                    const sverkaBtn = e.target.closest(".btn-sverka");
+              if (sverkaBtn) {
+                const candidateNumber = sverkaBtn.getAttribute("data-candidate-number");
+                if (candidateNumber) {
+                  startSverkaForCandidate(parseInt(candidateNumber, 10));
+                }
+              }
+            });
+
+      // закрытие по Esc
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.classList.contains("is-visible")) {
+          closeModal();
+        }
+      });
+    });
+  </script>
 </body>
 </html>

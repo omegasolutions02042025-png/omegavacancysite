@@ -475,41 +475,37 @@
           </div>
 
           <!-- grade -->
+          <!-- grade -->
           <div class="filter-block">
             <span class="filter-label">Грейд</span>
             <div id="filter_grade" class="filter-chips">
               <label class="chip-checkbox">
-                <input type="checkbox" value="trainee"> trainee
+                <input type="checkbox" value="Junior"> Junior
               </label>
               <label class="chip-checkbox">
-                <input type="checkbox" value="junior"> junior
+                <input type="checkbox" value="Junior+"> Junior+
               </label>
               <label class="chip-checkbox">
-                <input type="checkbox" value="middle"> middle
+                <input type="checkbox" value="Middle"> Middle
               </label>
               <label class="chip-checkbox">
-                <input type="checkbox" value="senior"> senior
+                <input type="checkbox" value="Middle+"> Middle+
               </label>
               <label class="chip-checkbox">
-                <input type="checkbox" value="lead"> lead
+                <input type="checkbox" value="Senior"> Senior
               </label>
               <label class="chip-checkbox">
-                <input type="checkbox" value="head"> head
-              </label>
-              <label class="chip-checkbox">
-                <input type="checkbox" value="director"> director
-              </label>
-              <label class="chip-checkbox">
-                <input type="checkbox" value="c_level"> c-level
+                <input type="checkbox" value="Lead"> Lead
               </label>
             </div>
           </div>
+
 
           <!-- Локация -->
           <div class="filter-block">
             <label class="filter-label" for="filter_location">Локация кандидата</label>
             <select id="filter_location" class="filter-select">
-              <option value="">Любая</option>
+              <option value="">---</option>
             </select>
           </div>
 
@@ -958,7 +954,7 @@
       }
     });
 
-    // ====== мульти-дропдауны (универсальные вспомогалки) ======
+    // ===== мульти-дропдауны (универсальные вспомогалки) =====
 
     function createRemovablePill(text, type) {
       const pill = document.createElement('span');
@@ -1043,7 +1039,8 @@
       try {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
-        params.set('limit', '50');
+        // раньше было 50 → поднимем лимит, чтобы брать все типичные значения
+        params.set('limit', '500');
         const res = await fetch('/dropdown/specializations?' + params.toString());
         const data = await res.json();
         allSpecializations = Array.isArray(data)
@@ -1115,7 +1112,9 @@
       try {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
-        params.set('limit', '50');
+        // КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: увеличиваем лимит,
+        // чтобы в выпадашку попадали все скиллы из БД, а не только первые 50
+        params.set('limit', '500');
         const res = await fetch('/dropdown/skills?' + params.toString());
         const data = await res.json();
         allSkills = Array.isArray(data)
@@ -1187,7 +1186,8 @@
       try {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
-        params.set('limit', '50');
+        // подняли лимит, аналогично skills/spec
+        params.set('limit', '500');
         const res = await fetch('/dropdown/domains?' + params.toString());
         const data = await res.json();
         allDomains = Array.isArray(data)

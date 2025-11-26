@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>История сверок — OmegaSolutions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/modern-style.css">
+  <link rel="icon" type="image/png"
+        href="{{ url_for('static', path='img/omega-logo.png') }}">
+
+  <style>
+    body{
+      background:#f3f4f6;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    /* ===== ЛЕЙАУТ КАК В ПРОФИЛЕ ===== */
+    .profile-page{
+      max-width:1100px;
+      margin:32px auto 40px;
+      padding:0 16px;
+      display:flex;
+      gap:20px;
+      align-items:flex-start;
+    }
+    .profile-sidebar{
+      width:230px;
+      background:#0f172a;
+      color:#e5e7eb;
+      border-radius:18px;
+      padding:18px 16px;
+      box-shadow:0 10px 30px rgba(15,23,42,.45);
+    }
+    .sidebar-title{
+      font-size:0.95rem;
+      font-weight:600;
+      margin-bottom:10px;
+      color:#facc15;
+    }
+    .sidebar-menu{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-top:8px;
+    }
+    .sidebar-link{
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:0.9rem;
+      color:#e5e7eb;
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+    }
+    .sidebar-link:hover{
+      background:rgba(148,163,184,.2);
+    }
+    .sidebar-link span.icon{
+      font-size:1.1rem;
+    }
+
+    .profile-main{
+      flex:1;
+    }
+
+    /* ===== КАРТОЧКА ИСТОРИИ ===== */
+    .history-card{
+      background:#ffffff;
+      border-radius:18px;
+      padding:22px 22px 26px;
+      box-shadow:0 14px 40px rgba(15,23,42,.08);
+      border:1px solid rgba(148,163,184,0.35);
+    }
+    .page-title{
+      margin:0 0 4px;
+      font-size:24px;
+      font-weight:700;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .page-subtitle{
+      margin:0 0 18px;
+      font-size:14px;
+      color:#6b7280;
+    }
+
+    .history-table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:8px;
+      font-size:14px;
+    }
+    .history-table thead{
+      background:#f1f5f9;
+    }
+    .history-table th,
+    .history-table td{
+      padding:10px 12px;
+      text-align:left;
+      border-bottom:1px solid #e5e7eb;
+    }
+    .history-table th{
+      font-weight:600;
+      color:#4b5563;
+      font-size:13px;
+    }
+    .history-table tbody tr:last-child td{
+      border-bottom:none;
+    }
+    .vacancy-id-cell{
+      font-family:ui-monospace, Menlo, Monaco, Consolas,"Liberation Mono","Courier New",monospace;
+      font-size:13px;
+      color:#1d4ed8;
+    }
+    .vacancy-title{
+      font-weight:500;
+      color:#0f172a;
+    }
+    .btn-open{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid #cbd5f5;
+      background:#ffffff;
+      font-size:13px;
+      color:#0f172a;
+      text-decoration:none;
+      cursor:pointer;
+      transition:all .15s ease-out;
+    }
+    .btn-open span[aria-hidden="true"]{
+      font-weight:600;
+    }
+    .btn-open:hover{
+      background:#e0f2fe;
+      border-color:#93c5fd;
+      transform:translateY(-1px);
+      box-shadow:0 6px 16px rgba(15,23,42,.12);
+    }
+    .empty-box{
+      margin-top:12px;
+      padding:26px 18px;
+      border-radius:14px;
+      border:1px dashed #cbd5f5;
+      background:#f8fafc;
+      text-align:center;
+      color:#94a3b8;
+      font-size:14px;
+    }
+    .footer-links{
+      margin-top:20px;
+      font-size:14px;
+    }
+    .footer-links a{
+      margin-right:14px;
+      text-decoration:none;
+      color:#0f172a;
+    }
+
+    @media(max-width:768px){
+      .profile-page{
+        flex-direction:column;
+      }
+      .profile-sidebar{
+        width:100%;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+      }
+    }
+
+    @media(max-width:640px){
+      .history-table thead{
+        display:none;
+      }
+      .history-table,
+      .history-table tbody,
+      .history-table tr,
+      .history-table td{
+        display:block;
+        width:100%;
+      }
+      .history-table tr{
+        margin-bottom:12px;
+        border-radius:12px;
+        background:#f9fafb;
+        border:1px solid #e5e7eb;
+        padding:10px 10px 8px;
+      }
+      .history-table td{
+        border-bottom:none;
+        padding:4px 2px;
+      }
+      .history-table td[data-label]::before{
+        content:attr(data-label) ": ";
+        font-weight:600;
+        color:#6b7280;
+      }
+      .btn-open{
+        width:100%;
+        justify-content:center;
+        margin-top:6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% include "auth/header_auth.html" %}
+
+  <main class="profile-page">
+    <!-- Боковое меню как в профиле -->
+    <aside class="profile-sidebar">
+      <div>
+        <div class="sidebar-title">Личный кабинет</div>
+        <nav class="sidebar-menu">
+          <a href="/sverka/history" class="sidebar-link">
+            <span class="icon">🧾</span>
+            <span>История сверки</span>
+          </a>
+          <a href="/candidate" class="sidebar-link">
+            <span class="icon">👥</span>
+            <span>Мои кандидаты</span>
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Основной контент страницы истории -->
+    <section class="profile-main">
+      <div class="history-card">
+        <h1 class="page-title">История сверок</h1>
+        <p class="page-subtitle">
+          На этой странице показаны вакансии, по которым выполнялась сверка резюме.
+        </p>
+
+        {% if items and items|length > 0 %}
+          <table class="history-table">
+            <thead>
+            <tr>
+              <th style="width:120px;">ID вакансии</th>
+              <th>Название вакансии</th>
+              <th style="width:140px;">Действие</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in items %}
+              <tr>
+                <td class="vacancy-id-cell" data-label="ID вакансии">
+                  {{ row.vacancy_id }}
+                </td>
+                <td data-label="Название" class="vacancy-title">
+                  {{ row.title or 'Без названия' }}
+                </td>
+                <td data-label="Действие">
+                  <a class="btn-open"
+                     href="/sverka/history/detail?vacancy_id={{ row.vacancy_id }}">
+                    Открыть сверку <span aria-hidden="true">→</span>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-box">
+            У вас пока нет сохранённых результатов сверки.
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>
