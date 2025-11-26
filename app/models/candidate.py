@@ -16,6 +16,7 @@ class EducationItem(BaseModel):
     period: Optional[str] = None
 
 
+
 class CourseItem(BaseModel):
     name: Optional[str] = None
     organization: Optional[str] = None
