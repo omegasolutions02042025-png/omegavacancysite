@@ -813,8 +813,19 @@ async def sverka_history_detail(
     )
 
     # приводим к формату, как у тебя в /sverka/result/{task_id}
+    # и генерируем slug для записей, у которых его нет
+    def slug6() -> str:
+        chars = string.ascii_lowercase + string.digits
+        return ''.join(random.choice(chars) for _ in range(6))
+    
     results: list[dict] = []
     for row in rows:
+        # Если slug отсутствует, генерируем его и обновляем в БД
+        if not row.slug:
+            new_slug = slug6()
+            await vacancy_repository.update_sverka_slug(row.id, new_slug)
+            row.slug = new_slug
+        
         results.append(
             {
                 "resume_json": row.sverka_json,
