@@ -525,6 +525,19 @@ class VacancyRepository:
             )
             return result.scalars().all()
 
+    async def update_sverka_slug(self, sverka_id: int, slug: str) -> bool:
+        """Обновить slug для сверки по ID."""
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(
+                select(Sverka).where(Sverka.id == sverka_id)
+            )
+            sverka = result.scalars().first()
+            if sverka:
+                sverka.slug = slug
+                await session.commit()
+                return True
+            return False
+
     async def get_sverkas_by_candidate_fullname_and_user_id(
         self, 
         user_id: int, 

@@ -415,11 +415,18 @@
                 </div>
 
                 <div class="result-footer">
-                  {# ВМЕСТО idx ИСПОЛЬЗУЕМ slug ИЗ БД #}
-                  <a class="view-link"
-                     href="{% if is_admin_view %}/admin/user/{{ user_id }}/sverka-history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% else %}/sverka/history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% endif %}">
-                    Открыть сверку <span aria-hidden="true">→</span>
-                  </a>
+                  {# Если есть slug - используем путь из истории, иначе - путь с task_id и индексом #}
+                  {% if item.slug %}
+                    <a class="view-link"
+                       href="{% if is_admin_view %}/admin/user/{{ user_id }}/sverka-history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% else %}/sverka/history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% endif %}">
+                      Открыть сверку <span aria-hidden="true">→</span>
+                    </a>
+                  {% else %}
+                    <a class="view-link"
+                       href="/sverka/result/{{ task_id }}/{{ idx }}?tg_username={{ tg_username }}">
+                      Открыть сверку <span aria-hidden="true">→</span>
+                    </a>
+                  {% endif %}
                 </div>
               </div>
             {% endfor %}

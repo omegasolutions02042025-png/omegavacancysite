@@ -415,11 +415,16 @@
                 </div>
 
                 <div class="result-footer">
-                  {# ВМЕСТО idx ИСПОЛЬЗУЕМ slug ИЗ БД #}
-                  <a class="view-link"
-                     href="{% if is_admin_view %}/admin/user/{{ user_id }}/sverka-history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% else %}/sverka/history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% endif %}">
-                    Открыть сверку <span aria-hidden="true">→</span>
-                  </a>
+                  {# Используем slug из БД, если он есть, иначе генерируем или используем ID #}
+                  {% if item.slug %}
+                    <a class="view-link"
+                       href="{% if is_admin_view %}/admin/user/{{ user_id }}/sverka-history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% else %}/sverka/history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% endif %}">
+                      Открыть сверку <span aria-hidden="true">→</span>
+                    </a>
+                  {% else %}
+                    {# Если slug отсутствует, это ошибка - не должно быть таких записей в истории #}
+                    <span style="color: #E74C3C; font-size: 0.9rem;">Ошибка: отсутствует идентификатор сверки</span>
+                  {% endif %}
                 </div>
               </div>
             {% endfor %}
