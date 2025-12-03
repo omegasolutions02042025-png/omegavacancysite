@@ -7,15 +7,29 @@ from email.header import decode_header
 from email.message import Message
 from email.utils import parseaddr
 from urllib.parse import quote
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
+from pathlib import Path
+from datetime import datetime
+import uuid
+import os
 
 from app.database.user_db import UserRepository
+from app.database.chat_db import chat_repository
+from app.database.vacancy_db import VacancyRepository
+from app.database.candidate_db import CandidateRepository
 from app.core.websocket_notif import ws_manager
+from app.core.chat_websocket import chat_ws_manager
+
+# Директория для хранения вложений из email
+MEDIA_DIR = Path("media/email")
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class EmailListener:
     def __init__(self, poll_interval: int = 10, top_limit: int = 5):
         self.user_repo = UserRepository()
+        self.vacancy_repo = VacancyRepository()
+        self.candidate_repo = CandidateRepository()
         self.default_imap_host = "mailbe07.hoster.by"
         self.default_imap_port = 993
 
@@ -48,6 +62,63 @@ class EmailListener:
         _name, addr = parseaddr(raw_from)
         return addr.strip().lower()
 
+
+    @staticmethod
+    def _clean_reply_text(text: str) -> str:
+        """
+        Очищает текст от цитат и служебной информации.
+        Оставляет только новое сообщение до первой цитаты.
+        """
+        if not text:
+            return ""
+        
+        lines = text.split('\n')
+        clean_lines = []
+        
+        # Паттерны для определения начала цитаты
+        quote_patterns = [
+            'пт,',  # пт, 28 нояб. 2025 г.
+            'чт,',  # чт, 27 нояб. 2025 г.
+            'ср,',  # ср, 26 нояб. 2025 г.
+            'вт,',  # вт, 25 нояб. 2025 г.
+            'пн,',  # пн, 24 нояб. 2025 г.
+            'сб,',  # сб, 23 нояб. 2025 г.
+            'вс,',  # вс, 22 нояб. 2025 г.
+            'on ',  # On Mon, Nov 28, 2025
+            '----',  # Разделитель
+            '___',   # Разделитель
+            '> ',    # Цитирование с >
+            'from:',  # From: sender
+            'sent:',  # Sent: date
+            'wrote:',  # User wrote:
+            'написал',  # Пользователь написал
+        ]
+        
+        for line in lines:
+            line_lower = line.strip().lower()
+            
+            # Проверяем, является ли строка началом цитаты
+            is_quote = False
+            for pattern in quote_patterns:
+                if line_lower.startswith(pattern):
+                    is_quote = True
+                    break
+            
+            # Если нашли цитату - останавливаемся
+            if is_quote:
+                break
+            
+            # Добавляем строку, если она не пустая или если уже есть текст
+            if line.strip() or clean_lines:
+                clean_lines.append(line)
+        
+        # Убираем пустые строки в конце
+        while clean_lines and not clean_lines[-1].strip():
+            clean_lines.pop()
+        
+        result = '\n'.join(clean_lines).strip()
+        return result if result else text  # Если ничего не осталось, возвращаем оригинал
+
     @staticmethod
     def _extract_text_from_message(msg: Message) -> str:
         if msg.is_multipart():
@@ -57,14 +128,18 @@ class EmailListener:
                 if content_type == "text/plain" and "attachment" not in content_disposition:
                     try:
                         charset = part.get_content_charset() or "utf-8"
-                        return part.get_payload(decode=True).decode(charset, errors="replace")
+                        raw_text = part.get_payload(decode=True).decode(charset, errors="replace")
+                        # ✅ Очищаем от цитат
+                        return EmailListener._clean_reply_text(raw_text)
                     except Exception:
                         continue
             return ""
         else:
             try:
                 charset = msg.get_content_charset() or "utf-8"
-                return msg.get_payload(decode=True).decode(charset, errors="replace")
+                raw_text = msg.get_payload(decode=True).decode(charset, errors="replace")
+                # ✅ Очищаем от цитат
+                return EmailListener._clean_reply_text(raw_text)
             except Exception:
                 return ""
 
@@ -100,6 +175,71 @@ class EmailListener:
             return "https://mail.omega-solutions.ru/"
 
         return f"mailto:{quote(email_addr)}"
+
+    @staticmethod
+    def _extract_attachments(msg: Message, candidate_name: str) -> Tuple[bool, Optional[str], Optional[str], Optional[str]]:
+        """
+        Извлекает вложения из email сообщения
+        Возвращает: (has_media, media_type, media_path, media_filename)
+        """
+        has_media = False
+        media_type = None
+        media_path = None
+        media_filename = None
+
+        if msg.is_multipart():
+            for part in msg.walk():
+                content_disposition = part.get("Content-Disposition", "")
+                
+                # Проверяем, является ли это вложением
+                if "attachment" in content_disposition or part.get_filename():
+                    filename = part.get_filename()
+                    
+                    if filename:
+                        # Декодируем имя файла
+                        filename = EmailListener._decode_mime_words(filename)
+                        
+                        # Определяем тип медиа
+                        content_type = part.get_content_type().lower()
+                        
+                        if content_type.startswith('image/'):
+                            media_type = 'photo'
+                        elif content_type.startswith('video/'):
+                            media_type = 'video'
+                        elif content_type.startswith('audio/'):
+                            media_type = 'audio'
+                        else:
+                            media_type = 'document'
+                        
+                        # Генерируем уникальное имя файла
+                        unique_id = uuid.uuid4().hex[:8]
+                        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        safe_candidate_name = candidate_name.replace(' ', '_').replace('/', '_')
+                        
+                        # Получаем расширение файла
+                        file_ext = os.path.splitext(filename)[1]
+                        new_filename = f"{safe_candidate_name}_{timestamp_str}_{unique_id}{file_ext}"
+                        
+                        # Сохраняем файл
+                        file_path = MEDIA_DIR / new_filename
+                        
+                        try:
+                            payload = part.get_payload(decode=True)
+                            if payload:
+                                with open(file_path, 'wb') as f:
+                                    f.write(payload)
+                                
+                                has_media = True
+                                media_path = f"/media/email/{new_filename}"
+                                media_filename = filename
+                                
+                                print(f"[EMAIL] Сохранено вложение: {new_filename} ({media_type})")
+                                break  # Берем только первое вложение
+                        except Exception as e:
+                            print(f"[EMAIL] Ошибка сохранения вложения: {e}")
+                            continue
+        
+        return has_media, media_type, media_path, media_filename
 
     # ================== IMAP SYNC FETCH ==================
 
@@ -148,9 +288,12 @@ class EmailListener:
                     if len(snippet) > 200:
                         snippet = snippet[:200] + "..."
 
-                    messages.append(
-                        {"from_addr": from_addr, "subject": subject, "snippet": snippet}
-                    )
+                    messages.append({
+                        "from_addr": from_addr,
+                        "subject": subject,
+                        "snippet": snippet,
+                        "msg": msg  # Добавляем полное сообщение для извлечения вложений
+                    })
 
                     try:
                         mail.store(email_id, "+FLAGS", "\\Seen")
@@ -210,6 +353,7 @@ class EmailListener:
                         "vacancy_id": vacancy_id,
                         "candidate_fullname": candidate_fullname,
                         "message": text_for_db,
+                        "message_text": msg["snippet"] or msg["subject"],  # Добавляем текст сообщения
                         "from_email": from_addr,
                         "subject": msg["subject"],
                         "snippet": msg["snippet"],
@@ -223,10 +367,94 @@ class EmailListener:
                     except Exception:
                         pass
 
+                    # Получаем название вакансии
+                    vacancy_title = None
+                    if vacancy_id:
+                        vacancy = await self.vacancy_repo.get_vacancy_by_id(vacancy_id)
+                        if vacancy:
+                            vacancy_title = vacancy.title
+                    
+                    # Извлекаем вложения из email
+                    has_media = False
+                    media_type = None
+                    media_path = None
+                    media_filename = None
+                    
+                    if "msg" in msg:
+                        try:
+                            has_media, media_type, media_path, media_filename = await asyncio.to_thread(
+                                self._extract_attachments,
+                                msg["msg"],
+                                candidate_fullname
+                            )
+                        except Exception as e:
+                            print(f"[EMAIL_LISTENER] Ошибка извлечения вложений: {e}")
+                    
+                    # Формируем текст сообщения
+                    message_text = msg["snippet"] or msg["subject"]
+                    if has_media and not message_text:
+                        message_text = f"[{media_type.upper()}] {media_filename}"
+                    
+                    # Получаем ID кандидата по его полному имени
+                    candidate_id = None
+                    if candidate_fullname:
+                        candidate_id = await self.candidate_repo.get_candidate_id_by_fullname(
+                            user_id=user_id,
+                            candidate_fullname=candidate_fullname
+                        )
+                    
+                    # Сохраняем сообщение в чат
+                    saved_message = None
+                    try:
+                        saved_message = await chat_repository.add_message(
+                            user_id=user_id,
+                            candidate_id=candidate_id,
+                            candidate_fullname=candidate_fullname,
+                            vacancy_id=vacancy_id,
+                            message_type="email",
+                            sender="candidate",
+                            message_text=message_text,
+                            vacancy_title=vacancy_title,
+                            has_media=has_media,
+                            media_type=media_type,
+                            media_path=media_path,
+                            media_filename=media_filename,
+                        )
+                        print(f"[EMAIL_LISTENER] Сообщение сохранено в БД с ID: {saved_message.id}")
+                        if has_media:
+                            print(f"[EMAIL_LISTENER] С вложением: {media_filename} ({media_type})")
+                    except Exception as e:
+                        print(f"[EMAIL_LISTENER] Ошибка сохранения в чат: {e}")
+
+                    # Отправляем уведомление через основной WebSocket
                     try:
                         await ws_manager.send_to_user(user_id, notification)
                     except Exception:
                         pass
+                    
+                    # Отправляем обновление в чат через WebSocket
+                    if saved_message:
+                        chat_update = {
+                            "type": "new_message",
+                            "message": {
+                                "id": saved_message.id,
+                                "sender": "candidate",
+                                "message_text": message_text,
+                                "timestamp": saved_message.timestamp,
+                                "candidate_fullname": candidate_fullname,
+                                "vacancy_id": vacancy_id,
+                                "vacancy_title": vacancy_title,
+                                "message_type": "email",
+                                "has_media": has_media,
+                                "media_type": media_type,
+                                "media_path": media_path,
+                                "media_filename": media_filename,
+                            }
+                        }
+                        await chat_ws_manager.send_personal_message(chat_update, user_id)
+                        print(f"[EMAIL_LISTENER] Отправлено обновление чата через WebSocket для user_id={user_id}")
+                        if has_media:
+                            print(f"[EMAIL_LISTENER] С медиа: {media_filename} ({media_type})")
 
                 await asyncio.sleep(self.poll_interval)
 

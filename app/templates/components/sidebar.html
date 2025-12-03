@@ -1,0 +1,45 @@
+<aside class="app-sidebar">
+    <div class="sidebar-header">
+        <a href="/" class="sidebar-logo">
+            {% include "components/logo.html" %}
+        </a>
+    </div>
+    
+    <nav class="sidebar-nav">
+        <a href="/admin/dashboard" class="nav-item {% if request.url.path.startswith('/admin/dashboard') %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        
+        <a href="/vacancy" class="nav-item {% if request.url.path.startswith('/vacancy') %}active{% endif %}">
+            <i class="bi bi-briefcase"></i>
+            <span>Вакансии</span>
+        </a>
+        
+        <a href="/candidate" class="nav-item {% if request.url.path.startswith('/candidate') %}active{% endif %}">
+            <i class="bi bi-people"></i>
+            <span>Кандидаты</span>
+        </a>
+        
+        <a href="/chat" class="nav-item {% if request.url.path.startswith('/chat') %}active{% endif %}">
+            <i class="bi bi-chat-dots"></i>
+            <span>Сообщения</span>
+            {% if unread_messages_count and unread_messages_count > 0 %}
+            <span class="badge bg-danger ms-auto" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 10px;">{{ unread_messages_count }}</span>
+            {% endif %}
+        </a>
+        
+        <div style="margin-top: auto; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.05);">
+             <a href="/admin/users" class="nav-item {% if request.url.path.startswith('/admin/users') %}active{% endif %}">
+                <i class="bi bi-gear"></i>
+                <span>Настройки</span>
+            </a>
+             <a href="/auth/logout" class="nav-item">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Выйти</span>
+            </a>
+        </div>
+    </nav>
+</aside>
+
+

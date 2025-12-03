@@ -1,0 +1,192 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Чаты пользователя — Omega Hire{% endblock %}
+
+{% block head %}
+  <style>
+    .chat-card {
+      background: var(--color-bg-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 20px rgba(255, 215, 0, 0.05);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .chat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--color-accent-gold) 50%, 
+        transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .chat-card:hover::before {
+      opacity: 1;
+    }
+    .chat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.3),
+        0 0 30px rgba(255, 215, 0, 0.15);
+      border-color: rgba(255, 215, 0, 0.3);
+    }
+    .chat-card h6 {
+      margin: 0 0 8px 0;
+      color: var(--color-text-heading);
+      font-weight: 700;
+    }
+    .chat-preview {
+      color: var(--color-text-primary);
+      font-size: 0.875rem;
+      margin-top: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .badge-unread {
+      background: rgba(255, 193, 7, 0.2);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: #FFC107;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-text-heading);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--color-text-muted);
+    }
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--color-text-muted);
+      margin-bottom: 16px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="container-fluid p-4">
+    <div class="card mb-4">
+      <h2 class="mb-0" style="color: var(--color-text-heading);">
+        <i class="bi bi-person-circle me-2" style="color: var(--color-accent-gold);"></i><span class="text-readable-primary">{{ user_email }}</span>
+      </h2>
+      <p style="color: var(--color-text-muted); margin-top: 8px; margin-bottom: 0;">ID пользователя: <span class="text-readable-primary">{{ user_id }}</span></p>
+    </div>
+
+    {% if telegram_chats or email_chats %}
+      {% if telegram_chats %}
+      <div class="card">
+        <div class="section-title">
+          <i class="bi bi-telegram" style="color: #0088cc;"></i>
+          Telegram диалоги ({{ telegram_chats|length }})
+        </div>
+        {% for chat in telegram_chats %}
+        <div class="chat-card" onclick="window.location.href='/admin/user/{{ user_id }}/chat/telegram/' + encodeURIComponent('{{ chat.candidate_fullname }}')">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+              <h6>
+                <i class="bi bi-person me-2" style="color: #0088cc;"></i>
+                <span class="text-readable-heading">{{ chat.candidate_fullname }}</span>
+              </h6>
+              {% if chat.vacancy_title %}
+              <div style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 8px;">
+                <i class="bi bi-briefcase me-1"></i><span class="text-readable-primary">{{ chat.vacancy_title }}</span>
+              </div>
+              {% endif %}
+              <div class="chat-preview">
+                {{ chat.last_message[:100] }}{% if chat.last_message|length > 100 %}...{% endif %}
+              </div>
+              <div style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 8px;">
+                <i class="bi bi-clock me-1"></i>{{ chat.last_timestamp[:19] if chat.last_timestamp else 'Н/Д' }}
+              </div>
+            </div>
+            <div class="text-end">
+              {% if chat.unread_count > 0 %}
+              <span class="badge-unread">{{ chat.unread_count }}</span>
+              {% endif %}
+              <div style="margin-top: 8px;">
+                <i class="bi bi-chevron-right" style="color: var(--color-text-muted); font-size: 1.5rem;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if email_chats %}
+      <div class="card">
+        <div class="section-title">
+          <i class="bi bi-envelope" style="color: #2ECC71;"></i>
+          Email диалоги ({{ email_chats|length }})
+        </div>
+        {% for chat in email_chats %}
+        <div class="chat-card" onclick="window.location.href='/admin/user/{{ user_id }}/chat/email/' + encodeURIComponent('{{ chat.candidate_fullname }}')">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+              <h6>
+                <i class="bi bi-person me-2" style="color: #2ECC71;"></i>
+                <span class="text-readable-heading">{{ chat.candidate_fullname }}</span>
+              </h6>
+              {% if chat.vacancy_title %}
+              <div style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 8px;">
+                <i class="bi bi-briefcase me-1"></i><span class="text-readable-primary">{{ chat.vacancy_title }}</span>
+              </div>
+              {% endif %}
+              <div class="chat-preview">
+                {{ chat.last_message[:100] }}{% if chat.last_message|length > 100 %}...{% endif %}
+              </div>
+              <div style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 8px;">
+                <i class="bi bi-clock me-1"></i>{{ chat.last_timestamp[:19] if chat.last_timestamp else 'Н/Д' }}
+              </div>
+            </div>
+            <div class="text-end">
+              {% if chat.unread_count > 0 %}
+              <span class="badge-unread">{{ chat.unread_count }}</span>
+              {% endif %}
+              <div style="margin-top: 8px;">
+                <i class="bi bi-chevron-right" style="color: var(--color-text-muted); font-size: 1.5rem;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="card">
+        <div class="empty-state">
+          <i class="bi bi-chat-dots"></i>
+          <h4 style="color: var(--color-text-muted);">Нет диалогов</h4>
+          <p style="color: var(--color-text-muted); font-size: 0.9rem;">У этого пользователя пока нет активных переписок</p>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Сообщения чата — Omega Hire{% endblock %}
+
+{% block head %}
+  <style>
+    .message {
+      padding: 16px;
+      margin-bottom: 16px;
+      border-radius: 12px;
+      border-left: 4px solid;
+      background: var(--color-bg-surface-2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-left: 4px solid;
+      transition: all 0.3s ease;
+    }
+    .message:hover {
+      background: var(--color-bg-surface);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .message.user {
+      border-left-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.1);
+    }
+    .message.candidate {
+      border-left-color: #2ECC71;
+      background: rgba(46, 204, 113, 0.1);
+    }
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .message-sender {
+      font-weight: 700;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-heading);
+    }
+    .message.user .message-sender {
+      color: #3b82f6;
+    }
+    .message.candidate .message-sender {
+      color: #2ECC71;
+    }
+    .message-time {
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+    }
+    .message-text {
+      color: var(--color-text-primary);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .message-media {
+      margin-top: 8px;
+      padding: 8px;
+      background: var(--color-bg-surface-2);
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+    }
+    .info-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    .badge-telegram {
+      background: rgba(0, 136, 204, 0.2);
+      border: 1px solid rgba(0, 136, 204, 0.3);
+      color: #0088cc;
+    }
+    .badge-email {
+      background: rgba(46, 204, 113, 0.2);
+      border: 1px solid rgba(46, 204, 113, 0.3);
+      color: #2ECC71;
+    }
+    .badge-unread {
+      background: rgba(255, 193, 7, 0.2);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: #FFC107;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--color-text-muted);
+    }
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--color-text-muted);
+      margin-bottom: 16px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="container-fluid p-4">
+    <div class="card mb-4">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <h2 class="mb-2" style="color: var(--color-text-heading);">
+            <i class="bi bi-person-circle me-2" style="color: var(--color-accent-gold);"></i>{{ candidate_fullname }}
+          </h2>
+          <div style="color: var(--color-text-muted); font-size: 0.9rem;">
+            Пользователь: <span class="text-readable-primary">{{ user_email }}</span> (ID: <span class="text-readable-primary">{{ user_id }}</span>)
+          </div>
+        </div>
+        <div>
+          {% if message_type == "telegram" %}
+          <span class="info-badge badge-telegram">
+            <i class="bi bi-telegram me-1"></i>Telegram
+          </span>
+          {% else %}
+          <span class="info-badge badge-email">
+            <i class="bi bi-envelope me-1"></i>Email
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      {% if vacancy_title %}
+      <div style="color: var(--color-text-primary);">
+        <i class="bi bi-briefcase me-1"></i>Вакансия: <span class="text-readable-primary">{{ vacancy_title }}</span>
+        {% if vacancy_id %}
+        <span style="font-size: 0.85rem; color: var(--color-text-muted);">(ID: <span class="text-readable-primary">{{ vacancy_id }}</span>)</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3 class="mb-4" style="color: var(--color-text-heading);">
+        <i class="bi bi-chat-text me-2" style="color: var(--color-accent-gold);"></i>История сообщений ({{ messages|length }})
+      </h3>
+      
+      {% if messages %}
+        <div style="max-height: 70vh; overflow-y: auto;">
+          {% for msg in messages %}
+          <div class="message {{ msg.sender }}">
+            <div class="message-header">
+              <div>
+                <span class="message-sender">
+                  {% if msg.sender == "user" %}
+                  <i class="bi bi-person-fill me-1"></i>Рекрутер
+                  {% else %}
+                  <i class="bi bi-person me-1"></i>Кандидат
+                  {% endif %}
+                </span>
+                {% if not msg.is_read and msg.sender == "candidate" %}
+                <span class="badge-unread ms-2"><i class="bi bi-bell me-1"></i>Непрочитано</span>
+                {% endif %}
+              </div>
+              <span class="message-time">
+                <i class="bi bi-clock me-1"></i>{{ msg.timestamp[:19] if msg.timestamp else 'Н/Д' }}
+              </span>
+            </div>
+            <div class="message-text">{{ msg.message_text }}</div>
+            {% if msg.has_media %}
+            <div class="message-media">
+              <i class="bi bi-file-earmark me-1"></i>
+              <strong>Медиа:</strong> {{ msg.media_type or 'Файл' }}
+              {% if msg.media_filename %}
+              - {{ msg.media_filename }}
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <i class="bi bi-chat-dots"></i>
+          <h4 style="color: var(--color-text-muted);">Нет сообщений</h4>
+          <p style="color: var(--color-text-muted); font-size: 0.9rem;">В этом диалоге пока нет сообщений</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.addEventListener('load', function() {
+      const messagesContainer = document.querySelector('[style*="max-height: 70vh"]');
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    });
+  </script>
+{% endblock %}

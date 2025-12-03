@@ -1,10 +1,9 @@
 from click.types import UUID
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, Response, FileResponse
 from starlette.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from passlib.hash import bcrypt
 from fastapi.templating import Jinja2Templates
 import os
 
@@ -13,43 +12,70 @@ from app.core.current_user import get_current_user_from_cookie
 from app.models.user import UserCreate
 from fastapi import HTTPException
 from app.database.user_db import UserRepository
+from app.database.registration_db import registration_repository
 from pathlib import Path
+from app.core.email_send import send_email_smtp
+from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
 user_repo = UserRepository()
-templates = Jinja2Templates(directory="templates")
+templates_dir = str(Path(__file__).resolve().parent.parent / "templates")
+templates = Jinja2Templates(directory=templates_dir)
 
 
-@router.post("/register")
-async def register(user: UserCreate):
-    email = user.email
-    password = user.password
-    print(email, password)
-    status = await user_repo.create_user(email=email, password=password)
-    if not status:
-        print("User already exists")
-        return HTTPException(status_code=400, detail="User already exists")
+# Регистрация отключена - аккаунты создаются только администратором
+# @router.post("/register")
+# async def register(user: UserCreate):
+#     email = user.email
+#     password = user.password
+#     print(email, password)
+#     status = await user_repo.create_user(email=email, password=password)
+#     if not status:
+#         print("User already exists")
+#         return HTTPException(status_code=400, detail="User already exists")
 
-    token = authx.create_access_token(uid=str(status.id))
+#     token = authx.create_access_token(uid=str(status.id))
 
-    response = RedirectResponse("/auth/profile", status_code=303)
-    response.set_cookie(
-        "access_token",
-        token,
-        httponly=True,
-        samesite="lax",
-        path="/"
-    )
+#     response = RedirectResponse("/auth/profile", status_code=303)
+#     response.set_cookie(
+#         "access_token",
+#         token,
+#         httponly=True,
+#         samesite="lax",
+#         path="/"
+#     )
 
-    return response
+#     return response
 
 
 
 @router.post("/login")
 async def login(email: str = Form(...), password: str = Form(...)):
+    """
+    Аутентификация пользователя по email и паролю.
+    
+    Args:
+        email: Email пользователя
+        password: Пароль пользователя
+        
+    Returns:
+        RedirectResponse: Редирект на страницу профиля с установленной cookie access_token
+        
+    Raises:
+        HTTPException: Если учетные данные неверны или пользователь в архиве
+    """
     user = await user_repo.authenticate(email, password)
     if not user:
-        return HTTPException(status_code=400, detail="Incorrect email or password")
+        raise HTTPException(status_code=400, detail="Неверный email или пароль")
+    
+    # Проверяем, не находится ли пользователь в архиве
+    if user.is_archived:
+        print(f"[AUTH] ❌ Попытка входа архивного пользователя: {email}")
+        raise HTTPException(
+            status_code=403, 
+            detail="Ваш аккаунт заблокирован администратором. Обратитесь в поддержку для восстановления доступа."
+        )
+    
     token = authx.create_access_token(uid=str(user.id))
     print(token)
     response = RedirectResponse("/auth/profile", status_code=303)
@@ -62,11 +88,45 @@ async def login(email: str = Form(...), password: str = Form(...)):
     )
     return response
 
+@router.get("/profile-data")
+async def get_profile_data(
+    current_user=Depends(get_current_user_from_cookie),
+):
+    """
+    Получить данные профиля пользователя (включая photo_path и все поля профиля) для JS
+    """
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content={
+        "photo_path": current_user.photo_path if current_user.photo_path else None,
+        "email": current_user.email,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "middle_name": current_user.middle_name,
+        "phone": current_user.phone,
+        "specialization": current_user.specialization,
+        "experience": current_user.experience,
+        "resume": current_user.resume,
+    })
+
+
 @router.get("/profile", response_class=HTMLResponse)
 async def profile(
     request: Request,
     current_user=Depends(get_current_user_from_cookie),
 ):
+    """
+    Страница профиля пользователя.
+    
+    Args:
+        request: FastAPI Request объект
+        current_user: Текущий авторизованный пользователь (из cookie)
+        
+    Returns:
+        HTMLResponse: HTML страница профиля или редирект на логин если не авторизован
+    """
     if not current_user:
         return RedirectResponse("/auth/login", status_code=303)
     print('Telegram username:', current_user.work_telegram)
@@ -77,18 +137,25 @@ async def profile(
             "request": request,
             "user_id": current_user.id,
             "user_email": current_user.email,
+            "user_first_name": current_user.first_name,
+            "user_last_name": current_user.last_name,
+            "user_middle_name": current_user.middle_name,
+            "user_phone": current_user.phone,
+            "user_specialization": current_user.specialization,
+            "user_experience": current_user.experience,
+            "user_resume": current_user.resume,
             "telegram_username": current_user.work_telegram,
-            "linked_email" : current_user.work_email,
-            'user_id' : current_user.id # ВАЖНО — сюда привязываем email
+            "linked_email": current_user.work_email,
         },
     )
 
 
 
-@router.get("/register")
-async def register_page(request: Request):
-  """Показать страницу регистрации"""
-  return templates.TemplateResponse("auth/register.html", {"request": request})
+# Регистрация отключена - аккаунты создаются только администратором
+# @router.get("/register")
+# async def register_page(request: Request):
+#   """Показать страницу регистрации"""
+#   return templates.TemplateResponse("auth/register.html", {"request": request})
 
 
 @router.get("/login")
@@ -98,8 +165,544 @@ async def login_page(request: Request):
 
 @router.get("/logout")
 async def logout():
+    """
+    Выход пользователя из системы.
+    Удаляет cookie с токеном доступа и перенаправляет на страницу входа.
+    
+    Returns:
+        RedirectResponse: Редирект на страницу логина
+    """
     resp = RedirectResponse("/auth/login", status_code=303)
     # ВАЖНО: то же имя и path, что и при установке
     resp.delete_cookie("access_token", path="/")
     return resp
+
+@router.get("/forgot-password")
+async def forgot_password_page(request: Request):
+    """
+    Показать страницу восстановления пароля.
+    
+    Пользователь вводит email, на который будет отправлена ссылка для восстановления.
+    """
+    return templates.TemplateResponse("auth/forgot_password.html", {"request": request})
+
+@router.post("/forgot-password")
+async def forgot_password(
+    email: str = Form(...),
+):
+    """
+    Отправка ссылки для восстановления пароля на email.
+    
+    Проверяет, что пользователь существует и аккаунт подтвержден администратором.
+    Генерирует токен и отправляет ссылку на email.
+    
+    Args:
+        email: Email пользователя
+        
+    Returns:
+        JSONResponse: Сообщение об успешной отправке
+        
+    Raises:
+        HTTPException: Если пользователь не найден или аккаунт не подтвержден
+    """
+    # Проверяем, что пользователь существует
+    user = await user_repo.get_by_email(email)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Пользователь с таким email не найден или аккаунт не подтвержден администратором"
+        )
+    
+    # Проверяем, что аккаунт подтвержден (создан администратором)
+    if not user.created_by_admin:
+        raise HTTPException(
+            status_code=404,
+            detail="Аккаунт не подтвержден. Обратитесь к администратору."
+        )
+    
+    # Создаем токен восстановления
+    token = await user_repo.create_password_reset_token(email)
+    if not token:
+        raise HTTPException(
+            status_code=500,
+            detail="Не удалось создать токен восстановления"
+        )
+    
+    # Отправляем письмо с ссылкой
+    reset_link = f"http://omegahire.tech/auth/reset-password?token={token}"
+    
+    email_body = f"""
+    <html>
+    <body>
+        <h2>Восстановление пароля на OmegaHire</h2>
+        <p>Здравствуйте!</p>
+        <p>Вы запросили восстановление пароля для вашего аккаунта.</p>
+        <p>Для установки нового пароля перейдите по ссылке:</p>
+        <p><a href="{reset_link}">{reset_link}</a></p>
+        <p>Ссылка действительна в течение 24 часов.</p>
+        <p>Если вы не запрашивали восстановление пароля, проигнорируйте это письмо.</p>
+        <br>
+        <p>С уважением,<br>Команда OmegaHire</p>
+    </body>
+    </html>
+    """
+    
+    try:
+        success = await send_email_smtp(
+            sender_email=settings.smtp_from_email,
+            recipient_email=email,
+            subject="Восстановление пароля на OmegaHire",
+            body=email_body,
+            html=True,
+            smtp_host=settings.smtp_host,
+            smtp_port=settings.smtp_port,
+            smtp_username=settings.smtp_username,
+            smtp_password=settings.smtp_password,
+            use_tls=settings.smtp_use_tls,
+            use_starttls=settings.smtp_use_starttls,
+        )
+        
+        if not success:
+            print(f"[PASSWORD RESET] ⚠️ Не удалось отправить письмо на {email}")
+            raise HTTPException(
+                status_code=500,
+                detail="Не удалось отправить письмо. Попробуйте позже."
+            )
+    except Exception as e:
+        print(f"[PASSWORD RESET] ❌ Ошибка отправки письма: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Ошибка отправки письма. Попробуйте позже."
+        )
+    
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        content={"message": "Ссылка для восстановления пароля отправлена на ваш email"},
+        status_code=200
+    )
+
+@router.get("/reset-password")
+async def reset_password_page(request: Request, token: str):
+    """
+    Показать страницу для ввода нового пароля.
+    
+    Args:
+        request: FastAPI Request объект
+        token: Токен восстановления пароля
+        
+    Returns:
+        HTMLResponse: Страница с формой для ввода нового пароля
+        
+    Raises:
+        HTTPException: Если токен недействителен
+    """
+    # Проверяем токен
+    user = await user_repo.verify_password_reset_token(token)
+    if not user:
+        raise HTTPException(
+            status_code=400,
+            detail="Ссылка недействительна или истекла"
+        )
+    
+    return templates.TemplateResponse(
+        "auth/reset_password.html",
+        {"request": request, "token": token}
+    )
+
+@router.post("/reset-password")
+async def reset_password(
+    token: str = Form(...),
+    new_password: str = Form(...),
+):
+    """
+    Установка нового пароля по токену восстановления.
+    
+    Args:
+        token: Токен восстановления пароля
+        new_password: Новый пароль
+        
+    Returns:
+        JSONResponse: Сообщение об успешном изменении пароля
+        
+    Raises:
+        HTTPException: Если токен недействителен или истек
+    """
+    if len(new_password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="Пароль должен содержать минимум 6 символов"
+        )
+    
+    success = await user_repo.reset_password_by_token(token, new_password)
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail="Ссылка недействительна или истекла"
+        )
+    
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        content={"message": "Пароль успешно изменен"},
+        status_code=200
+    )
+
+
+@router.get("/register")
+async def register_page(request: Request):
+    """Показать страницу подачи заявки на регистрацию"""
+    return templates.TemplateResponse("auth/register.html", {"request": request})
+
+
+@router.post("/register")
+async def register_request(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    phone: str = Form(...),
+    middle_name: str = Form(None),
+    specialization: str = Form(None),
+    experience: str = Form(None),
+    resume: str = Form(None),
+    pd_consent: str = Form(None),  # Чекбокс возвращает "on" если отмечен
+):
+    """
+    Подать заявку на регистрацию нового пользователя.
+    
+    Создает заявку в базе данных, отправляет письмо с подтверждением email.
+    После подтверждения email администратор должен одобрить заявку.
+    
+    Args:
+        request: FastAPI Request объект
+        email: Email пользователя
+        password: Пароль пользователя
+        confirm_password: Подтверждение пароля
+        first_name: Имя
+        last_name: Фамилия
+        phone: Телефон
+        middle_name: Отчество (опционально)
+        specialization: Специализация (опционально)
+        experience: Опыт работы (опционально)
+        resume: Резюме или ссылка (опционально)
+        
+    Returns:
+        HTMLResponse: Страница успешной отправки заявки
+        
+    Raises:
+        HTTPException: Если пользователь уже существует или заявка уже подана
+    """
+    print(f"[REGISTRATION] Заявка на регистрацию: email={email}")
+    
+    # Проверяем согласие на обработку персональных данных
+    if not pd_consent or pd_consent != "on":
+        return templates.TemplateResponse(
+            "auth/register.html",
+            {
+                "request": request,
+                "error": "Необходимо дать согласие на обработку персональных данных",
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "middle_name": middle_name,
+                "phone": phone,
+                "specialization": specialization,
+                "experience": experience,
+                "resume": resume
+            }
+        )
+    
+    if password != confirm_password:
+         return templates.TemplateResponse(
+            "auth/register.html",
+            {
+                "request": request,
+                "error": "Пароли не совпадают",
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "middle_name": middle_name,
+                "phone": phone,
+                "specialization": specialization,
+                "experience": experience,
+                "resume": resume
+            }
+        )
+    
+    # Получаем IP-адрес клиента
+    client_ip = request.client.host if request.client else None
+    # Если за прокси, пытаемся получить реальный IP из заголовков
+    if not client_ip or client_ip == "127.0.0.1":
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+        else:
+            real_ip = request.headers.get("X-Real-IP")
+            if real_ip:
+                client_ip = real_ip
+    
+    # Получаем текущую дату и время
+    from datetime import datetime
+    consent_at = datetime.now().isoformat()
+    
+    # Создаем заявку
+    request_obj = await registration_repository.create_request(
+        email=email, 
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+        middle_name=middle_name,
+        phone=phone,
+        specialization=specialization,
+        experience=experience,
+        resume=resume,
+        pd_consent=True,
+        pd_consent_at=consent_at,
+        pd_consent_email=email,
+        pd_consent_ip=client_ip
+    )
+    if not request_obj:
+        return templates.TemplateResponse(
+            "auth/register.html",
+            {
+                "request": request,
+                "error": "Пользователь с таким email уже существует или заявка уже подана",
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "middle_name": middle_name,
+                "phone": phone,
+                "specialization": specialization,
+                "experience": experience,
+                "resume": resume
+            }
+        )
+    
+    # Отправляем письмо для подтверждения email
+    verification_link = f"http://omegahire.tech/auth/verify-email?token={request_obj.verification_token}"
+    
+    email_body = f"""
+    <html>
+    <body>
+        <h2>Подтверждение регистрации на OmegaHire</h2>
+        <p>Здравствуйте!</p>
+        <p>Вы подали заявку на регистрацию в системе OmegaHire.</p>
+        <p>Для подтверждения вашего email-адреса, пожалуйста, перейдите по ссылке:</p>
+        <p><a href="{verification_link}">{verification_link}</a></p>
+        <p>После подтверждения email администратор рассмотрит вашу заявку.</p>
+        <br>
+        <p>С уважением,<br>Команда OmegaHire</p>
+    </body>
+    </html>
+    """
+    
+    try:
+        success = await send_email_smtp(
+            sender_email=settings.smtp_from_email,
+            recipient_email=email,
+            subject="Подтверждение регистрации на OmegaHire",
+            body=email_body,
+            html=True,
+            smtp_host=settings.smtp_host,
+            smtp_port=settings.smtp_port,
+            smtp_username=settings.smtp_username,
+            smtp_password=settings.smtp_password,
+            use_tls=settings.smtp_use_tls,
+            use_starttls=settings.smtp_use_starttls,
+        )
+        
+        if not success:
+            print(f"[REGISTRATION] ⚠️ Не удалось отправить письмо на {email}")
+    except Exception as e:
+        print(f"[REGISTRATION] ❌ Ошибка отправки письма: {e}")
+    
+    # Перенаправляем на страницу с сообщением
+    return templates.TemplateResponse(
+        "auth/register_success.html",
+        {"request": request, "email": email}
+    )
+
+
+@router.get("/verify-email")
+async def verify_email(request: Request, token: str):
+    """
+    Подтверждение email пользователя по токену из письма.
+    
+    После подтверждения email администратор получает уведомление о новой заявке.
+    
+    Args:
+        request: FastAPI Request объект
+        token: Токен верификации из письма
+        
+    Returns:
+        HTMLResponse: Страница ожидания одобрения администратором
+        
+    Raises:
+        HTTPException: Если токен неверный или уже использован
+    """
+    print(f"[REGISTRATION] Подтверждение email: token={token}")
+    
+    request_obj = await registration_repository.verify_email(token)
+    if not request_obj:
+        raise HTTPException(
+            status_code=400,
+            detail="Неверный или уже использованный токен"
+        )
+    
+    # Уведомляем администратора о новой заявке
+    admin_link = f"http://omegahire.tech/admin/pending-registrations"
+    
+    email_body = f"""
+    <html>
+    <body>
+        <h2>Новая заявка на регистрацию</h2>
+        <p>Пользователь подтвердил свой email и ожидает одобрения:</p>
+        <p><strong>Email:</strong> {request_obj.email}</p>
+        <p><strong>Пароль:</strong> {request_obj.password}</p>
+        <p>Для рассмотрения заявки перейдите в панель администратора:</p>
+        <p><a href="{admin_link}">{admin_link}</a></p>
+    </body>
+    </html>
+    """
+    
+    try:
+        # Отправляем админу (можно настроить email админа в config)
+        success = await send_email_smtp(
+            sender_email=settings.smtp_from_email,
+            recipient_email=settings.smtp_from_email,  # Отправляем себе
+            subject="Новая заявка на регистрацию OmegaHire",
+            body=email_body,
+            html=True,
+            smtp_host=settings.smtp_host,
+            smtp_port=settings.smtp_port,
+            smtp_username=settings.smtp_username,
+            smtp_password=settings.smtp_password,
+            use_tls=settings.smtp_use_tls,
+            use_starttls=settings.smtp_use_starttls,
+        )
+    except Exception as e:
+        print(f"[REGISTRATION] ❌ Ошибка отправки письма админу: {e}")
+    
+    # Показываем страницу ожидания
+    return templates.TemplateResponse(
+        "auth/email_verified.html",
+        {"request": request}
+    )
+
+
+@router.post("/update-profile")
+async def update_profile(
+    request: Request,
+    current_user=Depends(get_current_user_from_cookie),
+):
+    """
+    Обновить профиль рекрутера.
+    
+    Позволяет рекрутеру обновить свои данные: ФИО, телефон, опыт, специализацию, резюме.
+    
+    Args:
+        request: FastAPI Request объект с JSON телом
+        current_user: Текущий авторизованный пользователь
+        
+    Returns:
+        JSONResponse: Результат обновления профиля
+        
+    Raises:
+        HTTPException: Если пользователь не авторизован
+    """
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        body = await request.json()
+    except:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    
+    # Обновляем профиль через репозиторий
+    updated_user = await user_repo.update_profile(
+        user_id=current_user.id,
+        first_name=body.get("first_name"),
+        last_name=body.get("last_name"),
+        middle_name=body.get("middle_name"),
+        phone=body.get("phone"),
+        experience=body.get("experience"),
+        specialization=body.get("specialization"),
+        resume=body.get("resume"),
+    )
+    
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content={
+        "ok": True,
+        "message": "Профиль успешно обновлен"
+    })
+
+
+@router.get("/consent-personal-data", response_class=HTMLResponse)
+async def consent_personal_data_page(request: Request):
+    """
+    Показать страницу «Согласие на обработку персональных данных».
+    
+    Returns:
+        HTMLResponse: HTML страница с согласием на обработку персональных данных
+    """
+    return templates.TemplateResponse("auth/consent_personal_data.html", {"request": request})
+
+
+@router.get("/policy-personal-data", response_class=HTMLResponse)
+async def policy_personal_data_page(request: Request):
+    """
+    Показать страницу «Политика обработки и защиты персональных данных».
+    
+    Returns:
+        HTMLResponse: HTML страница с политикой обработки персональных данных
+    """
+    return templates.TemplateResponse("auth/policy_personal_data.html", {"request": request})
+
+
+@router.get("/download/pd-consent")
+async def download_pd_consent():
+    """
+    Скачать документ «Согласие на обработку персональных данных».
+    
+    Returns:
+        FileResponse: Файл Consent_Personal_Data_OmegaSolutionsGroup_2025-12-02.docx
+    """
+    # Используем абсолютный путь относительно корня проекта
+    base_path = Path(__file__).resolve().parent.parent.parent
+    file_path = base_path / "politic" / "Consent_Personal_Data_OmegaSolutionsGroup_2025-12-02.docx"
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    
+    return FileResponse(
+        path=str(file_path),
+        filename="Согласие_на_обработку_персональных_данных.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+
+
+@router.get("/download/pd-policy")
+async def download_pd_policy():
+    """
+    Скачать документ «Политика обработки и защиты персональных данных».
+    
+    Returns:
+        FileResponse: Файл Policy_Personal_Data_OmegaSolutionsGroup_2025-12-02.docx
+    """
+    # Используем абсолютный путь относительно корня проекта
+    base_path = Path(__file__).resolve().parent.parent.parent
+    file_path = base_path / "politic" / "Policy_Personal_Data_OmegaSolutionsGroup_2025-12-02.docx"
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    
+    return FileResponse(
+        path=str(file_path),
+        filename="Политика_обработки_персональных_данных.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
     

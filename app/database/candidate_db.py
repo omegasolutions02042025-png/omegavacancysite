@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from sqlmodel import select, func
+from sqlmodel import select, func, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.database import CandidateProfileDB
@@ -203,6 +203,57 @@ class CandidateRepository:
             )
             return result.one_or_none()
 
+    async def get_candidate_id_by_fullname(
+        self,
+        user_id: int,
+        candidate_fullname: str
+    ) -> Optional[int]:
+        """
+        Получить number_for_user кандидата по его полному имени.
+        
+        Args:
+            user_id: ID пользователя
+            candidate_fullname: Полное имя кандидата (например, "Иванов Иван Иванович")
+            
+        Returns:
+            int: number_for_user кандидата или None если не найден
+        """
+        async with AsyncSession(self.engine) as session:
+            # Получаем всех кандидатов пользователя
+            result = await session.exec(
+                select(CandidateProfileDB).where(
+                    CandidateProfileDB.user_id == user_id
+                )
+            )
+            candidates = result.all()
+            
+            # Нормализуем искомое имя (убираем лишние пробелы, приводим к нижнему регистру)
+            search_name = " ".join(candidate_fullname.split()).lower()
+            
+            # Ищем кандидата, сравнивая полное имя
+            for candidate in candidates:
+                # Формируем полное имя из отдельных полей
+                name_parts = []
+                if candidate.first_name:
+                    name_parts.append(candidate.first_name)
+                if candidate.last_name:
+                    name_parts.append(candidate.last_name)
+                if candidate.middle_name:
+                    name_parts.append(candidate.middle_name)
+                
+                full_name = " ".join(name_parts)
+                if not full_name:
+                    continue
+                
+                # Нормализуем имя кандидата
+                candidate_name = " ".join(full_name.split()).lower()
+                
+                # Сравниваем имена (точное совпадение или частичное)
+                if candidate_name == search_name or search_name in candidate_name or candidate_name in search_name:
+                    return candidate.number_for_user
+            
+            return None
+
     async def update_candidate_for_user(
         self,
         candidate_id: int,
@@ -227,7 +278,9 @@ class CandidateRepository:
 
             # простые поля
             simple_fields = [
-                "full_name",
+                "first_name",
+                "last_name",
+                "middle_name",  
                 "title",
                 "email",
                 "telegram",
@@ -253,7 +306,13 @@ class CandidateRepository:
             ]
             for field in simple_fields:
                 if field in payload:
-                    setattr(candidate, field, payload[field])
+                    value = payload[field]
+                    # Сохраняем значение (может быть None, пустая строка или текст)
+                    # Для строковых полей пустая строка сохраняется как пустая строка
+                    if value == "" and field in ["regions", "city", "timezone", "countries", "relocation"]:
+                        setattr(candidate, field, "")
+                    else:
+                        setattr(candidate, field, value)
 
             # JSON-поля
             if "experience" in payload and isinstance(payload["experience"], list):
@@ -270,12 +329,50 @@ class CandidateRepository:
             await session.refresh(candidate)
             return candidate
 
-    async def get_all_candidates_for_user(self, user_id: int):
+    async def get_all_candidates_for_user(
+        self,
+        user_id: int,
+        search_query: Optional[str] = None,
+        specialization_filter: Optional[str] = None,
+    ):
+        """
+        Получить всех кандидатов пользователя с опциональной фильтрацией.
+        
+        Args:
+            user_id: ID пользователя
+            search_query: Поиск по имени (first_name, last_name, middle_name) и title
+            specialization_filter: Фильтр по специализации (точное совпадение или вхождение)
+        """
+        from sqlalchemy import or_
+        
         async with AsyncSession(self.engine) as session:
+            query = select(CandidateProfileDB).where(
+                CandidateProfileDB.user_id == user_id
+            )
+            
+            # Поиск по имени и title
+            if search_query:
+                search_lower = search_query.lower().strip()
+                query = query.where(
+                    or_(
+                        func.lower(CandidateProfileDB.first_name).ilike(f"%{search_lower}%"),
+                        func.lower(CandidateProfileDB.last_name).ilike(f"%{search_lower}%"),
+                        func.lower(CandidateProfileDB.middle_name).ilike(f"%{search_lower}%"),
+                        func.lower(CandidateProfileDB.title).ilike(f"%{search_lower}%"),
+                    )
+                )
+            
+            # Фильтр по специализации
+            if specialization_filter:
+                # Ищем специализацию в строке specializations (может быть через запятую, точку с запятой и т.д.)
+                query = query.where(
+                    func.lower(CandidateProfileDB.specializations).ilike(
+                        f"%{specialization_filter.lower()}%"
+                    )
+                )
+            
             result = await session.exec(
-                select(CandidateProfileDB).where(
-                    CandidateProfileDB.user_id == user_id
-                ).order_by(CandidateProfileDB.number_for_user.desc())
+                query.order_by(CandidateProfileDB.number_for_user.desc())
             )
             return result.all()
 
@@ -369,7 +466,15 @@ class CandidateRepository:
 
             # 3) фильтр по хард-полям + скиллам/спецам
             for c in candidates:
-                print(f"\n---- Candidate id={c.id}, full_name={c.full_name!r} ----")
+                # Формируем полное имя из отдельных полей
+                full_name_parts = []
+                if c.first_name:
+                    full_name_parts.append(c.first_name)
+                if c.last_name:
+                    full_name_parts.append(c.last_name)
+                if c.middle_name:
+                    full_name_parts.append(c.middle_name)
+                full_name = " ".join(full_name_parts) if full_name_parts else "Без имени"
 
                 # хард-поля
                 c_work_format = self.norm(c.work_format)
@@ -482,7 +587,7 @@ class CandidateRepository:
                             "number_for_user": c.number_for_user,
 
                             # ФИО и позиция
-                            "full_name": c.full_name,
+                            "full_name": full_name,
                             "title": c.title,
 
                             # контакты
@@ -557,3 +662,156 @@ class CandidateRepository:
             )
             res = await session.exec(stmt)
             return res.one_or_none()
+
+    async def merge_candidate_profile(
+        self,
+        existing_candidate: CandidateProfileDB,
+        new_profile: GPTCandidateProfile,
+    ) -> CandidateProfileDB:
+        """
+        Объединяет существующий профиль кандидата с новым профилем из обновленного резюме.
+        
+        Правила слияния:
+        - Для полей где значение None - заполняем из нового резюме
+        - Для строковых полей - если старое None или пустое, берем новое, иначе оставляем старое
+        - Для массивов (experience, education, courses, projects) - дополняем новыми данными
+        """
+        async with AsyncSession(self.engine) as session:
+            # Загружаем кандидата в сессию для отслеживания изменений
+            result = await session.exec(
+                select(CandidateProfileDB).where(
+                    CandidateProfileDB.id == existing_candidate.id
+                )
+            )
+            candidate = result.one_or_none()
+            if not candidate:
+                raise ValueError("Кандидат не найден в БД")
+
+            # ===== PERSONAL =====
+            # Приоритет: если старое None или пустое - берем новое
+            if not candidate.first_name:
+                candidate.first_name = new_profile.personal.first_name
+            if not candidate.last_name:
+                candidate.last_name = new_profile.personal.last_name
+            if not candidate.middle_name:
+                candidate.middle_name = new_profile.personal.middle_name
+            if not candidate.title:
+                candidate.title = new_profile.personal.title
+            if not candidate.email:
+                candidate.email = new_profile.personal.email
+            if not candidate.telegram:
+                candidate.telegram = new_profile.personal.telegram
+            if not candidate.phone:
+                candidate.phone = new_profile.personal.phone
+            if not candidate.linkedin:
+                candidate.linkedin = new_profile.personal.linkedin
+            if not candidate.github:
+                candidate.github = new_profile.personal.github
+            if not candidate.portfolio:
+                candidate.portfolio = new_profile.personal.portfolio
+            if not candidate.about:
+                candidate.about = new_profile.personal.about
+
+            # ===== MAIN =====
+            if candidate.salary_usd is None:
+                candidate.salary_usd = new_profile.main.salary_usd
+            if not candidate.currencies:
+                candidate.currencies = new_profile.main.currencies
+            if not candidate.grade:
+                candidate.grade = new_profile.main.grade
+            if not candidate.work_format:
+                candidate.work_format = new_profile.main.work_format
+            if not candidate.employment_type:
+                candidate.employment_type = new_profile.main.employment_type
+            if not candidate.company_types:
+                candidate.company_types = new_profile.main.company_types
+            if not candidate.specializations:
+                candidate.specializations = new_profile.main.specializations
+            if not candidate.skills:
+                candidate.skills = new_profile.main.skills
+
+            # ===== LOCATION =====
+            if not candidate.city:
+                candidate.city = new_profile.location.city
+            if not candidate.timezone:
+                candidate.timezone = new_profile.location.timezone
+            if not candidate.regions:
+                candidate.regions = new_profile.location.regions
+            if not candidate.countries:
+                candidate.countries = new_profile.location.countries
+            if not candidate.relocation:
+                candidate.relocation = new_profile.location.relocation
+
+            # ===== ENGLISH LEVEL =====
+            if not candidate.english_level:
+                candidate.english_level = new_profile.english_level
+
+            # ===== МАССИВЫ: ОБЪЕДИНЯЕМ ДАННЫЕ =====
+            # Опыт работы
+            existing_exp = candidate.experience or []
+            new_exp = [e.model_dump(exclude_none=True) for e in new_profile.experience] if new_profile.experience else []
+            # Объединяем, избегая дубликатов по ключевым полям
+            merged_exp = list(existing_exp)
+            for new_item in new_exp:
+                # Проверяем, нет ли уже такого опыта (по компании и должности)
+                is_duplicate = False
+                for existing_item in existing_exp:
+                    if (existing_item.get("company") == new_item.get("company") and
+                        existing_item.get("title") == new_item.get("title")):
+                        is_duplicate = True
+                        break
+                if not is_duplicate and any(new_item.values()):
+                    merged_exp.append(new_item)
+            candidate.experience = merged_exp if merged_exp else None
+
+            # Образование
+            existing_edu = candidate.education or []
+            new_edu = [e.model_dump(exclude_none=True) for e in new_profile.education] if new_profile.education else []
+            merged_edu = list(existing_edu)
+            for new_item in new_edu:
+                # Проверяем дубликаты по университету и степени
+                is_duplicate = False
+                for existing_item in existing_edu:
+                    if (existing_item.get("university") == new_item.get("university") and
+                        existing_item.get("degree") == new_item.get("degree")):
+                        is_duplicate = True
+                        break
+                if not is_duplicate and any(new_item.values()):
+                    merged_edu.append(new_item)
+            candidate.education = merged_edu if merged_edu else None
+
+            # Курсы
+            existing_courses = candidate.courses or []
+            new_courses = [c.model_dump(exclude_none=True) for c in new_profile.courses] if new_profile.courses else []
+            merged_courses = list(existing_courses)
+            for new_item in new_courses:
+                # Проверяем дубликаты по названию и организации
+                is_duplicate = False
+                for existing_item in existing_courses:
+                    if (existing_item.get("name") == new_item.get("name") and
+                        existing_item.get("organization") == new_item.get("organization")):
+                        is_duplicate = True
+                        break
+                if not is_duplicate and any(new_item.values()):
+                    merged_courses.append(new_item)
+            candidate.courses = merged_courses if merged_courses else None
+
+            # Проекты
+            existing_projects = candidate.projects or []
+            new_projects = [p.model_dump(exclude_none=True) for p in new_profile.projects] if new_profile.projects else []
+            merged_projects = list(existing_projects)
+            for new_item in new_projects:
+                # Проверяем дубликаты по названию проекта
+                is_duplicate = False
+                for existing_item in existing_projects:
+                    if existing_item.get("name") == new_item.get("name"):
+                        is_duplicate = True
+                        break
+                if not is_duplicate and any(new_item.values()):
+                    merged_projects.append(new_item)
+            candidate.projects = merged_projects if merged_projects else None
+
+            session.add(candidate)
+            await session.commit()
+            await session.refresh(candidate)
+            return candidate

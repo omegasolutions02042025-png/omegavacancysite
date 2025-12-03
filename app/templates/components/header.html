@@ -1,0 +1,302 @@
+<header class="app-header">
+    <!-- Global Search -->
+    <div class="header-search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Поиск кандидатов, вакансий...">
+    </div>
+
+    <!-- Right Actions -->
+    <div class="header-actions">
+        <!-- Upload Button -->
+        <a href="/upload" class="btn btn-primary" style="padding: 8px 20px; font-size: 0.9rem;">
+            <i class="bi bi-plus-lg"></i>
+            <span>Загрузить</span>
+        </a>
+
+        <!-- Notifications -->
+        <div class="notif-wrapper position-relative">
+            <button class="action-btn" id="chat-bell" title="Уведомления">
+                <i class="bi bi-bell"></i>
+                <span class="notification-badge" id="chat-badge" style="display:none;">0</span>
+            </button>
+            
+            <!-- Dropdown logic reused from header_auth.html -->
+            <div class="notif-dropdown" id="chat-dropdown" style="
+                position: absolute;
+                right: 0;
+                top: 120%;
+                width: 320px;
+                max-height: 340px;
+                overflow-y: auto;
+                background: #020617;
+                border: 1px solid rgba(148,163,184,.45);
+                border-radius: 12px;
+                box-shadow: 0 16px 35px rgba(15,23,42,.85);
+                padding: 8px 0;
+                display: none;
+                z-index: 1000;
+            ">
+                <div class="notif-header" style="padding: 6px 12px 4px; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: #9ca3af; border-bottom: 1px solid rgba(31,41,55,.85);">Новые сообщения</div>
+                <div class="notif-empty" id="chat-empty" style="padding: 10px 12px; font-size: .85rem; color: #9ca3af;">Нет новых сообщений</div>
+                <ul class="notif-list" id="chat-list" style="list-style: none; margin: 0; padding: 0;"></ul>
+                <div style="padding: 8px 12px; border-top: 1px solid rgba(31,41,55,.85);">
+                    <a href="/chat" style="color: #facc15; text-decoration: none; font-size: .85rem; font-weight: 600;">
+                        Открыть все чаты →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Profile -->
+        <a href="/auth/profile" class="action-btn" title="Профиль">
+            <i class="bi bi-person"></i>
+        </a>
+    </div>
+</header>
+
+<!-- Audio for notifications -->
+<audio id="notif-sound" src="/static/sounds/notification.wav" preload="auto"></audio>
+<div id="notif-toast" class="notif-toast"></div>
+
+<style>
+    /* Reuse notification styles if not in global css yet */
+    .notif-toast {
+        position: fixed;
+        left: 20px;
+        bottom: 20px;
+        max-width: 360px;
+        background: rgba(15,23,42,0.96);
+        color: #f9fafb;
+        padding: 10px 14px;
+        border-radius: 10px;
+        box-shadow: 0 12px 25px rgba(15,23,42,.75);
+        font-size: .9rem;
+        line-height: 1.4;
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+        transition: opacity .25s ease, transform .25s ease;
+        z-index: 9999;
+    }
+    .notif-toast-visible {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+</style>
+
+<script>
+    (function(){
+      const bell      = document.getElementById("chat-bell");
+      const badge     = document.getElementById("chat-badge");
+      const dropdown  = document.getElementById("chat-dropdown");
+      const listEl    = document.getElementById("chat-list");
+      const emptyEl   = document.getElementById("chat-empty");
+      const toastEl   = document.getElementById("notif-toast");
+      const soundEl   = document.getElementById("notif-sound");
+
+      if (!bell || !badge || !dropdown || !listEl || !emptyEl || !toastEl) {
+        return;
+      }
+
+      let unreadChats = [];
+      let toastTimer = null;
+
+      // Загрузка списка чатов с непрочитанными сообщениями
+      async function loadUnreadChats(){
+        try{
+          const resp = await fetch("/chat/chats-list", {cache:"no-store"});
+          if(!resp.ok){
+            console.warn("chats-list status", resp.status);
+            return;
+          }
+          const data = await resp.json();
+          
+          // Объединяем telegram и email чаты, фильтруем только с непрочитанными
+          const allChats = [
+            ...(data.telegram_chats || []),
+            ...(data.email_chats || [])
+          ];
+          
+          unreadChats = allChats.filter(chat => chat.unread_count > 0);
+          renderUnreadChats();
+        }catch(e){
+          console.error("chats-list error", e);
+        }
+      }
+
+      function renderUnreadChats(){
+        listEl.innerHTML = "";
+        
+        if(!unreadChats.length){
+          emptyEl.style.display = "block";
+          badge.style.display   = "none";
+          return;
+        }
+        
+        emptyEl.style.display = "none";
+        badge.style.display   = "flex";
+        
+        // Подсчитываем общее количество непрочитанных сообщений
+        const totalUnread = unreadChats.reduce((sum, chat) => sum + chat.unread_count, 0);
+        badge.textContent = totalUnread > 9 ? "9+" : String(totalUnread);
+
+        unreadChats.forEach(function(chat){
+          const li = document.createElement("li");
+          li.className = "notif-item";
+          li.style.cssText = "display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(31,41,55,.85);font-size:.85rem;color:#e5e7eb;cursor:pointer;";
+          
+          const textDiv = document.createElement("div");
+          textDiv.className = "notif-item-text";
+          textDiv.style.flex = "1";
+          
+          const icon = chat.message_type === 'telegram' ? '📱' : '✉️';
+          const preview = chat.last_message ? chat.last_message.substring(0, 40) + '...' : 'Новое сообщение';
+          
+          textDiv.innerHTML = `
+            <div style="font-weight:600;margin-bottom:2px;">${icon} ${chat.candidate_fullname}</div>
+            <div style="font-size:0.8rem;color:#9ca3af;">${preview}</div>
+          `;
+          
+          // При клике открываем чат
+          li.addEventListener("click", function(){
+            window.location.href = "/chat";
+          });
+
+          li.appendChild(textDiv);
+          
+          // Показываем количество непрочитанных
+          if (chat.unread_count > 0) {
+            const countSpan = document.createElement("span");
+            countSpan.style.cssText = "background:#ef4444;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 6px;border-radius:999px;min-width:18px;text-align:center;";
+            countSpan.textContent = chat.unread_count;
+            li.appendChild(countSpan);
+          }
+          
+          listEl.appendChild(li);
+        });
+      }
+
+      function showToast(message){
+        if(!toastEl) return;
+
+        if(toastTimer){
+          clearTimeout(toastTimer);
+          toastTimer = null;
+        }
+
+        const msg = message.message || {};
+        const candidate = msg.candidate_fullname || "кандидата";
+        const vacancy = msg.vacancy_id || "";
+        const messageType = msg.message_type === 'telegram' ? 'Telegram' : 'Email';
+        
+        let text = `💬 Новое сообщение в ${messageType} от ${candidate}`;
+        if (vacancy) {
+          text += ` (${vacancy})`;
+        }
+
+        toastEl.textContent = text;
+        toastEl.classList.add("notif-toast-visible");
+
+        toastTimer = setTimeout(function(){
+          toastEl.classList.remove("notif-toast-visible");
+        }, 5000);
+      }
+
+      function playSound(){
+        if (!soundEl) return;
+        try{
+          soundEl.currentTime = 0;
+          soundEl.play().catch(function(e){
+            console.warn("cannot play sound", e);
+          });
+        }catch(e){
+          console.warn("cannot play sound", e);
+        }
+      }
+
+      // Открытие/закрытие dropdown
+      bell.addEventListener("click", async function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        // const dropdown = document.getElementById("chat-dropdown"); // Already defined
+        if (dropdown.style.display === "none" || !dropdown.style.display) {
+            await loadUnreadChats();
+            dropdown.style.display = "block";
+        } else {
+            dropdown.style.display = "none";
+        }
+      });
+
+      document.addEventListener("click", function(e){
+        if(!dropdown.contains(e.target) && !bell.contains(e.target)){
+          dropdown.style.display = "none";
+        }
+      });
+
+      const USER_ID_RAW = "{{ user_id }}";
+      const USER_ID = Number(USER_ID_RAW || "0") || 0;
+
+      // Подключаемся к WebSocket для чата
+      if (USER_ID > 0) {
+        try{
+          const proto = (window.location.protocol === "https:") ? "wss://" : "ws://";
+          const wsUrl = proto + window.location.host + "/chat/ws/" + USER_ID;
+          const ws = new WebSocket(wsUrl);
+
+          ws.onopen = function(){
+            console.log("✅ [HEADER] Chat WebSocket connected");
+          };
+          
+          ws.onclose = function(){
+            console.log("🔌 [HEADER] Chat WebSocket closed, reconnecting...");
+            // Переподключение через 5 секунд
+            setTimeout(function(){
+              // window.location.reload(); // Avoid full reload
+              // Reconnection logic could be added here
+            }, 5000);
+          };
+          
+          ws.onerror = function(ev){
+            console.error("❌ [HEADER] Chat WebSocket error", ev);
+          };
+          
+          ws.onmessage = async function(event){
+            try{
+              const data = JSON.parse(event.data);
+              console.log("📨 [HEADER] New message from chat WS:", data);
+
+              // Обрабатываем только новые сообщения
+              if (data.type === 'new_message') {
+                // Обновляем список непрочитанных чатов
+                await loadUnreadChats();
+                
+                // Показываем toast уведомление
+                showToast(data);
+                
+                // Воспроизводим звук
+                playSound();
+              }
+            }catch(e){
+              console.error("❌ [HEADER] Chat WS parse error", e);
+            }
+          };
+          
+          // Отправляем ping каждые 30 секунд
+          setInterval(function(){
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send('ping');
+            }
+          }, 30000);
+          
+        }catch(e){
+          console.error("❌ [HEADER] Chat WebSocket init error", e);
+        }
+      }
+
+      // Загружаем непрочитанные чаты при загрузке страницы
+      loadUnreadChats();
+    })();
+</script>
+
+

@@ -1,0 +1,136 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Все сверки — Omega Hire{% endblock %}
+
+{% block head %}
+  <style>
+    .sverkas-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .sverkas-table th {
+      background: var(--color-bg-surface-2);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--color-text-heading);
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    .sverkas-table td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--color-text-primary);
+    }
+    .sverkas-table tr:hover {
+      background: var(--color-bg-surface-2);
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--color-text-muted);
+    }
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--color-text-muted);
+      margin-bottom: 16px;
+    }
+    .btn-view {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: var(--gradient-gold);
+      color: #0A1929;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 4px 15px rgba(255, 215, 0, 0.4),
+        0 0 20px rgba(255, 215, 0, 0.2);
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+    .btn-view:hover {
+      background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+      transform: translateY(-2px);
+      box-shadow: 
+        0 8px 24px rgba(255, 215, 0, 0.6),
+        0 0 30px rgba(255, 215, 0, 0.4);
+    }
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="container-fluid p-4">
+    <div class="card">
+      <h2 class="mb-4" style="color: var(--color-text-heading);">
+        <i class="bi bi-graph-up me-2" style="color: var(--color-accent-gold);"></i>Все сверки
+      </h2>
+      <p class="mb-4" style="color: var(--color-text-primary);">Найдено сверок: <span class="chip chip-neutral">{{ sverkas|length }}</span></p>
+      
+      {% if sverkas %}
+      <div class="table-responsive">
+        <table class="sverkas-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Вакансия ID</th>
+              <th>Кандидат</th>
+              <th>Рекрутер</th>
+              <th class="text-end">Действие</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sverka in sverkas %}
+            <tr>
+              <td><span class="text-readable-primary">#{{ sverka.id }}</span></td>
+              <td><span class="chip chip-neutral">{{ sverka.vacancy_id }}</span></td>
+              <td><strong class="text-readable-heading">{{ sverka.candidate_fullname or 'Н/Д' }}</strong></td>
+              <td>
+                {% if sverka.user_id and users_dict.get(sverka.user_id) %}
+                  <div>
+                    <div class="text-readable-heading" style="font-weight: 600;">{{ users_dict[sverka.user_id].email }}</div>
+                    <small style="color: var(--color-text-muted);">ID: <span class="text-readable-primary">#{{ sverka.user_id }}</span></small>
+                  </div>
+                {% else %}
+                  <span style="color: var(--color-text-muted);">#<span class="text-readable-primary">{{ sverka.user_id }}</span></span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if sverka.user_id %}
+                  <a 
+                    href="/admin/user/{{ sverka.user_id }}/candidates"
+                    class="btn-view"
+                    title="Открыть кандидатов рекрутера"
+                  >
+                    <i class="bi bi-eye me-1"></i>Открыть
+                  </a>
+                {% else %}
+                  <span class="chip chip-neutral">Нет данных</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <h4 style="color: var(--color-text-muted);">Пока нет сверок в системе</h4>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Сверки появятся здесь после их создания</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

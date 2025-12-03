@@ -1,47 +1,151 @@
-<!-- --- HTML: страница статуса (polling /api/status/{job_id}) --- -->
-<html lang="ru"><head>
-  <meta charset="utf-8">
-  <title>Статус обработки</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body{font-family:system-ui,Arial;margin:24px;background:#0b1020;color:#e8eefc}
-    .card{max-width:900px;margin:auto;background:#121a35;border-radius:16px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .muted{color:#a8b3d6}
-    .result{margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px}
-    pre{white-space:pre-wrap;background:#0c1226;padding:12px;border-radius:10px;overflow:auto}
-  </style>
-</head><body>
-  <div class="card">
+{% extends "layouts/base.html" %}
+
+{% block title %}Статус обработки — Omega Hire{% endblock %}
+
+{% block head %}
+<style>
+  .status-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .status-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 30px rgba(255, 215, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .status-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--color-accent-gold) 50%, 
+      transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .status-card h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    margin: 0 0 20px;
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .muted {
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    font-size: 1rem;
+  }
+
+  #status {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .result {
+    margin-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 20px;
+  }
+
+  .result pre {
+    white-space: pre-wrap;
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 16px;
+    border-radius: 10px;
+    overflow: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-heading);
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .result p {
+    color: var(--color-text-heading);
+    line-height: 1.7;
+  }
+
+  .result small {
+    color: var(--color-text-primary);
+    opacity: 0.8;
+    font-size: 0.85rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="status-container">
+  <div class="status-card">
     <h1>Статус обработки файла</h1>
     <p id="status" class="muted">Идёт обработка…</p>
     <div id="result" class="result"></div>
-    <p class="muted"><small>Job ID: {job_id}</small></p>
+    <p class="muted"><small>Job ID: {{ job_id }}</small></p>
   </div>
+</div>
 
-  <script>
-    const jobId = "{job_id}";
-    const statusEl = document.getElementById('status');
-    const resultEl = document.getElementById('result');
+<script>
+  const jobId = "{{ job_id }}";
+  const statusEl = document.getElementById('status');
+  const resultEl = document.getElementById('result');
 
-    async function poll(){
-      try{
-        const r = await fetch(`/api/status/${jobId}`, {cache:'no-store'});
-        if(!r.ok){ statusEl.textContent = 'Ошибка сервера'; return; }
-        const data = await r.json();
-        statusEl.textContent = 'Статус: ' + data.status + (data.progress != null ? ` (${data.progress}%)` : '');
-        if(data.status === 'done'){
-          resultEl.innerHTML = data.result_html || '<p>Результат пуст.</p>';
-          return; // стоп
-        }
-        if(data.status === 'error'){
-          resultEl.innerHTML = `<pre>${(data.error || 'Неизвестная ошибка')}</pre>`;
-          return; // стоп
-        }
-      }catch(e){
-        statusEl.textContent = 'Ошибка запроса: ' + e.message;
+  async function poll(){
+    try{
+      const r = await fetch(`/api/status/${jobId}`, {cache:'no-store'});
+      if(!r.ok){ 
+        statusEl.textContent = 'Ошибка сервера'; 
+        statusEl.style.color = '#E74C3C';
+        return; 
       }
-      setTimeout(poll, 900); // повторный опрос
+      const data = await r.json();
+      statusEl.textContent = 'Статус: ' + data.status + (data.progress != null ? ` (${data.progress}%)` : '');
+      
+      if(data.status === 'done'){
+        resultEl.innerHTML = data.result_html || '<p>Результат пуст.</p>';
+        statusEl.style.color = '#2ECC71';
+        return; // стоп
+      }
+      if(data.status === 'error'){
+        resultEl.innerHTML = `<pre>${(data.error || 'Неизвестная ошибка')}</pre>`;
+        statusEl.style.color = '#E74C3C';
+        return; // стоп
+      }
+    }catch(e){
+      statusEl.textContent = 'Ошибка запроса: ' + e.message;
+      statusEl.style.color = '#E74C3C';
     }
-    poll();
-  </script>
-</body></html>
+    setTimeout(poll, 900); // повторный опрос
+  }
+  poll();
+</script>
+{% endblock %}

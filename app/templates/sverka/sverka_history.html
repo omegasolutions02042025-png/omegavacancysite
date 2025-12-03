@@ -1,279 +1,288 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>История сверок — OmegaSolutions</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/css/modern-style.css">
-  <link rel="icon" type="image/png"
-        href="{{ url_for('static', path='img/omega-logo.png') }}">
+{% extends "layouts/base.html" %}
 
-  <style>
-    body{
-      background:#f3f4f6;
-      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+{% block title %}История сверок — Omega Hire{% endblock %}
+
+{% block head %}
+<style>
+  .history-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .history-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 30px rgba(255, 215, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .history-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--color-accent-gold) 50%, 
+      transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .page-title {
+    margin: 0 0 4px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .page-subtitle {
+    margin: 0 0 18px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+  }
+
+  .page-subtitle strong {
+    color: var(--color-accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+
+  .history-table thead {
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .history-table th,
+  .history-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .history-table th {
+    font-weight: 600;
+    color: var(--color-text-heading);
+    font-size: 13px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+  }
+
+  .history-table tbody tr {
+    transition: all 0.3s ease;
+  }
+
+  .history-table tbody tr:hover {
+    background: var(--color-bg-surface-2);
+    box-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .history-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .history-table td {
+    color: var(--color-text-heading);
+  }
+
+  .vacancy-id-cell {
+    font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 13px;
+    color: var(--color-accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  .vacancy-title {
+    font-weight: 500;
+    color: var(--color-text-heading);
+  }
+
+  .btn-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: var(--gradient-gold);
+    color: #0A1929;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.4),
+      0 0 20px rgba(255, 215, 0, 0.2);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-open::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  .btn-open:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .btn-open span[aria-hidden="true"] {
+    font-weight: 700;
+  }
+
+  .btn-open:hover {
+    background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 25px rgba(255, 215, 0, 0.6),
+      0 0 40px rgba(255, 215, 0, 0.4);
+  }
+
+  .empty-box {
+    margin-top: 12px;
+    padding: 26px 18px;
+    border-radius: 14px;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    text-align: center;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    font-size: 14px;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  @media (max-width: 640px) {
+    .history-table thead {
+      display: none;
     }
 
-    /* ===== ЛЕЙАУТ КАК В ПРОФИЛЕ ===== */
-    .profile-page{
-      max-width:1100px;
-      margin:32px auto 40px;
-      padding:0 16px;
-      display:flex;
-      gap:20px;
-      align-items:flex-start;
-    }
-    .profile-sidebar{
-      width:230px;
-      background:#0f172a;
-      color:#e5e7eb;
-      border-radius:18px;
-      padding:18px 16px;
-      box-shadow:0 10px 30px rgba(15,23,42,.45);
-    }
-    .sidebar-title{
-      font-size:0.95rem;
-      font-weight:600;
-      margin-bottom:10px;
-      color:#facc15;
-    }
-    .sidebar-menu{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      margin-top:8px;
-    }
-    .sidebar-link{
-      border-radius:999px;
-      padding:8px 12px;
-      font-size:0.9rem;
-      color:#e5e7eb;
-      text-decoration:none;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      cursor:pointer;
-    }
-    .sidebar-link:hover{
-      background:rgba(148,163,184,.2);
-    }
-    .sidebar-link span.icon{
-      font-size:1.1rem;
+    .history-table,
+    .history-table tbody,
+    .history-table tr,
+    .history-table td {
+      display: block;
+      width: 100%;
     }
 
-    .profile-main{
-      flex:1;
+    .history-table tr {
+      margin-bottom: 12px;
+      border-radius: 12px;
+      background: var(--color-bg-surface-2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 10px 8px;
+      box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
-    /* ===== КАРТОЧКА ИСТОРИИ ===== */
-    .history-card{
-      background:#ffffff;
-      border-radius:18px;
-      padding:22px 22px 26px;
-      box-shadow:0 14px 40px rgba(15,23,42,.08);
-      border:1px solid rgba(148,163,184,0.35);
-    }
-    .page-title{
-      margin:0 0 4px;
-      font-size:24px;
-      font-weight:700;
-      color:#0f172a;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .page-subtitle{
-      margin:0 0 18px;
-      font-size:14px;
-      color:#6b7280;
+    .history-table td {
+      border-bottom: none;
+      padding: 4px 2px;
     }
 
-    .history-table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:8px;
-      font-size:14px;
-    }
-    .history-table thead{
-      background:#f1f5f9;
-    }
-    .history-table th,
-    .history-table td{
-      padding:10px 12px;
-      text-align:left;
-      border-bottom:1px solid #e5e7eb;
-    }
-    .history-table th{
-      font-weight:600;
-      color:#4b5563;
-      font-size:13px;
-    }
-    .history-table tbody tr:last-child td{
-      border-bottom:none;
-    }
-    .vacancy-id-cell{
-      font-family:ui-monospace, Menlo, Monaco, Consolas,"Liberation Mono","Courier New",monospace;
-      font-size:13px;
-      color:#1d4ed8;
-    }
-    .vacancy-title{
-      font-weight:500;
-      color:#0f172a;
-    }
-    .btn-open{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 12px;
-      border-radius:999px;
-      border:1px solid #cbd5f5;
-      background:#ffffff;
-      font-size:13px;
-      color:#0f172a;
-      text-decoration:none;
-      cursor:pointer;
-      transition:all .15s ease-out;
-    }
-    .btn-open span[aria-hidden="true"]{
-      font-weight:600;
-    }
-    .btn-open:hover{
-      background:#e0f2fe;
-      border-color:#93c5fd;
-      transform:translateY(-1px);
-      box-shadow:0 6px 16px rgba(15,23,42,.12);
-    }
-    .empty-box{
-      margin-top:12px;
-      padding:26px 18px;
-      border-radius:14px;
-      border:1px dashed #cbd5f5;
-      background:#f8fafc;
-      text-align:center;
-      color:#94a3b8;
-      font-size:14px;
-    }
-    .footer-links{
-      margin-top:20px;
-      font-size:14px;
-    }
-    .footer-links a{
-      margin-right:14px;
-      text-decoration:none;
-      color:#0f172a;
+    .history-table td[data-label]::before {
+      content: attr(data-label) ": ";
+      font-weight: 600;
+      color: var(--color-accent-gold);
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
     }
 
-    @media(max-width:768px){
-      .profile-page{
-        flex-direction:column;
-      }
-      .profile-sidebar{
-        width:100%;
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-      }
+    .btn-open {
+      width: 100%;
+      justify-content: center;
+      margin-top: 6px;
     }
+  }
+</style>
+{% endblock %}
 
-    @media(max-width:640px){
-      .history-table thead{
-        display:none;
-      }
-      .history-table,
-      .history-table tbody,
-      .history-table tr,
-      .history-table td{
-        display:block;
-        width:100%;
-      }
-      .history-table tr{
-        margin-bottom:12px;
-        border-radius:12px;
-        background:#f9fafb;
-        border:1px solid #e5e7eb;
-        padding:10px 10px 8px;
-      }
-      .history-table td{
-        border-bottom:none;
-        padding:4px 2px;
-      }
-      .history-table td[data-label]::before{
-        content:attr(data-label) ": ";
-        font-weight:600;
-        color:#6b7280;
-      }
-      .btn-open{
-        width:100%;
-        justify-content:center;
-        margin-top:6px;
-      }
-    }
-  </style>
-</head>
-<body>
-  {% include "auth/header_auth.html" %}
+{% block content %}
+<div class="history-page">
+  <div class="history-card">
+    <h1 class="page-title">История сверок{% if is_admin_view %} пользователя{% endif %}</h1>
+    <p class="page-subtitle">
+      {% if is_admin_view %}
+      История сверок рекрутера: <strong>{{ user_email }}</strong>
+      {% else %}
+      На этой странице показаны вакансии, по которым выполнялась сверка резюме.
+      {% endif %}
+    </p>
 
-  <main class="profile-page">
-    <!-- Боковое меню как в профиле -->
-    <aside class="profile-sidebar">
-      <div>
-        <div class="sidebar-title">Личный кабинет</div>
-        <nav class="sidebar-menu">
-          <a href="/sverka/history" class="sidebar-link">
-            <span class="icon">🧾</span>
-            <span>История сверки</span>
-          </a>
-          <a href="/candidate" class="sidebar-link">
-            <span class="icon">👥</span>
-            <span>Мои кандидаты</span>
-          </a>
-        </nav>
+    {% if items and items|length > 0 %}
+      <table class="history-table">
+        <thead>
+        <tr>
+          <th style="width:120px;">ID вакансии</th>
+          <th>Название вакансии</th>
+          <th style="width:140px;">Действие</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in items %}
+          <tr>
+            <td class="vacancy-id-cell" data-label="ID вакансии">
+              {{ row.vacancy_id }}
+            </td>
+            <td data-label="Название" class="vacancy-title">
+              {{ row.title or 'Без названия' }}
+            </td>
+            <td data-label="Действие">
+              <a class="btn-open"
+                 href="{% if is_admin_view %}/admin/user/{{ user_id }}/sverka-history/detail?vacancy_id={{ row.vacancy_id }}{% else %}/sverka/history/detail?vacancy_id={{ row.vacancy_id }}{% endif %}">
+                Открыть сверку <span aria-hidden="true">→</span>
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-box">
+        У вас пока нет сохранённых результатов сверки.
       </div>
-    </aside>
-
-    <!-- Основной контент страницы истории -->
-    <section class="profile-main">
-      <div class="history-card">
-        <h1 class="page-title">История сверок</h1>
-        <p class="page-subtitle">
-          На этой странице показаны вакансии, по которым выполнялась сверка резюме.
-        </p>
-
-        {% if items and items|length > 0 %}
-          <table class="history-table">
-            <thead>
-            <tr>
-              <th style="width:120px;">ID вакансии</th>
-              <th>Название вакансии</th>
-              <th style="width:140px;">Действие</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for row in items %}
-              <tr>
-                <td class="vacancy-id-cell" data-label="ID вакансии">
-                  {{ row.vacancy_id }}
-                </td>
-                <td data-label="Название" class="vacancy-title">
-                  {{ row.title or 'Без названия' }}
-                </td>
-                <td data-label="Действие">
-                  <a class="btn-open"
-                     href="/sverka/history/detail?vacancy_id={{ row.vacancy_id }}">
-                    Открыть сверку <span aria-hidden="true">→</span>
-                  </a>
-                </td>
-              </tr>
-            {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <div class="empty-box">
-            У вас пока нет сохранённых результатов сверки.
-          </div>
-        {% endif %}
-      </div>
-    </section>
-  </main>
-</body>
-</html>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

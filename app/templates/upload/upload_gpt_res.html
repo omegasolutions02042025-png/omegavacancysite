@@ -1,16 +1,219 @@
-<!--RESULT_READY-->
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Результат обработки</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/css/modern-style.css">
-</head>
-<body>
-  <div class="container">
-    <div class="card">
-      <h1>✅ Результат обработки</h1>
+{% extends "layouts/base.html" %}
+
+{% block title %}Результат обработки — Omega Hire{% endblock %}
+
+{% block head %}
+<style>
+  .page-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .result-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 30px rgba(255, 215, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--color-accent-gold) 50%, 
+      transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    margin: 0 0 12px;
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .subtitle {
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    font-size: 1rem;
+    margin: 0 0 32px;
+  }
+
+  .result-section {
+    margin: 32px 0;
+    padding: 24px;
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .result-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  }
+
+  .status-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.2),
+      0 0 15px rgba(46, 204, 113, 0.2);
+  }
+
+  .status-completed {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(46, 204, 113, 0.1) 100%);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    color: #2ECC71;
+  }
+
+  .ai-analysis {
+    color: var(--color-text-heading);
+    line-height: 1.7;
+    font-size: 1rem;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary {
+    background: var(--gradient-gold);
+    color: #0A1929;
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.4),
+      0 0 20px rgba(255, 215, 0, 0.2);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  .btn-primary:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 25px rgba(255, 215, 0, 0.6),
+      0 0 40px rgba(255, 215, 0, 0.4);
+  }
+
+  .btn-secondary {
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--color-text-heading);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-bg-surface);
+    border-color: rgba(255, 215, 0, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    color: var(--color-accent-gold);
+  }
+
+  .navigation {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .navigation a {
+    color: var(--color-accent-gold);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  .navigation a:hover {
+    text-decoration: underline;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    color: #FFE066;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="result-card">
+      <h1 class="page-title">✅ Результат обработки</h1>
       <p class="subtitle">Анализ загруженного документа от искусственного интеллекта</p>
       
       <div class="result-section">
@@ -35,6 +238,5 @@
       </div>
     </div>
   </div>
-</body>
-</html>
-
+</div>
+{% endblock %}

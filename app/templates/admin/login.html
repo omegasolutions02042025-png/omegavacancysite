@@ -1,0 +1,281 @@
+{% extends "layouts/auth_layout.html" %}
+
+{% block title %}Вход Администратора — Omega Hire{% endblock %}
+
+{% block head %}
+<style>
+  .admin-auth-wrapper {
+    width: 100%;
+    max-width: 460px;
+    padding: 0 16px;
+  }
+
+  .admin-auth-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 16px;
+    padding: 48px 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 30px rgba(255, 215, 0, 0.05);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .admin-auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--color-accent-gold) 50%, 
+      transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .admin-auth-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    background: var(--gradient-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin: 0 auto 24px;
+    box-shadow: 
+      0 8px 24px rgba(255, 215, 0, 0.4),
+      0 0 30px rgba(255, 215, 0, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    position: relative;
+  }
+
+  .admin-auth-logo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+    border-radius: 20px;
+    pointer-events: none;
+  }
+
+  .admin-auth-logo i {
+    color: #0A1929;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 1;
+  }
+
+  .admin-badge {
+    display: inline-block;
+    background: var(--gradient-gold);
+    color: #0A1929;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.4),
+      0 0 20px rgba(255, 215, 0, 0.2);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .admin-auth-card h1 {
+    margin: 0 0 12px;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .subtitle {
+    margin: 0 0 32px;
+    color: var(--color-text-primary);
+    opacity: 0.95;
+    font-size: 1rem;
+  }
+
+  .admin-auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--color-text-heading);
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .form-input::placeholder {
+    color: var(--color-text-primary);
+    opacity: 0.7;
+  }
+
+  .form-input:focus {
+    border-color: var(--color-accent-gold);
+    background: var(--color-bg-surface);
+    box-shadow: 
+      0 0 0 2px rgba(255, 215, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px 0;
+    border-radius: 12px;
+    border: none;
+    background: var(--gradient-gold);
+    color: #0A1929;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 
+      0 8px 24px rgba(255, 215, 0, 0.4),
+      0 0 30px rgba(255, 215, 0, 0.2);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  .btn-primary:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 12px 32px rgba(255, 215, 0, 0.6),
+      0 0 40px rgba(255, 215, 0, 0.4);
+  }
+
+  .error-message {
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(231, 76, 60, 0.1) 100%);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #E74C3C;
+    font-weight: 500;
+    display: none;
+    box-shadow: 
+      0 0 15px rgba(231, 76, 60, 0.2),
+      0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="admin-auth-wrapper">
+  <div class="admin-auth-card">
+    <div class="admin-auth-logo">
+      <i class="bi bi-shield-lock-fill"></i>
+    </div>
+    <div class="admin-badge">Администратор</div>
+    <h1>Панель управления</h1>
+    <p class="subtitle">Вход для администраторов системы</p>
+
+    <div id="error-message" class="error-message"></div>
+
+    <form id="admin_login_form" class="admin-auth-form">
+      <input name="username" type="text" placeholder="Логин" class="form-input" required autocomplete="username">
+      <input name="password" type="password" placeholder="Пароль" class="form-input" required autocomplete="current-password">
+      <button type="submit" class="btn-primary">Войти</button>
+    </form>
+  </div>
+</main>
+
+<script>
+  const loginForm = document.getElementById("admin_login_form");
+  const errorDiv = document.getElementById("error-message");
+
+  // Обработка формы логина
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorDiv.style.display = 'none';
+    
+    const formData = new FormData(loginForm);
+    
+    console.log('[ADMIN_LOGIN] Отправка формы...');
+    
+    try {
+      const resp = await fetch("/admin/login", {
+        method: "POST",
+        body: formData,
+        redirect: 'manual'
+      });
+      
+      console.log('[ADMIN_LOGIN] Статус ответа:', resp.status);
+      
+      // Если редирект (успешный вход)
+      if (resp.status === 303 || resp.redirected) {
+        console.log('[ADMIN_LOGIN] ✅ Успешный вход, редирект на /admin/dashboard');
+        window.location.href = "/admin/dashboard";
+        return;
+      }
+      
+      // Если ошибка
+      if (!resp.ok) {
+        console.log('[ADMIN_LOGIN] ❌ Ошибка:', resp.status);
+        const data = await resp.json();
+        errorDiv.textContent = data.detail || "Ошибка входа";
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      // Если не редирект и не ошибка - все равно пробуем перейти
+      console.log('[ADMIN_LOGIN] ✅ Успех, переходим на /admin/dashboard');
+      window.location.href = "/admin/dashboard";
+    } catch (error) {
+      console.error('[ADMIN_LOGIN] ❌ Исключение:', error);
+      errorDiv.textContent = "Ошибка подключения к серверу";
+      errorDiv.style.display = 'block';
+    }
+  });
+</script>
+{% endblock %}

@@ -1,152 +1,577 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Результат сверки</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/css/modern-style.css">
-  <link rel="icon" type="image/png"
-        href="{{ url_for('static', path='img/omega-logo.png') }}">
-  <style>
-    :root{
-      --brand:#3b82f6;
-      --brand-2:#2563eb;
-      --ink:#0f172a;
-      --muted:#64748b;
-      --bg:#f8fafc;
-      --card:#ffffff;
-    }
-    body{background:#f3f4f6}
-    .container .card{box-shadow:0 12px 35px rgba(15,23,42,0.08);border-radius:16px}
+{% extends "layouts/base.html" %}
 
-    /* Top back button */
-    .back-top{
-      position:fixed;left:12px;top:14px;z-index:1000;
-      background:linear-gradient(180deg,#fff,#f8fafc);
-      border:1px solid rgba(15,23,42,.08);
-      border-left:3px solid var(--brand);
-      border-radius:9999px;
-      padding:8px 12px;
-      display:flex;align-items:center;gap:8px;
-      color:var(--ink);font-weight:600;cursor:pointer;
-      box-shadow:0 6px 20px rgba(15,23,42,.10);
-    }
-    .back-top:hover{background:#fff}
+{% block title %}Результат сверки — Omega Hire{% endblock %}
 
-    /* AI analysis box (без summary/details) */
-    .ai-box{
-      margin:20px 0;
-      background:#f5f7fc;
-      border:1px solid #e2e8f0;
-      border-left:4px solid var(--brand);
-      border-radius:10px;
-      padding:16px;
-    }
-    .toggle-under{
-      display:inline-flex;align-items:center;gap:8px;margin-top:10px;
-      padding:8px 12px;border-radius:10px;border:1px solid #cbd5e1;background:#eef2ff;
-      color:#1e293b;font-weight:600;cursor:pointer;
-      box-shadow:0 1px 2px rgba(0,0,0,.04);
-    }
-    .toggle-under:hover{background:#e2e8ff}
+{% block head %}
+<style>
+  .sverka-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
 
-    /* Mail buttons */
-    .mail-buttons{display:flex;gap:15px;margin-top:15px;flex-wrap:wrap}
-    .mail-buttons a,.mail-buttons button{
-      flex:1;min-width:220px;padding:12px 20px;font-size:16px;cursor:pointer;border:none;border-radius:8px;
-      transition:all .3s ease;color:#fff;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;font-weight:500
-    }
-    .btn-primary{background:linear-gradient(135deg,#3b82f6,#2563eb)}
-    .btn-success{background:linear-gradient(135deg,#28a745,#20c997)}
-    .btn-warning{background:linear-gradient(135deg,#ffc107,#ff9800)}
-    .btn-danger{background:linear-gradient(135deg,#dc3545,#c82333)}
-    .btn-neutral{background:linear-gradient(135deg,#6b7280,#4b5563)}
-    .mail-buttons a:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
-    .hidden{display:none!important}
+  .sverka-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 30px rgba(255, 215, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
 
-    /* Loader */
-    #mail-loading{display:none;margin-top:16px;min-height:90px;text-align:center}
-    .loading-spinner{border:4px solid #f3f3f3;border-top:4px solid #3498db;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:10px auto}
-    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  .sverka-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--color-accent-gold) 50%, 
+      transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
 
-    /* Mail result */
-    #mail-result{display:none;margin-top:20px;background:#fff;border-radius:8px;padding:15px;box-shadow:0 2px 6px rgba(0,0,0,.05);animation:fadeIn .3s ease-in}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-    #mail-text{white-space:normal;line-height:1.6}
+  .sverka-card h1 {
+    color: var(--color-text-heading);
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 10;
+  }
 
-    .mail-toolbar{display:none;justify-content:flex-end;gap:10px;margin-bottom:10px}
-    .copy-btn{
-      background:linear-gradient(135deg,#10b981,#059669);
-      border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600
-    }
-    .copy-btn:hover{filter:brightness(1.05)}
-    .edit-btn{
-      background:linear-gradient(135deg,#6366f1,#4f46e5);
-      border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600
-    }
-    .edit-btn:hover{filter:brightness(1.05)}
-    .mail-editor{
-      width:100%;min-height:260px;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;
-      font:400 15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;resize:vertical;
-      box-shadow:inset 0 1px 2px rgba(0,0,0,.04);margin-top:10px;
-    }
+  .sverka-card h3 {
+    color: var(--color-text-heading);
+    text-shadow: 
+      0 0 15px rgba(255, 215, 0, 0.2),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 10;
+  }
 
-    /* Кнопки отправки (Telegram / e-mail) под письмом */
-    .send-actions{
-      display:none;
-      margin-top:14px;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:flex-start;
-    }
-    .send-btn{
-      border:none;
-      border-radius:8px;
-      padding:9px 14px;
-      font-size:0.9rem;
-      font-weight:600;
-      cursor:pointer;
-      color:#fff;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      box-shadow:0 2px 6px rgba(15,23,42,.18);
-    }
-    .send-btn-tg{
-      background:linear-gradient(135deg,#0ea5e9,#0284c7);
-    }
-    .send-btn-mail{
-      background:linear-gradient(135deg,#f97316,#ea580c);
-    }
-    .send-btn:hover{
-      filter:brightness(1.05);
-      transform:translateY(-1px);
-    }
+  .subtitle {
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    font-size: 1rem;
+    margin-bottom: 24px;
+  }
 
-    /* Clarifications */
-    .clarify-wrap{margin-top:18px}
-    .clarify-actions{display:none;gap:10px;margin:12px 0}
-    .clarify-btn{background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
-    .clarify-form{display:none;margin-top:10px;background:var(--bg);border:1px solid #e2e8f0;border-radius:10px;padding:12px}
-    .clarify-form textarea{width:100%;min-height:160px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:400 14px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
-    .clarify-save{margin-top:10px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700}
-    .clarify-hint{color:var(--muted);font-size:13px;margin-top:6px}
+  /* Top back button */
+  .back-top {
+    position: fixed;
+    left: 16px;
+    top: calc(var(--header-height) + 16px);
+    z-index: 1000;
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 3px solid var(--color-accent-gold);
+    border-radius: 12px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-heading);
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.3),
+      0 0 20px rgba(255, 215, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+  }
 
-    /* Contacts */
-    .contacts-block{margin-top:35px;background:#f8fafc;border-left:4px solid var(--brand);border-radius:10px;padding:20px 24px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
-    .contacts-block h3{margin-top:0;color:#1e293b}
-    .contacts-block p{margin:6px 0;font-size:15px;line-height:1.6}
+  .back-top:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-accent-gold);
+    box-shadow: 
+      0 6px 25px rgba(0, 0, 0, 0.4),
+      0 0 30px rgba(255, 215, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    color: var(--color-accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  }
 
-    /* --- новая анимация появления WL --- */
-    @keyframes pulseWL{
-      0%{box-shadow:0 0 0 0 rgba(37,99,235,.55)}
-      70%{box-shadow:0 0 0 12px rgba(37,99,235,0)}
-      100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}
+  /* AI analysis box (без summary/details) */
+  .ai-box {
+    margin: 24px 0;
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 3px solid var(--color-accent-gold);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 0 20px rgba(255, 215, 0, 0.1);
+  }
+
+  .ai-analysis {
+    color: var(--color-text-heading);
+    line-height: 1.7;
+  }
+
+  .toggle-under {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--color-text-heading);
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+
+  .toggle-under:hover {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.08) 100%);
+    border-color: var(--color-accent-gold);
+    color: var(--color-accent-gold);
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  /* Mail buttons */
+  .mail-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+  }
+
+  .mail-buttons a,
+  .mail-buttons button {
+    flex: 1;
+    min-width: 220px;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #fff;
+    text-align: center;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    box-shadow: 
+      0 4px 15px rgba(0, 0, 0, 0.3),
+      0 0 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mail-buttons a::before,
+  .mail-buttons button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  .mail-buttons a:hover::before,
+  .mail-buttons button:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, #2ECC71, #27AE60);
+  }
+
+  .btn-warning {
+    background: linear-gradient(135deg, var(--color-accent-gold), #E6C200);
+    color: #0A1929;
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #E74C3C, #C0392B);
+  }
+
+  .btn-neutral {
+    background: linear-gradient(135deg, var(--color-bg-surface-2), var(--color-bg-surface));
+    color: var(--color-text-heading);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .mail-buttons a:hover,
+  .mail-buttons button:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 25px rgba(0, 0, 0, 0.4),
+      0 0 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* Loader */
+  #mail-loading {
+    display: none;
+    margin-top: 16px;
+    min-height: 90px;
+    text-align: center;
+  }
+
+  .loading-spinner {
+    border: 4px solid var(--color-bg-surface-2);
+    border-top: 4px solid var(--color-accent-gold);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 10px auto;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Mail result */
+  #mail-result {
+    display: none;
+    margin-top: 20px;
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
     }
-    .pulse-wl{animation:pulseWL 1.2s ease-out 3;}
-  </style>
-</head>
-<body>
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  #mail-result h4 {
+    color: var(--color-text-heading);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+    margin-bottom: 12px;
+  }
+
+  #mail-text {
+    white-space: normal;
+    line-height: 1.6;
+    color: var(--color-text-heading);
+  }
+
+  .mail-toolbar {
+    display: none;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .copy-btn {
+    background: linear-gradient(135deg, #2ECC71, #27AE60);
+    border: none;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 
+      0 2px 8px rgba(46, 204, 113, 0.3),
+      0 0 15px rgba(46, 204, 113, 0.2);
+  }
+
+  .copy-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 4px 15px rgba(46, 204, 113, 0.5),
+      0 0 25px rgba(46, 204, 113, 0.3);
+  }
+
+  .edit-btn {
+    background: linear-gradient(135deg, var(--color-accent-gold), #E6C200);
+    border: none;
+    color: #0A1929;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 
+      0 2px 8px rgba(255, 215, 0, 0.3),
+      0 0 15px rgba(255, 215, 0, 0.2);
+  }
+
+  .edit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.5),
+      0 0 25px rgba(255, 215, 0, 0.3);
+  }
+
+  .mail-editor {
+    width: 100%;
+    min-height: 260px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    background: var(--color-bg-surface);
+    color: var(--color-text-heading);
+    font: 400 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    resize: vertical;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    margin-top: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .mail-editor:focus {
+    outline: none;
+    border-color: var(--color-accent-gold);
+    box-shadow: 
+      0 0 0 2px rgba(255, 215, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Кнопки отправки (Telegram / e-mail) под письмом */
+  .send-actions {
+    display: none;
+    margin-top: 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .send-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      0 0 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .send-btn-tg {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  }
+
+  .send-btn-mail {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+  }
+
+  .send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 4px 15px rgba(0, 0, 0, 0.4),
+      0 0 25px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Clarifications */
+  .clarify-wrap {
+    margin-top: 18px;
+  }
+
+  .clarify-actions {
+    display: none;
+    gap: 10px;
+    margin: 12px 0;
+  }
+
+  .clarify-btn {
+    background: linear-gradient(135deg, var(--color-accent-gold), #E6C200);
+    border: none;
+    color: #0A1929;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 
+      0 2px 8px rgba(255, 215, 0, 0.3),
+      0 0 15px rgba(255, 215, 0, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .clarify-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.5),
+      0 0 25px rgba(255, 215, 0, 0.3);
+  }
+
+  .clarify-form {
+    display: none;
+    margin-top: 10px;
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .clarify-form textarea {
+    width: 100%;
+    min-height: 160px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background: var(--color-bg-surface);
+    color: var(--color-text-heading);
+    font: 400 14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    transition: all 0.3s ease;
+  }
+
+  .clarify-form textarea:focus {
+    outline: none;
+    border-color: var(--color-accent-gold);
+    box-shadow: 
+      0 0 0 2px rgba(255, 215, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.15);
+  }
+
+  .clarify-save {
+    margin-top: 10px;
+    background: linear-gradient(135deg, #2ECC71, #27AE60);
+    border: none;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    box-shadow: 
+      0 2px 8px rgba(46, 204, 113, 0.3),
+      0 0 15px rgba(46, 204, 113, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .clarify-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 4px 15px rgba(46, 204, 113, 0.5),
+      0 0 25px rgba(46, 204, 113, 0.3);
+  }
+
+  .clarify-hint {
+    color: var(--color-text-primary);
+    opacity: 0.8;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+
+  /* Contacts */
+  .contacts-block {
+    margin-top: 40px;
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-left: 3px solid var(--color-accent-gold);
+    border-radius: 12px;
+    padding: 24px 28px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 0 20px rgba(255, 215, 0, 0.1);
+  }
+
+  .contacts-block h3 {
+    margin-top: 0;
+    color: var(--color-text-heading);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  }
+
+  .contacts-block p {
+    margin: 6px 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--color-text-heading);
+  }
+
+  .result-section {
+    margin-top: 32px;
+  }
+
+  .result-header {
+    margin-bottom: 16px;
+  }
+
+  /* --- новая анимация появления WL --- */
+  @keyframes pulseWL {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.55);
+    }
+    70% {
+      box-shadow: 0 0 0 12px rgba(255, 215, 0, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+    }
+  }
+
+  .pulse-wl {
+    animation: pulseWL 1.2s ease-out 3;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
   {# Подготовка контактов для кнопок и блока контактов #}
   {% set c = contacts or {} %}
   {% set _tg_raw = (c.get('telegram') or '').strip() %}
@@ -180,13 +605,18 @@
     {% set _has_li = False %}
   {% endif %}
 
-  {% include "auth/header_auth.html" %}
+  {% if is_admin_view %}
+  <a href="/admin/user/{{ user_id }}/sverka-history/detail?vacancy_id={{ vacancy_id }}" class="back-top" style="text-decoration: none;">
+    <span>⬅</span><span>Назад к истории</span>
+  </a>
+  {% else %}
   <button type="button" class="back-top" onclick="history.back()">
     <span>⬅</span><span>Назад</span>
   </button>
+  {% endif %}
 
-  <div class="container">
-    <div class="card">
+  <div class="sverka-container">
+    <div class="sverka-card">
       <h1>✅ Результат сверки</h1>
       <p class="subtitle">Анализ соответствия резюме требованиям вакансии от искусственного интеллекта</p>
 
@@ -285,8 +715,14 @@
       </div>
 
       <div class="navigation" style="margin-top:15px;">
+        {% if is_admin_view %}
+        <a href="/admin/user/{{ user_id }}/sverka-history/detail?vacancy_id={{ vacancy_id }}">← Назад к результатам</a>
+        <a href="/admin/user/{{ user_id }}/sverka-history">📊 История сверок</a>
+        <a href="/admin/dashboard">🏠 Админ-панель</a>
+        {% else %}
         <a href="/">🏠 Главная</a>
         <a href="/vacancy"> 📤 Открыть вакансии</a>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -393,7 +829,7 @@
         toggleSverkaBtn.textContent = hidden ? '⬆ Скрыть сверку' : '⬇ Раскрыть сверку';
       });
 
-      // Обработчик кликов по кнопкам генерации
+      // Обработчик кликов по кнопкам генерации с поддержкой стриминга
       async function handleClick(btn){
         // Сброс UI перед запросом
         clarifyActions.style.display = 'none';     // по умолчанию скрыть блок уточнений
@@ -409,51 +845,236 @@
         mailButtons.style.display = 'none';
         mailLoading.style.display = 'block';
 
-        try{
-          const resp = await fetch(btn.href);
-          const data = await (async function parseJsonSafe(r){
-            const ct = r.headers.get('content-type') || '';
-            if (ct.includes('application/json')) return await r.json();
-            const t = await r.text();
-            throw new Error(t.slice(0,500));
-          })(resp);
+        // Для WL-резюме используем обычный запрос
+        if(btn.dataset.type === 'wl'){
+          try{
+            const resp = await fetch(btn.href);
+            const data = await (async function parseJsonSafe(r){
+              const ct = r.headers.get('content-type') || '';
+              if (ct.includes('application/json')) return await r.json();
+              const t = await r.text();
+              throw new Error(t.slice(0,500));
+            })(resp);
 
-          mailLoading.style.display = 'none';
-          showButtons();
+            mailLoading.style.display = 'none';
+            showButtons();
 
-          if(data.error){
-            mailText.innerText = 'Ошибка: ' + (data.error || 'Неизвестная ошибка.');
-            toolbar.style.display = 'none';
-            mailResult.style.display = 'block';
-            return;
-          }
+            if(data.error){
+              mailText.innerText = 'Ошибка: ' + (data.error || 'Неизвестная ошибка.');
+              toolbar.style.display = 'none';
+              mailResult.style.display = 'block';
+              return;
+            }
 
-          if(btn.dataset.type === 'wl'){
             const url = data.download_link || data.url || data.file_url || '';
             const filename = data.filename || '';
             turnWlButtonToDownload(url, filename);
             if(!hasLetter){ setLetter('WL-резюме сформировано.'); }
-          } else {
-            const text =
-              (typeof data.mail_text === 'string' && data.mail_text.trim())
-                ? data.mail_text
-                : (data.message ? String(data.message) : 'Готово. Ответ сервиса получен.');
-            setLetter(text);
+          }catch(err){
+            mailLoading.style.display = 'none';
+            showButtons();
+            mailText.innerText = 'Ошибка при запросе: ' + err.message;
+            toolbar.style.display = 'none';
+            mailResult.style.display = 'block';
+          }
+          return;
+        }
 
-            if(btn.dataset.type === 'client'){
-              showWlCreate();
-            } else if (btn.dataset.type === 'utochnenie'){
-              clarifyActions.style.display = 'flex';
-              hideWl();
-            } else if (btn.dataset.type === 'finalist' || btn.dataset.type === 'otkaz'){
-              hideWl();
+        // Для писем используем стриминг через fetch с ReadableStream
+        try {
+          // Формируем URL для стриминга
+          // Пример: /api/mail/client?... -> /api/mail/client/stream?...
+          const originalUrl = new URL(btn.href, window.location.origin);
+          const streamUrl = originalUrl.pathname + '/stream' + originalUrl.search;
+          
+          // Скрываем лоадер и показываем результат для постепенного заполнения
+          // mailLoading.style.display = 'none'; // УБРАЛИ: Скроем лоадер только когда придет первый чанк
+          mailLoading.style.display = 'block';
+          
+          mailResult.style.display = 'block';
+          // toolbar.style.display = 'flex'; // Покажем тулбар только когда закончим или начнем (по желанию)
+          toolbar.style.display = 'none'; // Лучше скрыть тулбар пока пишется
+          
+          mailText.innerHTML = ''; // Очищаем перед началом
+          currentPlainText = '';
+          
+          let accumulatedText = '';
+          
+          // ОЧЕРЕДЬ ДЛЯ ЭФФЕКТА ПЕЧАТНОЙ МАШИНКИ
+          let textBuffer = '';         // Весь текст, который уже пришел, но еще не весь отображен
+          let displayedTextLength = 0; // Сколько символов мы уже показали в DOM
+          let isTyping = false;
+          let typeInterval = null;
+          
+          // Функция запуска "печаталки"
+          function startTypingEffect() {
+            if (isTyping) return;
+            isTyping = true;
+            
+            // Скорость печати (мс на символ). Чем больше, тем медленнее.
+            // Ставим 20мс (чуть быстрее), чтобы было читаемо.
+            const TYPE_SPEED_MS = 20; 
+            
+            typeInterval = setInterval(() => {
+               // Если отобразили всё, что есть в буфере
+               if (displayedTextLength >= accumulatedText.length) {
+                 // Если стрим закончился и буфер пуст (или равен) — останавливаемся
+                 // Но мы узнаем об окончании стрима из флага done
+                 return; 
+               }
+               
+               // Берем следующий кусочек.
+               // Если накопилось много отставания — плавно ускоряемся, но стараемся сохранить читаемость.
+               let charsToAdd = 1;
+               const lag = accumulatedText.length - displayedTextLength;
+               
+               // Если отставание больше 150 символов (~5 строк), чуть ускоряемся (2 символа за такт)
+               if (lag > 150) charsToAdd = 2;
+               // Если отставание очень большое (>500 символов), ускоряемся сильнее (5 символов за такт)
+               if (lag > 500) charsToAdd = 5;
+
+               const nextChunk = accumulatedText.substr(displayedTextLength, charsToAdd);
+               displayedTextLength += nextChunk.length;
+               
+               // Обновляем DOM (аккуратно с HTML-тегами, но у нас plain text, который мы просто меняем на <br>)
+               // Оптимизация: берем accumulatedText целиком до нужной длины и форматируем
+               const visibleSubstr = accumulatedText.substr(0, displayedTextLength);
+               mailText.innerHTML = visibleSubstr.replace(/\n/g, '<br>');
+               mailText.scrollTop = mailText.scrollHeight;
+               
+            }, TYPE_SPEED_MS);
+          }
+
+          // Используем fetch для стриминга с поддержкой cookies
+          console.log('Starting stream from:', streamUrl);
+          const response = await fetch(streamUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'text/event-stream',
+            },
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          let buffer = '';
+          let firstChunkReceived = false;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            
+            if (done) {
+              console.log('Stream complete');
+              
+              // Ждем, пока "печаталка" допечатает остаток
+              const waitFinish = setInterval(() => {
+                  if (displayedTextLength >= accumulatedText.length) {
+                      clearInterval(waitFinish);
+                      clearInterval(typeInterval);
+                      isTyping = false;
+                      
+                      // Финальные действия
+                      currentPlainText = accumulatedText;
+                      mailText.innerHTML = accumulatedText.replace(/\n/g, '<br>');
+                      if (sendActions) sendActions.style.display = 'flex';
+                      toolbar.style.display = 'flex';
+                      showButtons();
+                      hasLetter = true;
+                      
+                      // Специфичная логика
+                      if(btn.dataset.type === 'client') showWlCreate();
+                      else if (btn.dataset.type === 'utochnenie') { clarifyActions.style.display = 'flex'; hideWl(); }
+                      else hideWl();
+                  }
+              }, 100);
+              
+              break;
+            }
+
+            // Декодируем чанк
+            const chunkStr = decoder.decode(value, { stream: true });
+            buffer += chunkStr;
+            
+            let lines = buffer.split(/\r?\n/);
+            buffer = lines.pop();
+
+            for (const line of lines) {
+              if (line.trim().startsWith('data:')) {
+                const jsonStr = line.replace('data:', '').trim();
+                if (!jsonStr) continue;
+
+                try {
+                  const data = JSON.parse(jsonStr);
+                  
+                  if (data.error) {
+                    console.error('Backend error:', data.error);
+                    mailText.innerText = 'Ошибка: ' + data.error;
+                    clearInterval(typeInterval);
+                    mailLoading.style.display = 'none';
+                    toolbar.style.display = 'none'; 
+                    showButtons(); 
+                    throw new Error(data.error);
+                  }
+
+                  if (data.type === 'chunk' && data.chunk) {
+                     // ПЕРВЫЙ ЧАНК ПРИШЕЛ
+                     if (!firstChunkReceived) {
+                         firstChunkReceived = true;
+                         mailLoading.style.display = 'none'; // Скрываем крутилку
+                         startTypingEffect();                // Запускаем печать
+                     }
+                     
+                     accumulatedText += data.chunk;
+                     // Не обновляем DOM напрямую здесь, это делает setInterval
+                  } 
+                  else if (data.type === 'done') {
+                     console.log('Done received');
+                     if (data.full_text) accumulatedText = data.full_text;
+                     // Цикл done в while обработает завершение
+                  }
+                } catch (e) {
+                  console.warn('JSON parse error for line:', line, e);
+                }
+              }
             }
           }
-        }catch(err){
+        } catch(err){
+          console.error('Ошибка стриминга:', err);
           mailLoading.style.display = 'none';
+          
+          // Fallback: пытаемся получить письмо обычным способом
+          try {
+            const resp = await fetch(btn.href);
+            const data = await resp.json();
+            
+            if(data.error){
+              mailText.innerText = 'Ошибка: ' + (data.error || 'Неизвестная ошибка.');
+              toolbar.style.display = 'none';
+            } else {
+              const text = (typeof data.mail_text === 'string' && data.mail_text.trim())
+                ? data.mail_text
+                : (data.message ? String(data.message) : 'Готово. Ответ сервиса получен.');
+              setLetter(text);
+              
+              if(btn.dataset.type === 'client'){
+                showWlCreate();
+              } else if (btn.dataset.type === 'utochnenie'){
+                clarifyActions.style.display = 'flex';
+                hideWl();
+              } else if (btn.dataset.type === 'finalist' || btn.dataset.type === 'otkaz'){
+                hideWl();
+              }
+            }
+          } catch(fallbackErr) {
+            mailText.innerText = 'Ошибка при запросе: ' + (err.message || fallbackErr.message);
+            toolbar.style.display = 'none';
+          }
+          
           showButtons();
-          mailText.innerText = 'Ошибка при запросе: ' + err.message;
-          toolbar.style.display = 'none';
           mailResult.style.display = 'block';
         }
       }
@@ -646,5 +1267,4 @@
       hideWl();
     });
   </script>
-</body>
-</html>
+{% endblock %}

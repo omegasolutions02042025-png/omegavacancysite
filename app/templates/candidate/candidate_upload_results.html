@@ -1,105 +1,631 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Результаты импорта кандидатов — OmegaSolutions</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/css/modern-style.css">
-  <style>
-    .result-complete {
-      background:#dcfce7;
-      border-bottom:1px solid #bbf7d0;
-    }
-    .result-incomplete {
-      background:#fef9c3;
-      border-bottom:1px solid #facc15;
-    }
-  </style>
-</head>
-<body>
-  {% include "auth/header_auth.html" %}
+{% extends "layouts/base.html" %}
 
-  <main class="create-page" style="max-width:960px;margin:32px auto 40px;padding:0 16px 40px;">
-    <h1 class="create-title" style="text-align:center;font-size:2rem;font-weight:700;color:#111827;margin-bottom:10px;">
-      Результаты импорта кандидатов
-    </h1>
-    <p class="create-subtitle" style="text-align:center;font-size:1rem;color:#6b7280;margin-bottom:28px;">
-      Ниже список резюме, которые были обработаны. Нажмите на кандидата, чтобы перейти к его карточке.
-    </p>
+{% block title %}Результаты импорта кандидатов — Omega Hire{% endblock %}
 
-    <section class="card" style="background:#ffffff;border-radius:16px;padding:20px 24px;box-shadow:0 12px 30px rgba(15,23,42,.06);border:1px solid rgba(209,213,219,.9);">
-      {% if results %}
-        <div class="card-title" style="font-size:1rem;font-weight:650;margin:0 0 12px;letter-spacing:.04em;text-transform:uppercase;color:#111827;">
-          Успешно созданные кандидаты
-        </div>
-        <ul style="list-style:none;padding:0;margin:0 0 16px;">
-          {% for item in results %}
-            {% set row_class = "" %}
-            {% if item.completeness == "complete" %}
-              {% set row_class = "result-complete" %}
-            {% elif item.completeness == "incomplete" %}
-              {% set row_class = "result-incomplete" %}
-            {% endif %}
-            <li class="{{ row_class }}" style="padding:10px 0;border-bottom:1px solid #e5e7eb;">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                <div>
-                  <div style="font-weight:600;color:#111827;">
-                    {{ item.full_name or "Без имени" }}
-                    {% if item.title %}<span style="color:#6b7280;">— {{ item.title }}</span>{% endif %}
-                  </div>
-                  <div style="font-size:0.85rem;color:#6b7280;">
-                    Файл: {{ item.filename }} • ID: {{ item.candidate_id }}
+{% block head %}
+<style>
+  .page-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    margin: 0 0 12px;
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .page-subtitle {
+    font-size: 1.1rem;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    margin: 0;
+  }
+
+  .results-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 16px;
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 30px rgba(255, 215, 0, 0.05);
+    padding: 40px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .results-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--color-accent-gold) 50%, 
+      transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .section-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--gradient-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #0A1929;
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.4),
+      0 0 20px rgba(255, 215, 0, 0.2);
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    margin: 0;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  }
+  .results-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .result-item {
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .result-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .result-complete {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(46, 204, 113, 0.08) 100%);
+    border-color: rgba(46, 204, 113, 0.3);
+  }
+
+  .result-incomplete {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.08) 100%);
+    border-color: rgba(255, 215, 0, 0.3);
+  }
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .result-info {
+      flex: 1;
+      min-width: 0;
+    }
+  .result-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    position: relative;
+    z-index: 10;
+    margin: 0 0 6px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+  }
+
+  .result-title {
+    font-size: 1rem;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    margin: 0 0 8px;
+  }
+
+  .result-meta {
+    font-size: 0.85rem;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    margin: 0;
+  }
+
+  .result-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 8px;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .badge-complete {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(46, 204, 113, 0.1) 100%);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    color: #2ECC71;
+  }
+
+  .badge-incomplete {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%);
+    border: 1px solid var(--color-accent-gold);
+    color: var(--color-accent-gold);
+  }
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: var(--gradient-gold);
+    color: #0A1929;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.4),
+      0 0 20px rgba(255, 215, 0, 0.2);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-action::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  .btn-action:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .btn-action:hover {
+    background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 25px rgba(255, 215, 0, 0.6),
+      0 0 40px rgba(255, 215, 0, 0.4);
+  }
+
+  .error-item {
+    padding: 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(231, 76, 60, 0.1) 100%);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    margin-bottom: 12px;
+    box-shadow: 
+      0 0 15px rgba(231, 76, 60, 0.2),
+      0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .error-filename {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #E74C3C;
+    margin: 0 0 6px;
+  }
+
+  .error-message {
+    font-size: 0.9rem;
+    color: #E74C3C;
+    margin: 0;
+    opacity: 0.9;
+  }
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+  .btn-secondary {
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--color-text-heading);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-bg-surface);
+    border-color: rgba(255, 215, 0, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    color: var(--color-accent-gold);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    font-size: 1rem;
+  }
+
+  .processing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.08) 100%);
+    border: 1px solid var(--color-accent-gold);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 
+      0 0 15px rgba(255, 215, 0, 0.2),
+      0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--color-bg-surface-2);
+    border-top-color: var(--color-accent-gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .processing-text {
+    font-size: 0.95rem;
+    color: var(--color-accent-gold);
+    font-weight: 500;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  .result-item.processing {
+    opacity: 0.7;
+    border-style: dashed;
+  }
+
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 2rem;
+    }
+
+    .results-card {
+      padding: 24px;
+    }
+
+    .result-header {
+      flex-direction: column;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="page-wrapper">
+    <header class="page-header">
+      <h1 class="page-title">✅ Результаты импорта</h1>
+      <p class="page-subtitle">Список обработанных резюме и созданных кандидатов</p>
+    </header>
+
+    <div class="results-card">
+      <div id="processing-indicator" class="processing-indicator" style="display: none;">
+        <div class="spinner"></div>
+        <span class="processing-text">Обработка файлов...</span>
+      </div>
+
+      <div id="results-section">
+        {% if results %}
+          <div class="section-header">
+            <div class="section-icon">✨</div>
+            <h2 class="section-title">Успешно созданные кандидаты</h2>
+          </div>
+          <ul id="results-list" class="results-list">
+            {% for item in results %}
+              {% set row_class = "result-complete" if item.completeness == "complete" else "result-incomplete" %}
+              <li class="result-item {{ row_class }}" data-candidate-id="{{ item.candidate_id }}">
+                <div class="result-header">
+                  <div class="result-info">
+                    <h3 class="result-name">{{ item.full_name or "Без имени" }}</h3>
+                    {% if item.title %}
+                      <p class="result-title">{{ item.title }}</p>
+                    {% endif %}
+                    <p class="result-meta">
+                      📄 {{ item.filename }} • 🆔 ID: {{ item.candidate_id }}
+                    </p>
                     {% if item.completeness == "complete" %}
-                      • <span style="color:#166534;font-weight:600;">Все поля профиля заполнены</span>
+                      <span class="result-badge badge-complete">✓ Все поля заполнены</span>
                     {% elif item.completeness == "incomplete" %}
-                      • <span style="color:#854d0e;font-weight:600;">Есть незаполненные поля (None) в профиле</span>
+                      <span class="result-badge badge-incomplete">⚠ Есть незаполненные поля</span>
                     {% endif %}
                   </div>
+                  <a href="/candidate/edit/{{ item.candidate_id }}?task_id={{ task_id }}" class="btn-action">
+                     Редактировать
+                  </a>
                 </div>
-                <a href="/candidate/edit/{{ item.candidate_id }}"
-                   class="btn-secondary"
-                   style="padding:6px 14px;border-radius:999px;border:1px solid #d1d5db;background:#ffffff;font-size:0.85rem;font-weight:500;color:#111827;text-decoration:none;">
-                  Открыть карточку
-                </a>
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p style="color:#6b7280;margin:0 0 16px;">Не удалось создать ни одного кандидата.</p>
-      {% endif %}
-
-      {% if errors %}
-        <div class="card-title" style="font-size:0.95rem;font-weight:650;margin:16px 0 8px;letter-spacing:.04em;text-transform:uppercase;color:#b91c1c;">
-          Ошибки при обработке файлов
-        </div>
-        <ul style="list-style:none;padding:0;margin:0;">
-          {% for err in errors %}
-            <li style="padding:8px 0;border-bottom:1px solid #fee2e2;">
-              <div style="font-size:0.9rem;color:#991b1b;font-weight:600;">
-                {{ err.filename }}
-              </div>
-              <div style="font-size:0.85rem;color:#b91c1c;">
-                {{ err.error }}
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-
-      <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
-        <a href="/candidate" class="btn-secondary"
-           style="padding:9px 16px;border-radius:999px;border:1px solid #d1d5db;background:#ffffff;font-size:0.9rem;font-weight:500;color:#111827;text-decoration:none;">
-          Вернуться к списку кандидатов
-        </a>
-        <a href="/candidate/add" class="btn-secondary"
-           style="padding:9px 16px;border-radius:999px;border:1px solid #d1d5db;background:#ffffff;font-size:0.9rem;font-weight:500;color:#111827;text-decoration:none;">
-          Добавить ещё кандидатов
-        </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div id="empty-state" class="empty-state">
+            <p>Ожидание результатов обработки...</p>
+          </div>
+        {% endif %}
       </div>
-    </section>
+
+      <div id="errors-section">
+        {% if errors %}
+          <div class="section-header" style="margin-top: 40px;">
+            <div class="section-icon" style="background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%);">⚠️</div>
+            <h2 class="section-title" style="color: #dc2626;">Ошибки при обработке</h2>
+          </div>
+          <div id="errors-list">
+            {% for err in errors %}
+              <div class="error-item" data-filename="{{ err.filename }}">
+                <div class="error-filename">📄 {{ err.filename }}</div>
+                <p class="error-message">{{ err.error }}</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="actions">
+        <a href="/candidate" class="btn btn-secondary">← К списку кандидатов</a>
+        <a href="/candidate/add" class="btn btn-secondary">➕ Добавить ещё</a>
+      </div>
+    </div>
   </main>
-</body>
-</html>
 
-
+  <script>
+    const taskId = "{{ task_id }}";
+    const initialStatus = "{{ status }}";
+    
+    // Функция для добавления результата в список
+    function addResult(item) {
+      const resultsList = document.getElementById('results-list');
+      const emptyState = document.getElementById('empty-state');
+      
+      // Удаляем пустое состояние если оно есть
+      if (emptyState && resultsList) {
+        emptyState.remove();
+      }
+      
+      // Создаём секцию результатов если её нет
+      if (!resultsList) {
+        const resultsSection = document.getElementById('results-section');
+        const sectionHeader = document.createElement('div');
+        sectionHeader.className = 'section-header';
+        sectionHeader.innerHTML = `
+          <div class="section-icon">✨</div>
+          <h2 class="section-title">Успешно созданные кандидаты</h2>
+        `;
+        const newList = document.createElement('ul');
+        newList.id = 'results-list';
+        newList.className = 'results-list';
+        resultsSection.innerHTML = '';
+        resultsSection.appendChild(sectionHeader);
+        resultsSection.appendChild(newList);
+      }
+      
+      // Проверяем, нет ли уже такого результата
+      const existing = document.querySelector(`[data-candidate-id="${item.candidate_id}"]`);
+      if (existing) {
+        return; // Уже есть
+      }
+      
+      const rowClass = item.completeness === "complete" ? "result-complete" : "result-incomplete";
+      const badgeClass = item.completeness === "complete" ? "badge-complete" : "badge-incomplete";
+      const badgeText = item.completeness === "complete" 
+        ? "✓ Все поля заполнены" 
+        : "⚠ Есть незаполненные поля";
+      
+      const li = document.createElement('li');
+      li.className = `result-item ${rowClass}`;
+      li.setAttribute('data-candidate-id', item.candidate_id);
+      li.innerHTML = `
+        <div class="result-header">
+          <div class="result-info">
+            <h3 class="result-name">${item.full_name || "Без имени"}</h3>
+            ${item.title ? `<p class="result-title">${item.title}</p>` : ''}
+            <p class="result-meta">
+              📄 ${item.filename} • 🆔 ID: ${item.candidate_id}
+            </p>
+            <span class="result-badge ${badgeClass}">${badgeText}</span>
+          </div>
+          <a href="/candidate/edit/${item.candidate_id}?task_id=${taskId}" class="btn-action">
+             Редактировать
+          </a>
+        </div>
+      `;
+      
+      // Добавляем с анимацией
+      li.style.opacity = '0';
+      li.style.transform = 'translateY(-10px)';
+      document.getElementById('results-list').appendChild(li);
+      
+      // Анимация появления
+      setTimeout(() => {
+        li.style.transition = 'all 0.3s ease';
+        li.style.opacity = '1';
+        li.style.transform = 'translateY(0)';
+      }, 10);
+    }
+    
+    // Функция для добавления ошибки в список
+    function addError(err) {
+      let errorsList = document.getElementById('errors-list');
+      const errorsSection = document.getElementById('errors-section');
+      
+      // Создаём секцию ошибок если её нет
+      if (!errorsList) {
+        const sectionHeader = document.createElement('div');
+        sectionHeader.className = 'section-header';
+        sectionHeader.style.marginTop = '40px';
+        sectionHeader.innerHTML = `
+          <div class="section-icon" style="background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%);">⚠️</div>
+          <h2 class="section-title" style="color: #dc2626;">Ошибки при обработке</h2>
+        `;
+        errorsList = document.createElement('div');
+        errorsList.id = 'errors-list';
+        errorsSection.innerHTML = '';
+        errorsSection.appendChild(sectionHeader);
+        errorsSection.appendChild(errorsList);
+      }
+      
+      // Проверяем, нет ли уже такой ошибки
+      const existing = document.querySelector(`[data-filename="${err.filename}"]`);
+      if (existing) {
+        return; // Уже есть
+      }
+      
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-item';
+      errorDiv.setAttribute('data-filename', err.filename);
+      errorDiv.innerHTML = `
+        <div class="error-filename">📄 ${err.filename}</div>
+        <p class="error-message">${err.error}</p>
+      `;
+      
+      // Добавляем с анимацией
+      errorDiv.style.opacity = '0';
+      errorsList.appendChild(errorDiv);
+      setTimeout(() => {
+        errorDiv.style.transition = 'all 0.3s ease';
+        errorDiv.style.opacity = '1';
+      }, 10);
+    }
+    
+    // Подключение к SSE
+    if (initialStatus !== 'completed') {
+      const processingIndicator = document.getElementById('processing-indicator');
+      if (processingIndicator) {
+        processingIndicator.style.display = 'flex';
+      }
+      
+      const eventSource = new EventSource(`/candidate/upload/stream/${taskId}`);
+      
+      eventSource.onmessage = function(event) {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.error) {
+            console.error('SSE error:', data.error);
+            eventSource.close();
+            return;
+          }
+          
+          // Обновляем индикатор прогресса
+          if (data.total) {
+            const processingText = document.querySelector('.processing-text');
+            if (processingText) {
+              processingText.textContent = `Обработка файлов... (${data.processed}/${data.total})`;
+            }
+          }
+          
+          // Добавляем новые результаты
+          if (data.new_results && data.new_results.length > 0) {
+            data.new_results.forEach(item => addResult(item));
+          }
+          
+          // Добавляем новые ошибки
+          if (data.new_errors && data.new_errors.length > 0) {
+            data.new_errors.forEach(err => addError(err));
+          }
+          
+          // Если обработка завершена
+          if (data.status === 'completed') {
+            if (processingIndicator) {
+              processingIndicator.style.display = 'none';
+            }
+            eventSource.close();
+          }
+          
+        } catch (e) {
+          console.error('Error parsing SSE data:', e);
+        }
+      };
+      
+      eventSource.onerror = function(event) {
+        console.error('SSE connection error:', event);
+        if (processingIndicator) {
+          processingIndicator.style.display = 'none';
+        }
+        eventSource.close();
+      };
+    } else {
+      // Если уже завершено, скрываем индикатор
+      const processingIndicator = document.getElementById('processing-indicator');
+      if (processingIndicator) {
+        processingIndicator.style.display = 'none';
+      }
+    }
+  </script>
+{% endblock %}

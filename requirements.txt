@@ -6,3 +6,7 @@ pydantic-settings==2.1.0
 sqlmodel==0.0.27
 sqlalchemy==2.0.44
 asyncpg==0.29.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+alembic==1.13.1
+psycopg2-binary==2.9.9

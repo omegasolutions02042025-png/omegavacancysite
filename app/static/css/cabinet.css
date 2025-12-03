@@ -1,0 +1,431 @@
+/* ============================================
+   Candidate Cabinet Styles
+   Dark Tech Theme with Prefix 'candidate-'
+   ============================================ */
+
+/* Candidate Dashboard Container */
+.candidate-dashboard {
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Candidate Header */
+.candidate-header {
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.candidate-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    margin: 0;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.candidate-subtitle {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.candidate-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Candidate Buttons */
+.candidate-btn {
+    padding: 10px 20px;
+    border-radius: var(--radius-button);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--color-bg-surface-2);
+    color: var(--color-text-heading);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.candidate-btn:hover {
+    background: var(--color-bg-surface);
+    border-color: rgba(255, 215, 0, 0.3);
+    color: var(--color-accent-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+                0 0 20px rgba(255, 215, 0, 0.15);
+}
+
+.candidate-btn-sm {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+}
+
+/* Candidate Cards */
+.candidate-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-card);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 30px rgba(255, 215, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.candidate-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--color-accent-gold) 50%, 
+        transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.candidate-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 0 40px rgba(255, 215, 0, 0.1);
+}
+
+.candidate-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.candidate-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text-heading);
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.candidate-card-body {
+    padding: 24px;
+}
+
+/* Candidate Profile Card */
+.candidate-profile-card {
+    margin-bottom: 24px;
+}
+
+.candidate-avatar-wrapper {
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.candidate-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: var(--color-bg-surface-2);
+    border: 3px solid rgba(255, 215, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    font-size: 3rem;
+    color: var(--color-accent-gold);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+}
+
+.candidate-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    margin: 0;
+}
+
+.candidate-role {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.candidate-badges {
+    margin-top: 16px;
+}
+
+.candidate-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.candidate-badge-grade {
+    background: rgba(255, 215, 0, 0.2);
+    color: var(--color-accent-gold);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.candidate-badge-status {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+/* Candidate Info List */
+.candidate-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.candidate-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.candidate-info-icon {
+    font-size: 1.25rem;
+    color: var(--color-accent-gold);
+    width: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.candidate-info-label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.candidate-info-value {
+    font-size: 0.95rem;
+    color: var(--color-text-heading);
+    font-weight: 500;
+}
+
+/* Candidate Stat Cards */
+.candidate-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+}
+
+.candidate-stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.candidate-stat-icon-primary {
+    background: rgba(0, 123, 255, 0.2);
+    color: #007bff;
+    border: 1px solid rgba(0, 123, 255, 0.3);
+}
+
+.candidate-stat-icon-success {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.candidate-stat-icon-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.candidate-stat-content {
+    flex: 1;
+}
+
+.candidate-stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.candidate-stat-label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Candidate Placeholder */
+.candidate-placeholder {
+    text-align: center;
+    padding: 48px 24px;
+}
+
+.candidate-placeholder-icon {
+    font-size: 4rem;
+    color: var(--color-text-muted);
+    opacity: 0.3;
+    margin-bottom: 16px;
+}
+
+.candidate-placeholder-text {
+    font-size: 1.125rem;
+    color: var(--color-text-heading);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.candidate-placeholder-subtext {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0;
+}
+
+/* Candidate Links */
+.candidate-link {
+    color: var(--color-accent-gold);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.candidate-link:hover {
+    color: var(--color-accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    transform: translateX(4px);
+}
+
+/* Candidate Resume Card */
+.candidate-resume-card {
+    min-height: 200px;
+}
+
+/* Candidate Messages Card */
+.candidate-messages-card {
+    min-height: 300px;
+}
+
+/* Candidate Applications Card */
+.candidate-applications-card {
+    min-height: 300px;
+}
+
+/* Candidate Resume Loaded State */
+.candidate-resume-loaded {
+    padding: 16px 0;
+}
+
+.candidate-resume-filename {
+    font-size: 1rem;
+    color: var(--color-text-heading);
+}
+
+.candidate-resume-date {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+/* Candidate Upload Loading */
+.candidate-upload-loading {
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.candidate-upload-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+    color: var(--color-accent-gold);
+}
+
+/* File Input Styling */
+#resume-file-input,
+#resume-file-input-replace {
+    display: none;
+}
+
+/* Success Alert Styling */
+.alert-success {
+    background: rgba(40, 167, 69, 0.9);
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    color: white;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .candidate-dashboard {
+        padding: 16px;
+    }
+
+    .candidate-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 16px;
+    }
+
+    .candidate-title {
+        font-size: 1.5rem;
+    }
+
+    .candidate-actions {
+        width: 100%;
+    }
+
+    .candidate-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .candidate-card-body {
+        padding: 16px;
+    }
+
+    .candidate-card-header {
+        padding: 16px;
+    }
+
+    .candidate-avatar {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5rem;
+    }
+
+    .candidate-stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .candidate-stat-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.25rem;
+    }
+
+    .candidate-stat-value {
+        font-size: 1.5rem;
+    }
+}
+

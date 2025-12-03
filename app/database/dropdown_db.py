@@ -13,6 +13,8 @@ from .database import (
     CustomerDropdown,
     ManagerDropdown,
     LocationDropdown,
+    CategoryDropdown,
+    SubcategoryDropdown,
 )
 from ..models.vacancy import VacancyIn
 
@@ -249,6 +251,92 @@ class DropdownOptions:
 
             return existing_objs + new_domains
 
+    # ===== CATEGORIES =====
+
+    async def add_category(self, data: Sequence[VacancyIn]) -> list[CategoryDropdown]:
+        async with AsyncSession(self.engine) as session:
+            all_category_names: set[str] = set()
+
+            for vac in data:
+                cat_list = self._extract_list(getattr(vac, "categories", None))
+                for name in cat_list:
+                    norm = self._normalize_name(name)
+                    if norm:
+                        all_category_names.add(norm)
+
+            if not all_category_names:
+                return []
+
+            result = await session.execute(select(CategoryDropdown))
+            existing_objs: List[CategoryDropdown] = list(result.scalars().all())
+            existing_names: set[str] = {c.category_name for c in existing_objs}
+
+            new_categories: list[CategoryDropdown] = []
+
+            for name in all_category_names:
+                if name in existing_names:
+                    continue
+
+                similar = self._find_similar(name, existing_names)
+                if similar:
+                    print(f'[CATEGORY] "{name}" похож на "{similar}" — не добавляем новый.')
+                    continue
+
+                c = CategoryDropdown(category_name=name)
+                session.add(c)
+                new_categories.append(c)
+                existing_names.add(name)
+
+            if new_categories:
+                await session.commit()
+                for c in new_categories:
+                    await session.refresh(c)
+
+            return existing_objs + new_categories
+
+    # ===== SUBCATEGORIES =====
+
+    async def add_subcategory(self, data: Sequence[VacancyIn]) -> list[SubcategoryDropdown]:
+        async with AsyncSession(self.engine) as session:
+            all_subcategory_names: set[str] = set()
+
+            for vac in data:
+                subcat_list = self._extract_list(getattr(vac, "subcategories", None))
+                for name in subcat_list:
+                    norm = self._normalize_name(name)
+                    if norm:
+                        all_subcategory_names.add(norm)
+
+            if not all_subcategory_names:
+                return []
+
+            result = await session.execute(select(SubcategoryDropdown))
+            existing_objs: List[SubcategoryDropdown] = list(result.scalars().all())
+            existing_names: set[str] = {s.subcategory_name for s in existing_objs}
+
+            new_subcategories: list[SubcategoryDropdown] = []
+
+            for name in all_subcategory_names:
+                if name in existing_names:
+                    continue
+
+                similar = self._find_similar(name, existing_names)
+                if similar:
+                    print(f'[SUBCATEGORY] "{name}" похож на "{similar}" — не добавляем новый.')
+                    continue
+
+                s = SubcategoryDropdown(subcategory_name=name)
+                session.add(s)
+                new_subcategories.append(s)
+                existing_names.add(name)
+
+            if new_subcategories:
+                await session.commit()
+                for s in new_subcategories:
+                    await session.refresh(s)
+
+            return existing_objs + new_subcategories
+
     async def add_customer(self, data: Sequence[VacancyIn]) -> list[CustomerDropdown]:
         async with AsyncSession(self.engine) as session:
             all_customer_names: set[str] = set()
@@ -379,3 +467,31 @@ class DropdownOptions:
             spec = result.scalars().all()
             print(spec)
             return spec
+
+    async def get_candidate_specializations(self, user_id: int) -> list[str]:
+        """
+        Получить все уникальные специализации из кандидатов пользователя.
+        Извлекает значения из поля specializations, парсит их и возвращает уникальный список.
+        """
+        from .database import CandidateProfileDB
+        
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(
+                select(CandidateProfileDB.specializations).where(
+                    CandidateProfileDB.user_id == user_id,
+                    CandidateProfileDB.specializations.isnot(None)
+                )
+            )
+            all_specs = result.scalars().all()
+            
+            # Собираем все специализации в один set
+            unique_specs = set()
+            for spec_str in all_specs:
+                if spec_str:
+                    spec_list = self._extract_list(spec_str)
+                    for spec in spec_list:
+                        norm = self._normalize_name(spec)
+                        if norm:
+                            unique_specs.add(norm)
+            
+            return sorted(list(unique_specs))

@@ -1,0 +1,682 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Личный кабинет — Omega Hire{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/cabinet.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid candidate-dashboard">
+    <!-- Header Section -->
+    <div class="candidate-header mb-4">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h1 class="candidate-title mb-2">Личный кабинет</h1>
+                <p class="candidate-subtitle text-muted mb-0">Управление профилем и откликами</p>
+            </div>
+            <div class="candidate-actions">
+                <button class="btn btn-outline-light candidate-btn">
+                    <i class="bi bi-pencil-square me-2"></i>Редактировать профиль
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% if not profile %}
+    <!-- Большой Call-to-Action блок для новых пользователей -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; overflow: hidden;">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-stars" style="font-size: 4rem; opacity: 0.9;"></i>
+                    </div>
+                    <h2 class="mb-3" style="color: white; font-weight: 700;">Добро пожаловать в OmegaHire!</h2>
+                    <p class="lead mb-4" style="color: rgba(255,255,255,0.95); font-size: 1.25rem;">
+                        Загрузите резюме, чтобы наш AI автоматически заполнил ваш профиль.
+                    </p>
+                    <p class="mb-4" style="color: rgba(255,255,255,0.85);">
+                        Мы извлечем информацию о вашем опыте, навыках и уровне, чтобы вы могли начать получать предложения о работе.
+                    </p>
+                    <button id="upload-resume-banner-btn" class="btn btn-light btn-lg px-5 py-3" style="font-weight: 600; font-size: 1.1rem;">
+                        <i class="bi bi-cloud-upload me-2"></i>Загрузить резюме
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Content Grid -->
+    <div class="row g-4">
+        <!-- Left Column: Profile & Resume -->
+        <div class="col-lg-4">
+            <!-- Profile Card -->
+            <div class="candidate-card candidate-profile-card mb-4">
+                <div class="candidate-card-header">
+                    <h3 class="candidate-card-title">
+                        <i class="bi bi-person-circle me-2"></i>Профиль
+                    </h3>
+                </div>
+                <div class="candidate-card-body">
+                    <div class="candidate-avatar-wrapper text-center mb-4">
+                        <div class="candidate-avatar">
+                            {% if user.photo_path %}
+                                <img src="{{ user.photo_path }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            {% else %}
+                                <i class="bi bi-person-fill"></i>
+                            {% endif %}
+                        </div>
+                        <h4 class="candidate-name mt-3 mb-1" id="candidate-name">
+                            {% if user.first_name or user.last_name %}
+                                {{ user.first_name or '' }} {{ user.last_name or '' }}
+                            {% else %}
+                                {{ user.email }}
+                            {% endif %}
+                        </h4>
+                        <p class="candidate-role text-muted mb-3" id="candidate-role">
+                            {% if profile and profile.grade %}
+                                {{ profile.grade.value if profile.grade.value else profile.grade }} Developer
+                            {% else %}
+                                Кандидат
+                            {% endif %}
+                        </p>
+                        <div class="candidate-badges d-flex justify-content-center gap-2 flex-wrap" id="candidate-badges">
+                            {% if profile and profile.grade %}
+                                <span class="candidate-badge candidate-badge-grade" id="candidate-grade-badge">{{ profile.grade.value if profile.grade.value else profile.grade }}</span>
+                            {% else %}
+                                <span class="candidate-badge candidate-badge-grade" id="candidate-grade-badge">Новичок</span>
+                            {% endif %}
+                            <span class="candidate-badge candidate-badge-status">Активен</span>
+                        </div>
+                    </div>
+                    
+                    <div class="candidate-info-list">
+                        <div class="candidate-info-item">
+                            <i class="bi bi-envelope candidate-info-icon"></i>
+                            <div>
+                                <div class="candidate-info-label">Email</div>
+                                <div class="candidate-info-value">{{ user.email }}</div>
+                            </div>
+                        </div>
+                        {% if user.work_telegram %}
+                        <div class="candidate-info-item">
+                            <i class="bi bi-telegram candidate-info-icon"></i>
+                            <div>
+                                <div class="candidate-info-label">Telegram</div>
+                                <div class="candidate-info-value">@{{ user.work_telegram }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="candidate-info-item">
+                            <i class="bi bi-briefcase candidate-info-icon"></i>
+                            <div>
+                                <div class="candidate-info-label">Опыт</div>
+                                <div class="candidate-info-value" id="candidate-experience">
+                                    {% if profile and profile.experience_years %}
+                                        {{ profile.experience_years }} лет
+                                    {% else %}
+                                        0 лет
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="candidate-info-item" id="candidate-stack-item">
+                            <i class="bi bi-code-slash candidate-info-icon"></i>
+                            <div>
+                                <div class="candidate-info-label">Стек</div>
+                                <div class="candidate-info-value" id="candidate-stack">
+                                    {% if profile and profile.stack %}
+                                        {% for tech in profile.stack %}
+                                            <span class="badge bg-secondary me-1 mb-1">{{ tech }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">Стек не указан</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% if profile and profile.bio %}
+                        <div class="candidate-info-item" id="candidate-bio-item">
+                            <i class="bi bi-info-circle candidate-info-icon"></i>
+                            <div>
+                                <div class="candidate-info-label">О себе</div>
+                                <div class="candidate-info-value" id="candidate-bio" style="font-size: 0.875rem; line-height: 1.5;">{{ profile.bio }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                </div>
+            </div>
+
+            <!-- Resume Block -->
+            <div class="candidate-card candidate-resume-card">
+                <div class="candidate-card-header">
+                    <h3 class="candidate-card-title">
+                        <i class="bi bi-file-earmark-text me-2"></i>Резюме
+                    </h3>
+                </div>
+                <div class="candidate-card-body">
+                    {% if profile and profile.resume_url %}
+                    <!-- Состояние: резюме загружено -->
+                    <div id="resume-loaded" class="candidate-resume-loaded">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-file-earmark-pdf-fill text-gold" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <div class="candidate-resume-filename fw-bold text-white">
+                                        {% if profile and profile.resume_url %}
+                                            {{ profile.resume_url.split('/')[-1] }}
+                                        {% else %}
+                                            resume.pdf
+                                        {% endif %}
+                                    </div>
+                                    {% if profile and profile.updated_at %}
+                                    <div class="candidate-resume-date text-muted" style="font-size: 0.875rem;">
+                                        Обновлено: {{ profile.updated_at[:10] if profile.updated_at else '' }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <a id="resume-download-link" href="{% if profile and profile.resume_url %}{{ profile.resume_url }}{% else %}#{% endif %}" target="_blank" class="btn btn-outline-light candidate-btn-sm">
+                                <i class="bi bi-download me-2"></i>Скачать
+                            </a>
+                        </div>
+                        <input type="file" id="resume-file-input-replace" accept=".pdf,.docx,.txt,.rtf" style="display: none;">
+                        <button id="replace-resume-btn" class="btn btn-outline-light candidate-btn-sm w-100">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Заменить резюме
+                        </button>
+                    </div>
+                    {% else %}
+                    <!-- Состояние: резюме не загружено -->
+                    <div id="resume-placeholder" class="candidate-placeholder">
+                        <div class="candidate-placeholder-icon">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                        </div>
+                        <p class="candidate-placeholder-text">Резюме не загружено</p>
+                        <input type="file" id="resume-file-input" accept=".pdf,.docx,.txt,.rtf" style="display: none;">
+                        <button id="upload-resume-btn" class="btn btn-outline-light candidate-btn-sm">
+                            <i class="bi bi-upload me-2"></i>Загрузить резюме
+                        </button>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Индикатор загрузки -->
+                    <div id="resume-upload-loading" class="candidate-upload-loading" style="display: none;">
+                        <div class="text-center">
+                            <div class="spinner-border text-gold mb-3" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                            <p class="candidate-placeholder-text mb-0">Обработка резюме через AI...</p>
+                            <p class="candidate-placeholder-subtext text-muted">Пожалуйста, подождите</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Main Content -->
+        <div class="col-lg-8">
+            {% if profile %}
+            <!-- Stats Cards (показываем только если есть профиль) -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="candidate-card candidate-stat-card">
+                        <div class="candidate-stat-icon candidate-stat-icon-primary">
+                            <i class="bi bi-briefcase"></i>
+                        </div>
+                        <div class="candidate-stat-content">
+                            <div class="candidate-stat-value">12</div>
+                            <div class="candidate-stat-label">Активных откликов</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="candidate-card candidate-stat-card">
+                        <div class="candidate-stat-icon candidate-stat-icon-success">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="candidate-stat-content">
+                            <div class="candidate-stat-value">5</div>
+                            <div class="candidate-stat-label">Интервью</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="candidate-card candidate-stat-card">
+                        <div class="candidate-stat-icon candidate-stat-icon-warning">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="candidate-stat-content">
+                            <div class="candidate-stat-value">3</div>
+                            <div class="candidate-stat-label">В ожидании</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if profile %}
+            <!-- Messages Block (показываем только если есть профиль) -->
+            <div class="candidate-card candidate-messages-card mb-4">
+                <div class="candidate-card-header d-flex align-items-center justify-content-between">
+                    <h3 class="candidate-card-title mb-0">
+                        <i class="bi bi-chat-dots me-2"></i>Сообщения
+                    </h3>
+                    <a href="/candidate/messages" class="candidate-link">
+                        Все сообщения <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="candidate-card-body">
+                    <div class="candidate-placeholder">
+                        <div class="candidate-placeholder-icon">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <p class="candidate-placeholder-text">Нет новых сообщений</p>
+                        <p class="candidate-placeholder-subtext text-muted">Здесь будут отображаться сообщения от рекрутеров</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Applications Block (показываем только если есть профиль) -->
+            <div class="candidate-card candidate-applications-card">
+                <div class="candidate-card-header d-flex align-items-center justify-content-between">
+                    <h3 class="candidate-card-title mb-0">
+                        <i class="bi bi-list-check me-2"></i>Мои отклики
+                    </h3>
+                    <a href="/candidate/applications" class="candidate-link">
+                        Все отклики <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="candidate-card-body">
+                    <div class="candidate-placeholder">
+                        <div class="candidate-placeholder-icon">
+                            <i class="bi bi-briefcase"></i>
+                        </div>
+                        <p class="candidate-placeholder-text">Нет активных откликов</p>
+                        <p class="candidate-placeholder-subtext text-muted">Здесь будут отображаться ваши отклики на вакансии</p>
+                        <button class="btn btn-outline-light candidate-btn-sm mt-3">
+                            <i class="bi bi-search me-2"></i>Найти вакансии
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ============================================
+    // Загрузка резюме для кабинета кандидата
+    // ============================================
+    
+    // Данные профиля из сервера (если есть)
+    const profileData = {% if profile %}{{ profile | tojson }}{% else %}null{% endif %};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('resume-file-input');
+        const fileInputReplace = document.getElementById('resume-file-input-replace');
+        const uploadBtn = document.getElementById('upload-resume-btn');
+        const replaceBtn = document.getElementById('replace-resume-btn');
+        const placeholder = document.getElementById('resume-placeholder');
+        const resumeLoaded = document.getElementById('resume-loaded');
+        const uploadLoading = document.getElementById('resume-upload-loading');
+        
+        // Загружаем данные профиля при открытии страницы
+        if (profileData) {
+            loadProfileData(profileData);
+        }
+        
+        // Обработчик клика на кнопку "Загрузить резюме"
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', function() {
+                if (fileInput) fileInput.click();
+            });
+        }
+        
+        // Обработчик клика на большую кнопку в баннере
+        const uploadBannerBtn = document.getElementById('upload-resume-banner-btn');
+        if (uploadBannerBtn) {
+            uploadBannerBtn.addEventListener('click', function() {
+                if (fileInput) {
+                    fileInput.click();
+                } else if (fileInputReplace) {
+                    fileInputReplace.click();
+                }
+            });
+        }
+        
+        // Обработчик клика на кнопку "Заменить резюме"
+        if (replaceBtn) {
+            replaceBtn.addEventListener('click', function() {
+                fileInputReplace.click();
+            });
+        }
+        
+        // AJAX-загрузка резюме: обработчик выбора файла (первая загрузка)
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    handleResumeUpload(file, fileInput);
+                }
+            });
+        }
+        
+        // AJAX-загрузка резюме: обработчик выбора файла (замена)
+        if (fileInputReplace) {
+            fileInputReplace.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    handleResumeUpload(file, fileInputReplace);
+                }
+            });
+        }
+        
+        /**
+         * AJAX-загрузка резюме
+         * @param {File} file - Файл для загрузки
+         * @param {HTMLInputElement} inputElement - Элемент input
+         */
+        async function handleResumeUpload(file, inputElement) {
+            // Показываем спиннер или меняем текст кнопки
+            if (uploadBtn) {
+                const originalText = uploadBtn.innerHTML;
+                uploadBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>AI анализирует...';
+                uploadBtn.disabled = true;
+            }
+            
+            if (placeholder) placeholder.style.display = 'none';
+            if (resumeLoaded) resumeLoaded.style.display = 'none';
+            if (uploadLoading) uploadLoading.style.display = 'block';
+            
+            // Создаем FormData с файлом
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                // Fetch POST запрос на /candidate/upload-resume
+                // ВАЖНО: Не добавляем Content-Type заголовок - браузер сам установит boundary для FormData
+                const response = await fetch('/candidate/upload-resume', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include' // Для отправки cookies (авторизация)
+                    // НЕ добавляем headers - браузер сам установит правильный Content-Type с boundary
+                });
+                
+                // Обработка ответа
+                if (response.ok) {
+                    // Успех: выводим alert и перезагружаем страницу
+                    alert('Профиль успешно создан!');
+                    window.location.reload();
+                } else {
+                    // Ошибка: выводим сообщение об ошибке
+                    let errorMessage = 'Ошибка при загрузке резюме';
+                    
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorData.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = `Ошибка ${response.status}: ${response.statusText}`;
+                    }
+                    
+                    alert(errorMessage);
+                    
+                    // Скрываем спиннер и показываем placeholder
+                    if (uploadLoading) uploadLoading.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'block';
+                    
+                    // Восстанавливаем кнопку
+                    if (uploadBtn) {
+                        uploadBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Загрузить резюме';
+                        uploadBtn.disabled = false;
+                    }
+                    
+                    // Очищаем input
+                    inputElement.value = '';
+                }
+                
+            } catch (error) {
+                // Обработка сетевых ошибок
+                console.error('Ошибка при загрузке резюме:', error);
+                alert('Ошибка при загрузке резюме: ' + error.message);
+                
+                // Скрываем спиннер и показываем placeholder
+                if (uploadLoading) uploadLoading.style.display = 'none';
+                if (placeholder) placeholder.style.display = 'block';
+                
+                // Восстанавливаем кнопку
+                if (uploadBtn) {
+                    uploadBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Загрузить резюме';
+                    uploadBtn.disabled = false;
+                }
+                
+                // Очищаем input
+                inputElement.value = '';
+            }
+        }
+        
+        /**
+         * Показ Toast-уведомления
+         * @param {string} message - Текст сообщения
+         * @param {string} type - Тип уведомления: 'success' или 'error'
+         */
+        function showToast(message, type = 'success') {
+            // Создаем элемент Toast
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            toast.setAttribute('role', 'alert');
+            
+            const icon = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
+            toast.innerHTML = `
+                <i class="bi ${icon} me-2"></i>
+                <strong>${type === 'success' ? 'Успех!' : 'Ошибка!'}</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Автоматически скрываем через 5 секунд
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.remove();
+                        }
+                    }, 300); // Время анимации fade
+                }
+            }, 5000);
+        }
+        
+        /**
+         * Обновление данных профиля на странице
+         */
+        function updateProfileData(profile) {
+            if (!profile) return;
+            
+            // Обновляем grade (уровень)
+            if (profile.grade) {
+                const gradeBadge = document.getElementById('candidate-grade-badge');
+                if (gradeBadge) {
+                    gradeBadge.textContent = profile.grade;
+                }
+            }
+            
+            // Обновляем опыт
+            if (profile.experience_years) {
+                let experienceEl = document.getElementById('candidate-experience');
+                if (!experienceEl) {
+                    // Создаем элемент опыта, если его нет
+                    const infoList = document.querySelector('.candidate-info-list');
+                    if (infoList) {
+                        const experienceItem = document.createElement('div');
+                        experienceItem.className = 'candidate-info-item';
+                        experienceItem.innerHTML = `
+                            <i class="bi bi-briefcase candidate-info-icon"></i>
+                            <div>
+                                <div class="candidate-info-label">Опыт</div>
+                                <div class="candidate-info-value" id="candidate-experience">${profile.experience_years} лет</div>
+                            </div>
+                        `;
+                        infoList.appendChild(experienceItem);
+                        experienceEl = document.getElementById('candidate-experience');
+                    }
+                }
+                if (experienceEl) {
+                    experienceEl.textContent = profile.experience_years + ' лет';
+                }
+            }
+            
+            // Обновляем стек
+            if (profile.stack && profile.stack.length > 0) {
+                let stackItem = document.getElementById('candidate-stack-item');
+                let stackEl = document.getElementById('candidate-stack');
+                
+                if (!stackItem || !stackEl) {
+                    // Создаем элемент стека, если его нет
+                    const infoList = document.querySelector('.candidate-info-list');
+                    if (infoList) {
+                        const stackItemNew = document.createElement('div');
+                        stackItemNew.className = 'candidate-info-item';
+                        stackItemNew.id = 'candidate-stack-item';
+                        stackItemNew.innerHTML = `
+                            <i class="bi bi-code-slash candidate-info-icon"></i>
+                            <div>
+                                <div class="candidate-info-label">Стек</div>
+                                <div class="candidate-info-value" id="candidate-stack"></div>
+                            </div>
+                        `;
+                        infoList.appendChild(stackItemNew);
+                        stackItem = document.getElementById('candidate-stack-item');
+                        stackEl = document.getElementById('candidate-stack');
+                    }
+                }
+                
+                if (stackEl) {
+                    stackEl.innerHTML = profile.stack.map(tech => 
+                        `<span class="badge bg-secondary me-1 mb-1">${tech}</span>`
+                    ).join('');
+                    if (stackItem) {
+                        stackItem.style.display = 'flex';
+                    }
+                }
+            }
+            
+            // Обновляем биографию
+            if (profile.bio) {
+                let bioItem = document.getElementById('candidate-bio-item');
+                let bioEl = document.getElementById('candidate-bio');
+                
+                if (!bioItem || !bioEl) {
+                    // Создаем элемент биографии, если его нет
+                    const infoList = document.querySelector('.candidate-info-list');
+                    if (infoList) {
+                        const bioItemNew = document.createElement('div');
+                        bioItemNew.className = 'candidate-info-item';
+                        bioItemNew.id = 'candidate-bio-item';
+                        bioItemNew.innerHTML = `
+                            <i class="bi bi-info-circle candidate-info-icon"></i>
+                            <div>
+                                <div class="candidate-info-label">О себе</div>
+                                <div class="candidate-info-value" id="candidate-bio" style="font-size: 0.875rem; line-height: 1.5;"></div>
+                            </div>
+                        `;
+                        infoList.appendChild(bioItemNew);
+                        bioItem = document.getElementById('candidate-bio-item');
+                        bioEl = document.getElementById('candidate-bio');
+                    }
+                }
+                
+                if (bioEl) {
+                    bioEl.textContent = profile.bio;
+                    if (bioItem) {
+                        bioItem.style.display = 'flex';
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Показ блока с загруженным резюме
+         */
+        function showResumeLoaded(filename, resumeUrl) {
+            const filenameEl = resumeLoaded.querySelector('.candidate-resume-filename');
+            const dateEl = resumeLoaded.querySelector('.candidate-resume-date');
+            const downloadLink = document.getElementById('resume-download-link');
+            
+            if (filenameEl) {
+                filenameEl.textContent = filename;
+            }
+            
+            if (dateEl) {
+                const now = new Date();
+                dateEl.textContent = 'Загружено: ' + now.toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+            
+            if (downloadLink && resumeUrl) {
+                downloadLink.href = resumeUrl;
+            }
+            
+            // Показываем блок
+            uploadLoading.style.display = 'none';
+            placeholder.style.display = 'none';
+            resumeLoaded.style.display = 'block';
+        }
+        
+        /**
+         * Показ сообщения об успехе
+         */
+        function showSuccessMessage(message) {
+            // Создаем временное уведомление
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.minWidth = '300px';
+            alertDiv.innerHTML = `
+                <i class="bi bi-check-circle me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Автоматически скрываем через 5 секунд
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        /**
+         * Загрузка данных профиля при открытии страницы
+         */
+        function loadProfileData(profile) {
+            if (!profile) return;
+            
+            // Обновляем данные профиля
+            updateProfileData(profile);
+            
+            // Если есть резюме, показываем блок с загруженным резюме
+            if (profile.resume_url) {
+                // Извлекаем имя файла из URL
+                const filename = profile.resume_url.split('/').pop() || 'resume.pdf';
+                showResumeLoaded(filename, profile.resume_url);
+            }
+        }
+    });
+</script>
+{% endblock %}
+

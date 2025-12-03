@@ -12,8 +12,17 @@ user_repo = UserRepository()
 
 async def get_current_user_from_cookie(request: Request):
     """
-    Возвращает объект пользователя или None, если не залогинен.
-    Не кидает 401 — удобно для публичных страниц.
+    Получить текущего пользователя из cookie с JWT токеном.
+    
+    Декодирует JWT токен из cookie и загружает пользователя из базы данных.
+    Не выбрасывает исключения, возвращает None если пользователь не авторизован.
+    Удобно для публичных страниц где авторизация опциональна.
+    
+    Args:
+        request: FastAPI Request объект
+        
+    Returns:
+        User: Объект пользователя или None если не авторизован/токен невалиден
     """
     token = request.cookies.get(config.JWT_ACCESS_COOKIE_NAME)  # "access_token"
 
@@ -40,4 +49,10 @@ async def get_current_user_from_cookie(request: Request):
         return None
 
     user = await user_repo.get_by_id(user_id)
+
+    if user and getattr(user, "is_archived", False):
+        # Помечаем запрос, чтобы middleware удалил cookie
+        request.state.force_logout = True
+        return None
+
     return user

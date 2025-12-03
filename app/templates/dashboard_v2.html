@@ -1,0 +1,190 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Dashboard - Omega Hire{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h2 mb-0">Dashboard</h1>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted me-2">Last updated: just now</span>
+            <button class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Widgets -->
+    <div class="row g-4 mb-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px;">
+        <!-- Active Vacancies -->
+        <div class="card">
+            <div class="d-flex align-items-start justify-content-between mb-2">
+                <div class="text-muted text-uppercase fw-bold fs-7">Active Vacancies</div>
+                <div class="p-2 rounded bg-surface-2 text-gold">
+                    <i class="bi bi-briefcase fs-5"></i>
+                </div>
+            </div>
+            <div class="fs-1 fw-bold text-white mb-1">12</div>
+            <div class="text-success fs-7">
+                <i class="bi bi-arrow-up-short"></i> +2 this week
+            </div>
+        </div>
+
+        <!-- New Applications -->
+        <div class="card">
+            <div class="d-flex align-items-start justify-content-between mb-2">
+                <div class="text-muted text-uppercase fw-bold fs-7">New Applications</div>
+                <div class="p-2 rounded bg-surface-2 text-gold">
+                    <i class="bi bi-file-earmark-person fs-5"></i>
+                </div>
+            </div>
+            <div class="fs-1 fw-bold text-white mb-1">48</div>
+            <div class="text-success fs-7">
+                <i class="bi bi-arrow-up-short"></i> +12% vs last week
+            </div>
+        </div>
+
+        <!-- Candidates to Interview -->
+        <div class="card">
+            <div class="d-flex align-items-start justify-content-between mb-2">
+                <div class="text-muted text-uppercase fw-bold fs-7">To Interview</div>
+                <div class="p-2 rounded bg-surface-2 text-gold">
+                    <i class="bi bi-calendar-check fs-5"></i>
+                </div>
+            </div>
+            <div class="fs-1 fw-bold text-white mb-1">5</div>
+            <div class="text-warning fs-7">
+                Action required
+            </div>
+        </div>
+
+        <!-- Average AI Score -->
+        <div class="card">
+            <div class="d-flex align-items-start justify-content-between mb-2">
+                <div class="text-muted text-uppercase fw-bold fs-7">Avg AI Match</div>
+                <div class="p-2 rounded bg-surface-2 text-gold">
+                    <i class="bi bi-cpu fs-5"></i>
+                </div>
+            </div>
+            <div class="fs-1 fw-bold text-white mb-1">84%</div>
+            <div class="text-muted fs-7">
+                Based on last 100
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Hot Jobs -->
+    <div class="row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+        <!-- Hot Jobs Table -->
+        <div class="card">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h3 class="mb-0 fs-4">Hot Vacancies</h3>
+                <a href="/vacancy" class="btn btn-ghost btn-sm">View All</a>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Department</th>
+                            <th>Candidates</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-white">Senior Backend Developer</div>
+                                <div class="text-muted fs-7">Remote • Full-time</div>
+                            </td>
+                            <td>Engineering</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="text-white">14</div>
+                                    <span class="badge bg-danger rounded-pill" style="font-size: 0.6rem;">+3</span>
+                                </div>
+                            </td>
+                            <td><span class="chip chip-success">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-white">Product Designer</div>
+                                <div class="text-muted fs-7">Moscow • Hybrid</div>
+                            </td>
+                            <td>Design</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="text-white">8</div>
+                                    <span class="badge bg-danger rounded-pill" style="font-size: 0.6rem;">+1</span>
+                                </div>
+                            </td>
+                            <td><span class="chip chip-success">Active</span></td>
+                        </tr>
+                         <tr>
+                            <td>
+                                <div class="fw-bold text-white">QA Automation Engineer</div>
+                                <div class="text-muted fs-7">Remote</div>
+                            </td>
+                            <td>QA</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="text-white">22</div>
+                                </div>
+                            </td>
+                            <td><span class="chip chip-warning">Closing Soon</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="card">
+            <h3 class="mb-4 fs-4">Recent Activity</h3>
+            <div class="d-flex flex-column gap-4">
+                <!-- Activity Item -->
+                <div class="d-flex gap-3">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-surface-2 text-gold" style="width: 36px; height: 36px; min-width: 36px;">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <div>
+                        <div class="text-white fs-7 mb-1">
+                            <span class="fw-bold">Ivan Petrov</span> applied for <span class="text-gold">Senior Backend Developer</span>
+                        </div>
+                        <div class="text-muted fs-8">2 minutes ago</div>
+                    </div>
+                </div>
+                
+                <!-- Activity Item -->
+                <div class="d-flex gap-3">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-surface-2 text-success" style="width: 36px; height: 36px; min-width: 36px;">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                    <div>
+                        <div class="text-white fs-7 mb-1">
+                            <span class="fw-bold">Maria S.</span> moved to <span class="text-success">Offer Stage</span>
+                        </div>
+                        <div class="text-muted fs-8">1 hour ago</div>
+                    </div>
+                </div>
+
+                 <!-- Activity Item -->
+                <div class="d-flex gap-3">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-surface-2 text-primary" style="width: 36px; height: 36px; min-width: 36px;">
+                        <i class="bi bi-chat-left-text"></i>
+                    </div>
+                    <div>
+                        <div class="text-white fs-7 mb-1">
+                            New message from <span class="fw-bold">Alexey K.</span>
+                        </div>
+                        <div class="text-muted fs-8">3 hours ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

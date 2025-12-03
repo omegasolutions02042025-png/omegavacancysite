@@ -11,7 +11,7 @@ from app.core.utils import save_files
 
 router = APIRouter(tags=["upload"])
 # Use absolute path to templates directory
-templates_dir = str(Path(__file__).resolve().parent.parent.parent / "templates")
+templates_dir = str(Path(__file__).resolve().parent.parent / "templates")
 templates = Jinja2Templates(directory=templates_dir)
 
 TASKS = {}  # task_id -> {status, data}

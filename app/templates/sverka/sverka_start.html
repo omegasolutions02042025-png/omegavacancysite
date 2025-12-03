@@ -1,131 +1,436 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Сверка вакансии и резюме</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/css/modern-style.css">
-  <link rel="icon" type="image/png"
-        href="{{ url_for('static', path='img/omega-logo.png') }}">
-  <style>
-    body { background:#f3f4f6; }
+{% extends "layouts/base.html" %}
 
-    .vacancy-display {
-      background: linear-gradient(135deg, #f8f9ff, #e8f2ff);
-      border: 2px solid #e1e8ed;
-      border-radius: 15px;
-      padding: 20px;
-      margin: 18px 0 10px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-    }
-    .vacancy-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .vacancy-title {
-      color: #1f2933;
-      margin: 0;
-      font-size: 1.3em;
-      font-weight: 600;
-    }
-    .vacancy-meta {
-      font-size: 0.85rem;
-      color: #6b7280;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 14px;
-    }
-    .vacancy-meta span strong {
-      color: #111827;
-    }
-    .vacancy-content { color: #34495e; line-height: 1.6; }
-    .vacancy-text {
-      background: white;
-      padding: 16px;
-      border-radius: 10px;
-      border-left: 4px solid #667eea;
-      margin-top: 10px;
-      white-space: pre-wrap;
-      font-family: 'Segoe UI', sans-serif;
-      line-height: 1.7;
-      max-height: 260px;
-      overflow-y: auto;
-    }
+{% block title %}Сверка вакансии и резюме — Omega Hire{% endblock %}
 
-    .toggle-desc-btn{
-      border:none;
-      border-radius:999px;
-      padding:6px 12px;
-      font-size:0.8rem;
-      background:#e5e7eb;
-      color:#374151;
-      cursor:pointer;
-    }
+{% block head %}
+<style>
+  .page-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .main-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 30px rgba(255, 215, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .main-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--color-accent-gold) 50%, 
+      transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    margin: 0 0 12px;
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .page-subtitle {
+    font-size: 1.1rem;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    margin: 0 0 32px;
+  }
+  .vacancy-display {
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 24px 0;
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .vacancy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .vacancy-title {
+    color: var(--color-text-heading);
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  }
+
+  .vacancy-meta {
+    font-size: 0.85rem;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+  }
+
+  .vacancy-meta span strong {
+    color: var(--color-text-heading);
+  }
+
+  .vacancy-content { 
+    color: var(--color-text-heading); 
+    line-height: 1.6; 
+  }
+
+  .vacancy-text {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 16px;
+    border-radius: 10px;
+    border-left: 3px solid var(--color-accent-gold);
+    margin-top: 10px;
+    white-space: pre-wrap;
+    font-family: 'Segoe UI', sans-serif;
+    line-height: 1.7;
+    max-height: 260px;
+    overflow-y: auto;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .vacancy-text::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .vacancy-text::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .vacancy-text::-webkit-scrollbar-thumb {
+    background: var(--color-bg-surface-2);
+    border-radius: 3px;
+  }
+
+  .vacancy-text::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent-gold);
+  }
+
+  .toggle-desc-btn {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--color-text-heading);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .toggle-desc-btn:hover {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.08) 100%);
+    border-color: var(--color-accent-gold);
+    color: var(--color-accent-gold);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
 
     /* список выбранных файлов */
     #selected-files { margin-top: 8px; font-size: 0.85rem; color: #475569; }
     #selected-files ul { margin: 4px 0 0 0; padding-left: 18px; }
 
-    /* 🔄 Оверлей-крутилка при отправке формы */
-    .loading-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.55);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .loading-box {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 20px 28px;
-      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.25);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      max-width: 320px;
-      text-align: center;
-    }
-    .loader-spinner {
-      width: 48px;
-      height: 48px;
-      border-radius: 999px;
-      border: 4px solid #e5e7eb;
-      border-top-color: #3b82f6;
-      animation: spin 0.7s linear infinite;
-    }
-    .loading-text-main {
-      font-weight: 600;
-      color: #111827;
-      font-size: 0.98rem;
-    }
-    .loading-text-sub {
-      font-size: 0.85rem;
-      color: #6b7280;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+  /* 🔄 Оверлей-крутилка при отправке формы */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+  }
 
-    .alert-block {
-      background:#fee2e2;
-      border:1px solid #fecaca;
-      color:#b91c1c;
-      padding:10px 14px;
-      border-radius:10px;
-      font-size:0.9rem;
-      margin-bottom:10px;
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .loading-box {
+    background: linear-gradient(135deg, 
+      var(--color-bg-surface) 0%, 
+      var(--color-bg-surface-2) 100%);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      0 0 60px rgba(255, 215, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    max-width: 360px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
     }
-  </style>
-</head>
-<body>
-  {% include "auth/header_auth.html" %}
+    to { 
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .loading-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--color-accent-gold) 50%, 
+      transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .loader-spinner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 4px solid var(--color-bg-surface-2);
+    border-top-color: var(--color-accent-gold);
+    animation: spin 0.7s linear infinite;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  }
+
+  .loading-text-main {
+    font-weight: 600;
+    color: var(--color-text-heading);
+    font-size: 0.98rem;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  }
+
+  .loading-text-sub {
+    font-size: 0.85rem;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .form-group {
+    margin-bottom: 24px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-heading);
+    margin-bottom: 12px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+  }
+
+  .form-group input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--color-text-heading);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .form-group input[type="file"]:hover {
+    border-color: var(--color-accent-gold);
+    background: var(--color-bg-surface);
+    box-shadow: 
+      0 0 0 2px rgba(255, 215, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  #selected-files {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(46, 204, 113, 0.1) 100%);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    border-radius: 12px;
+    color: #2ECC71;
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 
+      0 0 15px rgba(46, 204, 113, 0.2),
+      0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  #selected-files ul {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+  }
+
+  .form-actions {
+    margin-top: 24px;
+    text-align: center;
+  }
+
+  .btn {
+    padding: 14px 32px;
+    border-radius: 12px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary {
+    background: var(--gradient-gold);
+    color: #0A1929;
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.4),
+      0 0 20px rgba(255, 215, 0, 0.2);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  .btn-primary:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 25px rgba(255, 215, 0, 0.6),
+      0 0 40px rgba(255, 215, 0, 0.4);
+  }
+
+  .btn-primary:disabled {
+    background: var(--color-bg-surface-2);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.6;
+  }
+
+  #form_hint {
+    margin-top: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .alert-block {
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(231, 76, 60, 0.1) 100%);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    color: #E74C3C;
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    box-shadow: 
+      0 0 15px rgba(231, 76, 60, 0.2),
+      0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .info-block {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .info-block p {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--color-text-heading);
+  }
+
+  .info-block strong {
+    color: var(--color-accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
 
   <!-- 🔄 Оверлей загрузки -->
   <div id="loading_overlay" class="loading-overlay">
@@ -136,9 +441,12 @@
     </div>
   </div>
 
-  <div class="container">
-    <div class="card">
-      <h1>🎯 Сверка вакансии и резюме</h1>
+  <div class="page-wrapper">
+    <header style="text-align: center; margin-bottom: 32px;">
+      <h1 class="page-title">🎯 Сверка вакансии и резюме</h1>
+      <p class="page-subtitle">Загрузите резюме — ИИ сверит их с требованиями вакансии</p>
+    </header>
+    <div class="main-card">
 
       {% if not telegram_username %}
         <div class="alert-block">
@@ -152,11 +460,12 @@
         </script>
       {% endif %}
 
-      <p class="subtitle">
-        Вакансия: <strong>{{ vacancy.vacancy_id }}</strong> — {{ vacancy.title }}
-        <br>Загрузите одно или несколько резюме — ИИ сверит их с требованиями.
-        <br>Поддерживаемые форматы: PDF, DOCX, TXT. Лимит — 10 МБ на файл.
-      </p>
+      <div class="info-block">
+        <p>
+          <strong>Вакансия:</strong> {{ vacancy.vacancy_id }} — {{ vacancy.title }}
+          <br>Поддерживаемые форматы: PDF, DOCX, TXT. Лимит — 10 МБ на файл.
+        </p>
+      </div>
 
       {% if error %}
         <div class="alert-block">
@@ -218,7 +527,7 @@
       </form>
       {% else %}
         <!-- Если Телеграм не привязан — форму вообще не показываем -->
-        <p style="margin-top:10px;font-size:0.9rem;color:#6b7280;">
+        <p style="margin-top:10px;font-size:0.9rem;color:var(--color-text-primary);opacity:0.9;">
           Ожидается перенаправление в профиль для привязки Telegram…
         </p>
       {% endif %}
@@ -244,12 +553,12 @@
             submitBtn.style.opacity = '0.5';
             submitBtn.style.cursor  = 'not-allowed';
             formHint.textContent    = '⚠️ Загрузите хотя бы одно резюме';
-            formHint.style.color    = '#ff6b6b';
+            formHint.style.color    = '#E74C3C';
           } else {
             submitBtn.style.opacity = '1';
             submitBtn.style.cursor  = 'pointer';
             formHint.textContent    = '✅ Всё готово! Можно начинать сверку';
-            formHint.style.color    = '#28a745';
+            formHint.style.color    = '#2ECC71';
           }
         }
 
@@ -298,5 +607,4 @@
       </script>
     </div>
   </div>
-</body>
-</html>
+{% endblock %}

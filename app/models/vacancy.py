@@ -8,21 +8,25 @@ from sqlmodel import SQLModel
 
 
     
-class VacancyIn(SQLModel):
-    vacancy_id: str
-    title: str
-    vacancy_text: str
-    work_format : str
-    employment_type : str
-    english_level : str
-    grade : str
-    company_type : str
-    specializations : str
-    skills : str 
-    domains : str 
-    location : str
-    manager_username : str
-    customer : str
+class VacancyIn(BaseModel):
+    vacancy_id: Optional[str] = None  # Опционально, будет сгенерирован если не указан
+    title: Optional[str] = "Без названия"  # Опционально
+    vacancy_text: Optional[str] = ""  # Опционально
+    work_format: str
+    employment_type: str
+    english_level: str
+    grade: str
+    company_type: str
+    specializations: Union[str, List[str]]  # Может быть строка или массив
+    skills: Union[str, List[str]]  # Может быть строка или массив
+    domains: Union[str, List[str]]  # Может быть строка или массив
+    location: Union[str, List[str]]  # Может быть строка или массив
+    manager_username: Optional[str] = None  # Опционально
+    customer: str
+    categories: Union[str, List[str]]  # Может быть строка или массив
+    subcategories: Union[str, List[str]]  # Может быть строка или массив
+    created_at: Optional[str] = None  # Дата создания (ISO формат), будет установлена автоматически если не указана
+    salary: Optional[str] = None  # Ставка в рублях РФ
     
 
 class MailPath(BaseModel):

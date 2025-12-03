@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omega Hire UI Kit</title>
+    <link rel="stylesheet" href="/static/css/globals.css">
+    <!-- Using Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { padding: 60px 20px; max-width: 1200px; margin: 0 auto; }
+        section { margin-bottom: 60px; }
+        .section-title { 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            padding-bottom: 16px; 
+            margin-bottom: 32px; 
+            color: var(--color-text-heading);
+            font-size: 1.5rem;
+        }
+        .component-row { 
+            display: flex; 
+            gap: 24px; 
+            align-items: center; 
+            margin-bottom: 32px; 
+            flex-wrap: wrap;
+        }
+        .label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            color: var(--color-text-primary);
+        }
+    </style>
+</head>
+<body>
+    <h1 style="margin-bottom: 48px;">Omega Hire Design System <span class="chip chip-success">v2.0</span></h1>
+    
+    <section>
+        <h2 class="section-title">1. Buttons</h2>
+        
+        <div class="component-row">
+            <div>
+                <span class="label">Primary</span>
+                <button class="btn btn-primary">Create Campaign</button>
+            </div>
+            <div>
+                <span class="label">Secondary</span>
+                <button class="btn btn-secondary">View Details</button>
+            </div>
+            <div>
+                <span class="label">Ghost</span>
+                <button class="btn btn-ghost">Cancel</button>
+            </div>
+        </div>
+        
+        <div class="component-row">
+             <div>
+                <span class="label">Primary (Hover State)</span>
+                <button class="btn btn-primary" style="transform: translateY(-2px); box-shadow: 0px 0px 20px rgba(255, 215, 0, 0.7); background: #FFE066;">Hover State</button>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2 class="section-title">2. Inputs & Forms</h2>
+        <div class="component-row" style="align-items: flex-start;">
+            <div style="flex: 1; max-width: 400px;">
+                <span class="label">Text Input</span>
+                <input type="text" placeholder="Enter candidate name...">
+            </div>
+            <div style="flex: 1; max-width: 400px;">
+                <span class="label">Select Dropdown</span>
+                <select>
+                    <option>Select Department</option>
+                    <option>Engineering</option>
+                    <option>Design</option>
+                    <option>Marketing</option>
+                </select>
+            </div>
+        </div>
+        <div class="component-row">
+            <div style="flex: 1; max-width: 600px;">
+                <span class="label">Textarea</span>
+                <textarea placeholder="Enter job description..." rows="4"></textarea>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2 class="section-title">3. Status Chips</h2>
+        <div class="component-row">
+            <div>
+                <span class="label">Success (High Score)</span>
+                <span class="chip chip-success">94% Match</span>
+            </div>
+            <div>
+                <span class="label">Warning (Pending)</span>
+                <span class="chip chip-warning">Processing</span>
+            </div>
+            <div>
+                <span class="label">Error (Rejected)</span>
+                <span class="chip chip-error">Rejected</span>
+            </div>
+            <div>
+                <span class="label">Neutral (Draft)</span>
+                <span class="chip chip-neutral">Draft</span>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2 class="section-title">4. Cards (Glassmorphism)</h2>
+        <div class="card" style="max-width: 500px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
+                <div>
+                    <h3 style="margin-bottom: 4px;">Senior Backend Developer</h3>
+                    <p class="text-muted" style="margin: 0; font-size: 0.9rem;">Engineering Dept • Remote</p>
+                </div>
+                <span class="chip chip-success">Active</span>
+            </div>
+            
+            <div style="display: flex; gap: 40px; margin-bottom: 24px;">
+                <div>
+                    <div class="text-gold" style="font-size: 1.5rem; font-weight: 700;">12</div>
+                    <div class="text-muted" style="font-size: 0.875rem;">New Candidates</div>
+                </div>
+                <div>
+                    <div class="text-heading" style="font-size: 1.5rem; font-weight: 700;">5</div>
+                    <div class="text-muted" style="font-size: 0.875rem;">Interviews</div>
+                </div>
+                <div>
+                    <div class="text-heading" style="font-size: 1.5rem; font-weight: 700;">28</div>
+                    <div class="text-muted" style="font-size: 0.875rem;">Total</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary" style="flex: 1;">Edit</button>
+                <button class="btn btn-primary" style="flex: 1;">View Candidates</button>
+            </div>
+        </div>
+    </section>
+    
+    <section>
+        <h2 class="section-title">5. Data Tables</h2>
+        <div class="card table-container" style="padding: 0; overflow: hidden;">
+            <table style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Candidate Name</th>
+                        <th>Current Role</th>
+                        <th>Match Score</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600; color: white;">Alexey Petrov</div>
+                            <div class="text-muted" style="font-size: 0.8rem;">alexey@example.com</div>
+                        </td>
+                        <td>Senior Python Dev</td>
+                        <td><div class="text-gold" style="font-weight: 700;">98%</div></td>
+                        <td><span class="chip chip-success">Interview</span></td>
+                        <td><button class="btn btn-ghost" style="padding: 4px 8px;">View</button></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600; color: white;">Maria Ivanova</div>
+                            <div class="text-muted" style="font-size: 0.8rem;">maria@example.com</div>
+                        </td>
+                        <td>UX Designer</td>
+                        <td><div class="text-gold" style="font-weight: 700;">85%</div></td>
+                        <td><span class="chip chip-warning">Screening</span></td>
+                        <td><button class="btn btn-ghost" style="padding: 4px 8px;">View</button></td>
+                    </tr>
+                     <tr>
+                        <td>
+                            <div style="font-weight: 600; color: white;">Dmitry Smirnov</div>
+                            <div class="text-muted" style="font-size: 0.8rem;">dmitry@example.com</div>
+                        </td>
+                        <td>Project Manager</td>
+                        <td><div style="font-weight: 700; color: #E74C3C;">42%</div></td>
+                        <td><span class="chip chip-error">Rejected</span></td>
+                        <td><button class="btn btn-ghost" style="padding: 4px 8px;">View</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</body>
+</html>
+

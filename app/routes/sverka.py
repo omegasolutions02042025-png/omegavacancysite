@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Form, Request, Query, Depends, Body, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path as PathlibPath
 from typing import Annotated
@@ -23,7 +23,7 @@ from app.core.gpt import gpt_generator
 from app.core.current_user import get_current_user_from_cookie
 from app.database.vacancy_db import VacancyRepository
 from app.models.vacancy import ClarificationsMail
-from app.models.candidate import SverkaFromCandidateRequest
+from app.models.candidate import GPTCandidateProfile, SverkaFromCandidateRequest
 from app.database.candidate_db import CandidateRepository
 from app.database.user_db import UserRepository
 import string
@@ -33,7 +33,8 @@ import random
 
 router = APIRouter(tags=["sverka"])
 
-templates = Jinja2Templates(directory="templates")
+templates_dir = str(PathlibPath(__file__).resolve().parent.parent / "templates")
+templates = Jinja2Templates(directory=templates_dir)
 vacancy_repository = VacancyRepository()
 candidate_repository = CandidateRepository()
 user_repository = UserRepository()
@@ -83,6 +84,37 @@ async def delete_task(task_id: str) -> None:
 # Логика сверки
 # =========================
 
+
+async def process_candidate_profiles_task(
+    resumes: list[dict],
+    task_id: str,
+    user_id: int,
+):
+    """
+    Обрабатывает резюме по одному через create_candidate_profile.
+    Не загружает GPT сразу всеми резюме.
+    
+    resumes: список словарей вида:
+    {
+        "text": <текст резюме>,
+        "filename": <имя файла>
+    }
+    """
+    
+    for item in resumes:
+        profile = await gpt_generator.create_candidate_profile(
+            text=item["text"],
+        )
+        if isinstance(profile, str):
+            profile = GPTCandidateProfile.model_validate_json(profile)
+        else:
+            profile = GPTCandidateProfile.model_validate(profile)
+        
+        profile_db = await candidate_repository.candidate_profile_to_db(
+            profile=profile,
+            user_id=user_id,
+            )
+        print(f"[CANDIDATE_PROFILES_TASK] Сохранен профиль кандидата в БД: {profile_db.model_dump()}")
 
 async def process_sverka_task(
     vacancy_text: str,
@@ -271,7 +303,7 @@ async def sverka_post(
             status_code=400,
         )
 
-    # 5. создаём задачу
+    # 5. создаём задачу для сверки
     task_id = str(uuid.uuid4())
     tg_username = norm_tg(tg_username)
 
@@ -284,6 +316,20 @@ async def sverka_post(
             task_id,
             vacancy_id,
             tg_username,
+        )
+    )
+    
+    # 5.1. создаём фоновую задачу для создания профилей кандидатов
+    # Обрабатываем резюме по одному через create_candidate_profile
+    profiles_task_id = str(uuid.uuid4())
+    
+    print(f"[SVERKA_POST] Создана фоновая задача {profiles_task_id} для создания профилей из {len(resumes_to_process)} резюме")
+    
+    asyncio.create_task(
+        process_candidate_profiles_task(
+            resumes_to_process,
+            profiles_task_id,
+            current_user.id,
         )
     )
 
@@ -396,12 +442,11 @@ async def sverka_result_one(
 
     results = task["results"]
     if index < 0 or index >= len(results):
-        topics = await vacancy_repository.get_topics()
         return templates.TemplateResponse(
             "sverka/sverka_start.html",
             {
                 "request": request,
-                "topics": topics,
+                "topics": [],
                 "error": "Результат с таким индексом не найден.",
                 "user_email": current_user.email,
                 "user_id": current_user.id,
@@ -452,12 +497,6 @@ async def sverka_result_one(
     )
 
 
-@router.get("/api/vacancies/by-topic/{topic_name}")
-async def get_vacancies_by_topic(topic_name: str):
-    vacancies = await vacancy_repository.get_vacancies_by_topic(topic_name)
-    return [{"vacancy_id": v.vacancy_id, "title": v.title} for v in vacancies]
-
-
 @router.get("/api/vacancy/{vacancy_id}")
 async def get_vacancy_details(vacancy_id: str):
     vacancy = await vacancy_repository.get_vacancy_by_vacancy_id(vacancy_id)
@@ -467,8 +506,73 @@ async def get_vacancy_details(vacancy_id: str):
         "vacancy_id": vacancy.vacancy_id,
         "title": vacancy.title,
         "vacancy_text": vacancy.vacancy_text,
-        "topic_name": vacancy.topic_name,
     }
+
+
+@router.get("/api/mail/{mail_type}/stream")
+async def generate_mail_stream(
+    mail_type: str, vacancy_id: str, candidate_fullname: str, tg_username: str, current_user=Depends(get_current_user_from_cookie)
+):
+    """
+    Стриминговый эндпоинт для генерации писем с эффектом набираемого текста.
+    Использует Server-Sent Events (SSE) для передачи данных в реальном времени.
+    """
+    if not current_user:
+        return RedirectResponse("/auth/login", status_code=303)
+    
+    async def event_generator():
+        try:
+            sverka = await vacancy_repository.get_sverka_by_vacancy_and_candidate_and_user_id(
+                vacancy_id,
+                candidate_fullname,
+                current_user.id,
+            )
+            if not sverka:
+                yield f"data: {json.dumps({'error': 'Сверка не найдена в базе данных'}, ensure_ascii=False)}\n\n"
+                return
+
+            resume_json = sverka.sverka_json
+
+            # Выбираем соответствующий метод стриминга
+            if mail_type == "finalist":
+                stream_gen = gpt_generator.create_finalist_mail_stream(resume_json, tg_username)
+            elif mail_type == "utochnenie":
+                vac = await vacancy_repository.get_vacancy_by_vacancy_id(vacancy_id)
+                vacancy_text = vac.vacancy_text if vac else ""
+                stream_gen = gpt_generator.create_utochnenie_mail_stream(resume_json, tg_username, vacancy_text)
+            elif mail_type == "otkaz":
+                stream_gen = gpt_generator.create_otkaz_mail_stream(resume_json, tg_username)
+            elif mail_type == "client":
+                stream_gen = gpt_generator.create_klient_mail_stream(resume_json, tg_username)
+            else:
+                yield f"data: {json.dumps({'error': 'Неизвестный тип письма'}, ensure_ascii=False)}\n\n"
+                return
+
+            # Отправляем чанки по мере генерации
+            full_text = ""
+            async for chunk in stream_gen:
+                if chunk:
+                    # Очищаем от маркеров Markdown и других символов
+                    clean_chunk = chunk.replace("*", "")
+                    full_text += clean_chunk
+                    # Отправляем каждый чанк
+                    yield f"data: {json.dumps({'chunk': clean_chunk, 'type': 'chunk'}, ensure_ascii=False)}\n\n"
+            
+            # Отправляем финальное сообщение с полным текстом
+            yield f"data: {json.dumps({'type': 'done', 'full_text': full_text}, ensure_ascii=False)}\n\n"
+            
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e), 'type': 'error'}, ensure_ascii=False)}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/api/mail/{mail_type}")
@@ -688,6 +792,7 @@ async def sverka_history(request: Request, current_user=Depends(get_current_user
             "telegram_username": current_user.work_telegram,
         },
     )
+    
     
 @router.get("/sverka/history/detail", response_class=HTMLResponse)
 async def sverka_history_detail(

@@ -1,0 +1,400 @@
+<!-- Виджет отображения ставок кандидата во всех валютах -->
+<div class="candidate-rates-widget">
+    <style>
+        .candidate-rates-widget {
+            background: var(--color-bg-surface);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 4px 16px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                0 0 20px rgba(255, 215, 0, 0.05);
+            margin: 20px 0;
+        }
+        
+        .rates-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .rates-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--color-text-heading);
+        }
+        
+        .base-rate-section {
+            background: var(--gradient-gold);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: #0A1929;
+            box-shadow: 
+                0 4px 15px rgba(255, 215, 0, 0.4),
+                0 0 20px rgba(255, 215, 0, 0.2);
+        }
+        
+        .base-rate-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .base-rate-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .base-rate-value {
+            font-size: 36px;
+            font-weight: 700;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        
+        .base-rate-currency {
+            font-size: 24px;
+            font-weight: 500;
+        }
+        
+        .base-rate-type {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 8px;
+        }
+        
+        .converted-rates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .rate-card {
+            background: var(--color-bg-surface-2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .rate-card:hover {
+            background: var(--color-bg-surface);
+            border-color: rgba(255, 215, 0, 0.3);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.2),
+                0 0 20px rgba(255, 215, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .rate-card.is-base {
+            background: var(--color-bg-surface);
+            border-color: var(--color-accent-gold);
+            box-shadow: 
+                0 0 20px rgba(255, 215, 0, 0.3),
+                0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .rate-currency-code {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-accent-gold);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .rate-currency-flag {
+            font-size: 20px;
+        }
+        
+        .rate-amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-text-heading);
+        }
+        
+        .rate-symbol {
+            font-size: 18px;
+            color: var(--color-text-muted);
+            margin-left: 4px;
+        }
+        
+        .rates-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--color-bg-surface-2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--color-text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .rates-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .rates-meta-icon {
+            color: var(--color-accent-gold);
+        }
+        
+        .refresh-button {
+            background: var(--gradient-gold);
+            color: #0A1929;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 4px 15px rgba(255, 215, 0, 0.4),
+                0 0 20px rgba(255, 215, 0, 0.2);
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+        }
+        
+        .refresh-button:hover {
+            background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+            transform: translateY(-1px);
+            box-shadow: 
+                0 8px 24px rgba(255, 215, 0, 0.6),
+                0 0 30px rgba(255, 215, 0, 0.4);
+        }
+        
+        .refresh-button:active {
+            transform: translateY(0);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(231, 76, 60, 0.1) 100%);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #E74C3C;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-size: 14px;
+            box-shadow: 
+                0 0 15px rgba(231, 76, 60, 0.2),
+                0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(46, 204, 113, 0.1) 100%);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: #2ECC71;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-size: 14px;
+            box-shadow: 
+                0 0 15px rgba(46, 204, 113, 0.2),
+                0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+    
+    <div class="rates-header">
+        <h3 class="rates-title"><i class="bi bi-currency-exchange me-2" style="color: var(--color-accent-gold);"></i>Ставка кандидата</h3>
+        <button class="refresh-button" onclick="recalculateRates()" id="refreshBtn">
+            <i class="bi bi-arrow-clockwise" id="refreshIcon"></i>
+            <span id="refreshText">Пересчитать</span>
+        </button>
+    </div>
+    
+    <!-- Основная ставка -->
+    <div class="base-rate-section">
+        <div class="base-rate-label">
+            <span>Исходная ставка кандидата</span>
+            <span class="base-rate-badge">
+                ✓ Базовая
+            </span>
+        </div>
+        <div class="base-rate-value">
+            <span id="baseAmount">{{ base_rate_amount | default(0) | round(2) }}</span>
+            <span class="base-rate-currency" id="baseCurrency">{{ base_rate_currency | default('RUB') }}</span>
+        </div>
+        <div class="base-rate-type" id="rateType">
+            {% if rate_type == 'hourly' %}
+                <i class="bi bi-clock me-1"></i>Почасовая ставка
+            {% elif rate_type == 'yearly' %}
+                <i class="bi bi-calendar-year me-1"></i>Годовая ставка
+            {% else %}
+                <i class="bi bi-calendar-month me-1"></i>Месячная ставка
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Конвертированные ставки -->
+    <div class="converted-rates-grid">
+        <div class="rate-card {% if base_rate_currency == 'RUB' %}is-base{% endif %}">
+            <div class="rate-currency-code">
+                <i class="bi bi-currency-exchange"></i>
+                <span>RUB - Рубль</span>
+            </div>
+            <div class="rate-amount">
+                <span id="rateRub">{{ rate_rub | default(0) | round(2) }}</span>
+                <span class="rate-symbol">₽</span>
+            </div>
+        </div>
+        
+        <div class="rate-card {% if base_rate_currency == 'USD' %}is-base{% endif %}">
+            <div class="rate-currency-code">
+                <i class="bi bi-currency-dollar"></i>
+                <span>USD - Доллар</span>
+            </div>
+            <div class="rate-amount">
+                <span id="rateUsd">{{ rate_usd | default(0) | round(2) }}</span>
+                <span class="rate-symbol">$</span>
+            </div>
+        </div>
+        
+        <div class="rate-card {% if base_rate_currency == 'EUR' %}is-base{% endif %}">
+            <div class="rate-currency-code">
+                <i class="bi bi-currency-euro"></i>
+                <span>EUR - Евро</span>
+            </div>
+            <div class="rate-amount">
+                <span id="rateEur">{{ rate_eur | default(0) | round(2) }}</span>
+                <span class="rate-symbol">€</span>
+            </div>
+        </div>
+        
+        <div class="rate-card {% if base_rate_currency == 'BYN' %}is-base{% endif %}">
+            <div class="rate-currency-code">
+                <i class="bi bi-currency-exchange"></i>
+                <span>BYN - Бел. рубль</span>
+            </div>
+            <div class="rate-amount">
+                <span id="rateByn">{{ rate_byn | default(0) | round(2) }}</span>
+                <span class="rate-symbol">Br</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Метаданные -->
+    <div class="rates-meta">
+        <div class="rates-meta-item">
+            <i class="bi bi-clock-history rates-meta-icon"></i>
+            <span>Рассчитано: <span id="calculatedAt" class="text-readable-primary">{{ rates_calculated_at | default('—') }}</span></span>
+        </div>
+        <div class="rates-meta-item">
+            <i class="bi bi-graph-up rates-meta-icon"></i>
+            <span>Курс от ЦБ РФ</span>
+        </div>
+    </div>
+    
+    <div id="messageContainer"></div>
+    
+    <script>
+        const candidateId = {{ candidate_id }};
+        
+        async function recalculateRates() {
+            const btn = document.getElementById('refreshBtn');
+            const icon = document.getElementById('refreshIcon');
+            const text = document.getElementById('refreshText');
+            const messageContainer = document.getElementById('messageContainer');
+            
+            // Показываем загрузку
+            btn.disabled = true;
+                icon.innerHTML = '<span class="loading-spinner"></span>';
+                text.textContent = 'Обновление...';
+                messageContainer.innerHTML = '';
+                
+                try {
+                    const response = await fetch(`/api/currency/candidates/${candidateId}/rate/recalculate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Ошибка при пересчете ставок');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Обновляем значения на странице
+                    document.getElementById('rateRub').textContent = data.rate_rub.toFixed(2);
+                    document.getElementById('rateUsd').textContent = data.rate_usd.toFixed(2);
+                    document.getElementById('rateEur').textContent = data.rate_eur.toFixed(2);
+                    document.getElementById('rateByn').textContent = data.rate_byn.toFixed(2);
+                    document.getElementById('calculatedAt').textContent = new Date(data.rates_calculated_at).toLocaleString('ru-RU');
+                    
+                    // Показываем успех
+                    messageContainer.innerHTML = '<div class="success-message"><i class="bi bi-check-circle me-1"></i>Ставки успешно пересчитаны с актуальным курсом</div>';
+                    
+                    setTimeout(() => {
+                        messageContainer.innerHTML = '';
+                    }, 3000);
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    messageContainer.innerHTML = '<div class="error-message"><i class="bi bi-x-circle me-1"></i>Ошибка при пересчете ставок. Попробуйте позже.</div>';
+                } finally {
+                    // Восстанавливаем кнопку
+                    btn.disabled = false;
+                    icon.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                    text.textContent = 'Пересчитать';
+                }
+        }
+        
+        // Форматирование даты при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            const calculatedAt = document.getElementById('calculatedAt');
+            const dateStr = calculatedAt.textContent;
+            if (dateStr && dateStr !== '—') {
+                try {
+                    const date = new Date(dateStr);
+                    calculatedAt.textContent = date.toLocaleString('ru-RU');
+                } catch (e) {
+                    console.error('Error parsing date:', e);
+                }
+            }
+        });
+    </script>
+</div>
+

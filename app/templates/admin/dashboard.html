@@ -1,0 +1,465 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Панель администратора — Omega Hire{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h2 mb-0">Панель управления</h1>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted me-2">Admin Mode</span>
+        </div>
+    </div>
+
+    <div id="success-message" class="alert alert-success alert-dismissible fade d-none" role="alert">
+      <div id="success-content"></div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- KPI / Navigation Widgets -->
+    <div class="row g-4 mb-5">
+        <!-- Pending Registrations -->
+        <div class="col-md-4">
+            <a href="/admin/pending-registrations" class="card text-decoration-none h-100 hover-card d-block">
+                <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div class="text-muted text-uppercase fw-bold fs-7">Заявки</div>
+                    <div class="p-2 rounded bg-surface-2 text-gold">
+                        <i class="bi bi-clipboard-check fs-5"></i>
+                    </div>
+                </div>
+                <div class="fs-1 fw-bold text-heading mb-1">
+                    {% if pending_registrations_count > 0 %}
+                    {{ pending_registrations_count }}
+                    {% else %}
+                    0
+                    {% endif %}
+                </div>
+                <div class="fs-7 {% if pending_registrations_count > 0 %}text-warning{% else %}text-success{% endif %}">
+                    {% if pending_registrations_count > 0 %}
+                    Ожидают подтверждения
+                    {% else %}
+                    Все заявки обработаны
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+
+        <!-- All Candidates -->
+        <div class="col-md-4">
+            <a href="/admin/candidates" class="card text-decoration-none h-100 hover-card d-block">
+                 <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div class="text-muted text-uppercase fw-bold fs-7">Кандидаты</div>
+                    <div class="p-2 rounded bg-surface-2 text-info">
+                        <i class="bi bi-people fs-5"></i>
+                    </div>
+                </div>
+                <div class="fs-1 fw-bold text-heading mb-1">База</div>
+                <div class="text-muted fs-7">
+                    Просмотр всех профилей
+                </div>
+            </a>
+        </div>
+
+        <!-- Chats -->
+        <div class="col-md-4">
+            <a href="/admin/chats" class="card text-decoration-none h-100 hover-card d-block">
+                 <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div class="text-muted text-uppercase fw-bold fs-7">Диалоги</div>
+                    <div class="p-2 rounded bg-surface-2 text-primary">
+                        <i class="bi bi-chat-dots fs-5"></i>
+                    </div>
+                </div>
+                <div class="fs-1 fw-bold text-heading mb-1">Чаты</div>
+                <div class="text-muted fs-7">
+                    История переписок
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Create Recruiter Form -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <h3 class="mb-4 fs-4">Создать рекрутера</h3>
+                <form id="create-form">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">EMAIL</label>
+                        <input type="email" name="email" placeholder="recruiter@omega.com" class="form-control" required style="background-color: var(--color-bg-surface-2); border-color: rgba(255,255,255,0.1); color: white;">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-person-plus me-2"></i>Создать аккаунт
+                    </button>
+                </form>
+                <div class="mt-4 text-muted small">
+                    <i class="bi bi-info-circle me-1"></i> Пароль будет сгенерирован автоматически.
+                </div>
+            </div>
+        </div>
+
+        <!-- Recruiters List -->
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-3">
+                    <h3 class="mb-0 fs-4">Список рекрутеров</h3>
+                    
+                    <!-- Filter Buttons -->
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-secondary filter-btn active" data-filter="all">
+                          Все (<span id="count-all">{{ recruiters|length }}</span>)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary filter-btn" data-filter="active" style="color: #2ecc71; border-color: #2ecc71;">
+                          Активные (<span id="count-active">{{ recruiters|selectattr('is_archived', 'equalto', False)|list|length }}</span>)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary filter-btn" data-filter="archived" style="color: #e74c3c; border-color: #e74c3c;">
+                          Архив (<span id="count-archived">{{ recruiters|selectattr('is_archived', 'equalto', True)|list|length }}</span>)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    {% if recruiters %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email / Пароль</th>
+                                <th>Статус</th>
+                                <th>Даты</th>
+                                <th class="text-end">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recruiters-tbody">
+                            {% for recruiter in recruiters %}
+                            <tr data-user-id="{{ recruiter.id }}" data-status="{% if recruiter.is_archived %}archived{% else %}active{% endif %}" style="{% if recruiter.is_archived %}opacity: 0.6;{% endif %}">
+                                <td><span class="text-muted">#{{ recruiter.id }}</span></td>
+                                <td>
+                                    <div class="fw-bold text-heading">{{ recruiter.email }}</div>
+                                    <div class="mt-1">
+                                        <code class="px-2 py-1 rounded fw-bold" style="background: rgba(255,255,255,0.1); color: var(--color-accent-gold); font-size: 0.85em;">{{ recruiter.password }}</code>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if recruiter.is_archived %}
+                                    <span class="chip chip-error">Архив</span>
+                                    {% else %}
+                                    <span class="chip chip-success">Активен</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-muted fs-7">Созд: {{ recruiter.created_at[:10] if recruiter.created_at else 'Н/Д' }}</div>
+                                    <div class="text-muted fs-7">Pass: {{ recruiter.password_changed_at[:10] if recruiter.password_changed_at else '-' }}</div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                        {% if not recruiter.is_archived %}
+                                        <button class="btn btn-ghost p-2" onclick="openCustomerAccessModal({{ recruiter.id }}, '{{ recruiter.email }}')" title="Доступ">
+                                            <i class="bi bi-lock"></i>
+                                        </button>
+                                        <button class="btn btn-ghost p-2" onclick="openChangePasswordModal({{ recruiter.id }}, '{{ recruiter.email }}')" title="Пароль">
+                                            <i class="bi bi-key"></i>
+                                        </button>
+                                        <a href="/admin/user/{{ recruiter.id }}/sverka-history" class="btn btn-ghost p-2" title="Сверки">
+                                            <i class="bi bi-graph-up"></i>
+                                        </a>
+                                        <button class="btn btn-ghost p-2 text-danger" onclick="archiveUser({{ recruiter.id }}, '{{ recruiter.email }}')" title="В архив">
+                                            <i class="bi bi-archive"></i>
+                                        </button>
+                                        {% else %}
+                                        <button class="btn btn-ghost p-2 text-success" onclick="unarchiveUser({{ recruiter.id }}, '{{ recruiter.email }}')" title="Восстановить">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="display-1 mb-3 text-muted">
+                            <i class="bi bi-inbox" style="font-size: 4rem; color: var(--color-text-muted);"></i>
+                        </div>
+                        <h4 class="text-muted">Нет рекрутеров</h4>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals (Styled for Dark Theme) -->
+<!-- Customer Access Modal -->
+<div class="modal fade" id="customer-access-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background-color: var(--color-bg-surface); border: 1px solid rgba(255,255,255,0.1);">
+      <div class="modal-header border-bottom border-secondary">
+        <h5 class="modal-title fw-bold text-heading"><i class="bi bi-shield-lock me-2"></i>Управление доступом</h5>
+        <button type="button" class="btn-close btn-close-white" onclick="closeCustomerAccessModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-recruiter-info" class="text-muted mb-3"></p>
+        <div id="customers-checkboxes" class="list-group">
+           <!-- Checkboxes via JS -->
+        </div>
+      </div>
+      <div class="modal-footer border-top border-secondary">
+        <button type="button" class="btn btn-ghost" onclick="closeCustomerAccessModal()">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="saveCustomerAccess()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="change-password-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background-color: var(--color-bg-surface); border: 1px solid rgba(255,255,255,0.1);">
+      <div class="modal-header border-bottom border-secondary">
+        <h5 class="modal-title fw-bold text-heading"><i class="bi bi-key me-2"></i>Смена пароля</h5>
+        <button type="button" class="btn-close btn-close-white" onclick="closeChangePasswordModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p id="password-modal-recruiter-info" class="text-muted mb-3"></p>
+        <form id="change-password-form">
+          <input type="hidden" id="password-user-id" name="user_id">
+          <div class="mb-3">
+            <label for="new-password" class="form-label text-muted">Новый пароль</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="new-password" name="new_password" required style="background-color: var(--color-bg-surface-2); border-color: rgba(255,255,255,0.1); color: white;">
+              <button class="btn btn-outline-secondary" type="button" onclick="generateNewPassword()" title="Сгенерировать пароль"><i class="bi bi-dice-6"></i></button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-top border-secondary">
+        <button type="button" class="btn btn-ghost" onclick="closeChangePasswordModal()">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="saveNewPassword()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const form = document.getElementById('create-form');
+    const successDiv = document.getElementById('success-message');
+    const tbody = document.getElementById('recruiters-tbody');
+    let currentUserId = null;
+    const allCustomers = {% if all_customers %}{{ all_customers | tojson }}{% else %}[]{% endif %};
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      successDiv.classList.add('d-none');
+      
+      const formData = new FormData(form);
+      const email = formData.get('email');
+      
+      try {
+        const response = await fetch('/admin/create-recruiter', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          const successContent = document.getElementById('success-content');
+          successContent.innerHTML = `
+            <strong>Аккаунт успешно создан!</strong><br>
+            Email: ${data.email}<br>
+            Пароль: <strong>${data.password}</strong>
+          `;
+          successDiv.classList.remove('d-none');
+          successDiv.classList.add('show');
+          
+          form.reset();
+          setTimeout(() => window.location.reload(), 5000);
+        } else {
+          alert('Ошибка: ' + (data.detail || 'Не удалось создать аккаунт'));
+        }
+      } catch (error) {
+        alert('Ошибка подключения к серверу');
+        console.error(error);
+      }
+    });
+
+    async function openCustomerAccessModal(userId, userEmail) {
+      currentUserId = userId;
+      const modalElement = document.getElementById('customer-access-modal');
+      const modal = new bootstrap.Modal(modalElement);
+      const info = document.getElementById('modal-recruiter-info');
+      const checkboxesContainer = document.getElementById('customers-checkboxes');
+      
+      info.textContent = `Рекрутер: ${userEmail}`;
+      
+      try {
+        const response = await fetch(`/admin/user-customer-access/${userId}`);
+        const data = await response.json();
+        const allowedIds = new Set(data.customer_ids || []);
+        
+        checkboxesContainer.innerHTML = '';
+        if (allCustomers.length === 0) {
+          checkboxesContainer.innerHTML = '<div class="p-3 text-center text-muted">Нет заказчиков в системе</div>';
+        } else {
+          allCustomers.forEach(customer => {
+            const div = document.createElement('div');
+            div.className = 'form-check p-2 border-bottom border-secondary';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'form-check-input';
+            checkbox.id = `customer-${customer.id}`;
+            checkbox.value = customer.id;
+            checkbox.checked = allowedIds.has(customer.id);
+            checkbox.style.backgroundColor = 'var(--color-bg-surface-2)';
+            checkbox.style.borderColor = 'var(--color-text-muted)';
+            
+            const label = document.createElement('label');
+            label.className = 'form-check-label ms-2 text-heading';
+            label.htmlFor = `customer-${customer.id}`;
+            label.textContent = customer.customer_name;
+            label.style.cursor = 'pointer';
+            
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            checkboxesContainer.appendChild(div);
+          });
+        }
+        
+        modal.show();
+      } catch (error) {
+        console.error('Ошибка загрузки доступов:', error);
+      }
+    }
+
+    function closeCustomerAccessModal() {
+      const modalElement = document.getElementById('customer-access-modal');
+      const modal = bootstrap.Modal.getInstance(modalElement);
+      if (modal) modal.hide();
+      currentUserId = null;
+    }
+
+    async function saveCustomerAccess() {
+      if (!currentUserId) return;
+      const checkboxes = document.querySelectorAll('#customers-checkboxes input[type="checkbox"]');
+      const selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => parseInt(cb.value));
+      
+      try {
+        const currentResponse = await fetch(`/admin/user-customer-access/${currentUserId}`);
+        const currentData = await currentResponse.json();
+        const currentIds = new Set(currentData.customer_ids || []);
+        
+        for (const customerId of currentIds) {
+          if (!selectedIds.includes(customerId)) {
+            const formData = new FormData();
+            formData.append('user_id', currentUserId);
+            formData.append('customer_id', customerId);
+            await fetch('/admin/revoke-customer-access', { method: 'POST', body: formData });
+          }
+        }
+        
+        for (const customerId of selectedIds) {
+          if (!currentIds.has(customerId)) {
+            const formData = new FormData();
+            formData.append('user_id', currentUserId);
+            formData.append('customer_id', customerId);
+            await fetch('/admin/grant-customer-access', { method: 'POST', body: formData });
+          }
+        }
+        
+        closeCustomerAccessModal();
+      } catch (error) {
+        console.error('Ошибка сохранения:', error);
+      }
+    }
+
+    function openChangePasswordModal(userId, userEmail) {
+      const modalElement = document.getElementById('change-password-modal');
+      const modal = new bootstrap.Modal(modalElement);
+      document.getElementById('password-user-id').value = userId;
+      document.getElementById('password-modal-recruiter-info').textContent = `Рекрутер: ${userEmail}`;
+      document.getElementById('new-password').value = '';
+      modal.show();
+    }
+
+    function closeChangePasswordModal() {
+      const modalElement = document.getElementById('change-password-modal');
+      const modal = bootstrap.Modal.getInstance(modalElement);
+      if (modal) modal.hide();
+    }
+
+    function generateNewPassword() {
+      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+      let password = "";
+      for (let i = 0; i < 12; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById('new-password').value = password;
+    }
+
+    async function saveNewPassword() {
+      const userId = document.getElementById('password-user-id').value;
+      const newPassword = document.getElementById('new-password').value;
+      if (!newPassword) return alert('Введите пароль');
+      
+      const formData = new FormData();
+      formData.append('user_id', userId);
+      formData.append('new_password', newPassword);
+      
+      try {
+        const response = await fetch('/admin/change-user-password', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          closeChangePasswordModal();
+          window.location.reload();
+        } else {
+          alert('Ошибка: ' + (data.detail || 'Ошибка'));
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    async function archiveUser(userId, userEmail) {
+      if (!confirm(`Архивировать пользователя ${userEmail}?`)) return;
+      const formData = new FormData();
+      formData.append('user_id', userId);
+      try {
+        const response = await fetch('/admin/archive-user', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (response.ok && data.success) window.location.reload();
+      } catch(e) { console.error(e); }
+    }
+
+    async function unarchiveUser(userId, userEmail) {
+       if (!confirm(`Восстановить пользователя ${userEmail}?`)) return;
+       const formData = new FormData();
+       formData.append('user_id', userId);
+       try {
+         const response = await fetch('/admin/unarchive-user', { method: 'POST', body: formData });
+         const data = await response.json();
+         if (response.ok && data.success) window.location.reload();
+       } catch(e) { console.error(e); }
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active'); // Will rely on default bootstrap active style or custom
+        
+        const rows = document.querySelectorAll('#recruiters-tbody tr');
+        rows.forEach(row => {
+          const status = row.dataset.status;
+          if (filter === 'all' || status === filter) row.style.display = '';
+          else row.style.display = 'none';
+        });
+      });
+    });
+</script>
+{% endblock %}

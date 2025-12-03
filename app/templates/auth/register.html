@@ -1,160 +1,97 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Регистрация</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/css/modern-style.css">
-  <link rel="icon" type="image/png"
-        href="{{ url_for('static', path='img/omega-logo.png') }}">
+{% extends "layouts/auth_layout.html" %}
 
-  <style>
-    body{
-      background:#f3f4f6;
-      font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    .auth-page{
-      min-height:calc(100vh - 64px);
-      display:flex;
-      align-items:flex-start;
-      justify-content:center;
-    }
-    .auth-wrapper{
-      width:100%;
-      max-width:420px;
-      margin:60px auto;
-      padding:0 16px;
-    }
-    .auth-card{
-      background:#ffffff;
-      padding:28px 30px 26px;
-      border-radius:18px;
-      box-shadow:0 12px 35px rgba(15,23,42,.12);
-      border:1px solid rgba(148,163,184,0.35);
-    }
-    .auth-card h1{
-      margin:0 0 14px;
-      font-size:1.7rem;
-      font-weight:700;
-      color:#4f46e5;
-      text-align:center;
-    }
-    .subtitle{
-      margin-bottom:22px;
-      color:#64748b;
-      font-size:0.9rem;
-      text-align:center;
-    }
-    .auth-form{
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-    }
-    .auth-card .form-input{
-      display:block;
-      width:100%;
-      box-sizing:border-box;
-      padding:11px 14px;
-      border-radius:12px;
-      border:1px solid #cbd5e1;
-      background:#f9fafb;
-      font-size:1rem;
-      outline:none;
-      transition:border-color .15s, box-shadow .15s, background .15s;
-    }
-    .auth-card .form-input:focus{
-      border-color:#6366f1;
-      box-shadow:0 0 0 1px rgba(99,102,241,.4);
-      background:#ffffff;
-    }
-    .btn-primary{
-      width:100%;
-      border:none;
-      border-radius:12px;
-      padding:12px 0;
-      background:linear-gradient(135deg,#facc15,#f97316);
-      color:#111827;
-      font-size:1rem;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 8px 20px rgba(248,181,0,.45);
-      transition:filter .15s, transform .1s;
-    }
-    .btn-primary:hover{
-      filter:brightness(1.05);
-      transform:translateY(-1px);
-    }
-    .auth-footer{
-      margin-top:16px;
-      text-align:center;
-      font-size:0.9rem;
-      color:#475569;
-    }
-    .auth-footer a{
-      text-decoration:none;
-      color:#2563eb;
-      font-weight:600;
-    }
-    .auth-footer a:hover{text-decoration:underline;}
-  </style>
-</head>
-<body>
+{% block title %}Регистрация — Omega Hire{% endblock %}
 
-  {% include "auth/header_auth.html" %}
+{% block content %}
+<div class="mb-4">
+    <h1 class="mb-2">Создать аккаунт</h1>
+    <p class="text-muted">Заполните форму, чтобы получить доступ к платформе</p>
+</div>
 
-  <main class="auth-page">
-    <div class="auth-wrapper">
-      <div class="auth-card">
-        <h1>Регистрация</h1>
-        <p class="subtitle">Создайте аккаунт, чтобы работать с системой OmegaSolutions</p>
+{% if error %}
+<div class="alert alert-danger mb-4">
+    <i class="bi bi-exclamation-circle me-2"></i> {{ error }}
+</div>
+{% endif %}
 
-        <form id="register_form" class="auth-form">
-          <input name="email" type="email" placeholder="Email" class="form-input" required>
-          <input name="password" type="password" placeholder="Пароль" class="form-input" required>
+<div class="alert alert-info d-flex mb-4" style="background: rgba(31, 78, 121, 0.3); border-color: rgba(255, 255, 255, 0.1); color: var(--color-text-primary);">
+    <i class="bi bi-info-circle me-2 mt-1 text-gold"></i>
+    <div class="small">После подачи заявки вам придет письмо для подтверждения email. Затем администратор рассмотрит вашу заявку.</div>
+</div>
 
-          <button type="submit" class="btn-primary">Создать аккаунт</button>
-        </form>
-
-
-        <div class="auth-footer">
-          Уже есть аккаунт? <a href="/auth/login">Войти</a>
+<form id="register_form" method="POST" action="/auth/register">
+    <!-- Личные данные -->
+    <h5 class="mb-3 text-gold text-uppercase fs-7 ls-1">Личные данные</h5>
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ФАМИЛИЯ *</label>
+            <input name="last_name" type="text" placeholder="Иванов" class="form-input" required value="{{ last_name or '' }}">
         </div>
-      </div>
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ИМЯ *</label>
+            <input name="first_name" type="text" placeholder="Иван" class="form-input" required value="{{ first_name or '' }}">
+        </div>
     </div>
-  </main>
+    <div class="mb-4">
+        <label class="form-label small text-muted fw-bold">ОТЧЕСТВО</label>
+        <input name="middle_name" type="text" placeholder="Иванович" class="form-input" value="{{ middle_name or '' }}">
+    </div>
 
-  <script>
-    const regForm = document.getElementById("register_form");
+    <!-- Контакты -->
+    <h5 class="mb-3 text-gold text-uppercase fs-7 ls-1">Контакты</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">EMAIL *</label>
+            <input name="email" type="email" placeholder="example@mail.com" class="form-input" required value="{{ email or '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ТЕЛЕФОН *</label>
+            <input name="phone" type="tel" placeholder="+7 (999) 000-00-00" class="form-input" required value="{{ phone or '' }}">
+        </div>
+    </div>
 
-    regForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    <!-- Профессиональные данные -->
+    <h5 class="mb-3 text-gold text-uppercase fs-7 ls-1">Профиль</h5>
+    <div class="mb-3">
+        <label class="form-label small text-muted fw-bold">СПЕЦИАЛИЗАЦИЯ</label>
+        <input name="specialization" type="text" placeholder="IT Recruiter, HR Manager..." class="form-input" value="{{ specialization or '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label small text-muted fw-bold">ОПЫТ РАБОТЫ</label>
+        <input name="experience" type="text" placeholder="3 года в подборе персонала..." class="form-input" value="{{ experience or '' }}">
+    </div>
+    <div class="mb-4">
+        <label class="form-label small text-muted fw-bold">ССЫЛКА НА РЕЗЮМЕ</label>
+        <input name="resume" type="text" placeholder="hh.ru/resume/..." class="form-input" value="{{ resume or '' }}">
+    </div>
 
-      const payload = {
-        email: regForm.email.value,      // ✅ ключ email
-        password: regForm.password.value
-      };
+    <!-- Пароль -->
+    <h5 class="mb-3 text-gold text-uppercase fs-7 ls-1">Безопасность</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ПАРОЛЬ *</label>
+            <input name="password" type="password" placeholder="Min 6 characters" class="form-input" required minlength="6">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ПОВТОР *</label>
+            <input name="confirm_password" type="password" placeholder="********" class="form-input" required minlength="6">
+        </div>
+    </div>
 
-      const resp = await fetch("/auth/register", {   // ✅ правильный путь
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload)
-      });
+    <!-- Согласие -->
+    <div class="form-check mb-4 p-3 rounded border border-secondary bg-surface-2">
+        <input class="form-check-input mt-1" type="checkbox" id="pd_consent" name="pd_consent" required style="background-color: var(--color-bg-primary); border-color: var(--color-text-muted);">
+        <label class="form-check-label small text-muted ms-2" for="pd_consent">
+            Я согласен на обработку <a href="/auth/consent-personal-data" target="_blank" class="text-gold text-decoration-none">персональных данных</a> и принимаю <a href="/auth/policy-personal-data" target="_blank" class="text-gold text-decoration-none">политику конфиденциальности</a>.
+        </label>
+    </div>
 
-      if (resp.redirected) {
-        window.location.href = resp.url;
-        return;
-      }
+    <button type="submit" class="btn btn-primary w-100 mb-4">
+        Подать заявку
+    </button>
 
-      const txt = await resp.text();
-
-      if (resp.ok) {
-        alert("Аккаунт создан, теперь можно войти");
-        window.location.href = "/auth/login";
-      } else {
-        alert("Ошибка регистрации:\n" + txt);
-      }
-    });
-  </script>
-
-</body>
-</html>
+    <div class="text-center text-muted">
+        Уже есть аккаунт? <a href="/auth/login" class="text-gold fw-bold">Войти</a>
+    </div>
+</form>
+{% endblock %}

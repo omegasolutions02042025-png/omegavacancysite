@@ -1,149 +1,450 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <title>Результаты сверки</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/css/modern-style.css">
-  <link rel="icon" type="image/png"
-        href="{{ url_for('static', path='img/omega-logo.png') }}">
-  <style>
-    body { background:#f3f4f6; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    .container { max-width:1100px; margin:30px auto; padding:0 15px; }
-    .card { background:#fff; border-radius:16px; padding:24px 24px 28px; box-shadow:0 12px 35px rgba(15,23,42,.08); }
-    h1 { margin-top:0; font-size:24px; display:flex; align-items:center; gap:10px; }
-    .subtitle { color:#6b7280; margin-top:4px; margin-bottom:20px; }
-    .group-title { margin:26px 0 12px; font-size:18px; display:flex; align-items:center; gap:10px; }
-    .group-ok { color:#166534; }
-    .group-partial { color:#92400e; }
-    .group-no { color:#991b1b; }
-    .group-unknown { color:#334155; }
+{% extends "layouts/base.html" %}
 
-    .results-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
-    .result-item {
-      background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);
-      border:1px solid #e2e8f0; border-radius:14px; padding:16px 16px 14px;
-      display:flex; flex-direction:column; gap:10px; position:relative;
+{% block title %}Результаты сверки — Omega Hire{% endblock %}
+
+{% block head %}
+<style>
+  .result-list-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .result-list-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 30px rgba(255, 215, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-list-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--color-accent-gold) 50%, 
+      transparent 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+
+  .result-list-card h1 {
+    margin-top: 0;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-heading);
+    text-shadow: 
+      0 0 20px rgba(255, 215, 0, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .subtitle {
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    margin-top: 4px;
+    margin-bottom: 20px;
+  }
+
+  .subtitle strong {
+    color: var(--color-accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .vacancy-pill {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%);
+    border: 1px solid var(--color-accent-gold);
+    color: var(--color-accent-gold);
+    padding: 5px 12px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      0 0 15px rgba(255, 215, 0, 0.2);
+  }
+
+  .group-title {
+    margin: 26px 0 12px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-heading);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  }
+
+  .group-ok {
+    color: #2ECC71;
+  }
+
+  .group-partial {
+    color: var(--color-accent-gold);
+  }
+
+  .group-no {
+    color: #E74C3C;
+  }
+
+  .group-unknown {
+    color: var(--color-text-primary);
+    opacity: 0.9;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .result-item {
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 16px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .result-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      0 0 20px rgba(255, 215, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .result-item h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--color-text-heading);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    word-break: break-word;
+    position: relative;
+    z-index: 10;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+  }
+
+  .file-tag {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.08) 100%);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: var(--color-accent-gold);
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+    max-width: 100%;
+    word-break: break-word;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 8px 3px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    width: fit-content;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .status-ok {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(46, 204, 113, 0.1) 100%);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    color: #2ECC71;
+  }
+
+  .status-missing {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%);
+    border: 1px solid var(--color-accent-gold);
+    color: var(--color-accent-gold);
+  }
+
+  .meta-row {
+    font-size: 13px;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--color-text-heading);
+    padding: 4px 10px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .meta-chip strong {
+    color: var(--color-accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  .result-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .view-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gradient-gold);
+    color: #0A1929;
+    padding: 10px 20px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.4),
+      0 0 20px rgba(255, 215, 0, 0.2);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .view-link::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  .view-link:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .view-link span[aria-hidden="true"] {
+    font-weight: 700;
+  }
+
+  .view-link:hover {
+    background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 25px rgba(255, 215, 0, 0.6),
+      0 0 40px rgba(255, 215, 0, 0.4);
+  }
+
+  .empty {
+    background: var(--color-bg-surface-2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    font-size: 1rem;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .navigation {
+    margin-top: 22px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .navigation a {
+    margin-right: 12px;
+    text-decoration: none;
+    color: var(--color-accent-gold);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  .navigation a:hover {
+    text-decoration: underline;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    color: #FFE066;
+  }
+
+  @media (max-width: 600px) {
+    .result-footer {
+      flex-direction: column;
+      align-items: flex-start;
     }
-    .result-item h3 { margin:0; font-size:16px; color:#0f172a; display:flex; gap:6px; align-items:center; word-break:break-word; }
-    .file-tag { display:inline-flex; gap:4px; align-items:center; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:9999px; font-size:12px; max-width:100%; word-break:break-word; }
-    .status-badge { display:inline-block; padding:3px 8px 3px; border-radius:9999px; font-size:12px; font-weight:600; width:fit-content; }
-    .status-ok { background:#dcfce7; color:#166534; }
-    .status-missing { background:#fef3c7; color:#92400e; }
-    .meta-row { font-size:13px; color:#334155; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-    .meta-chip { display:inline-flex; align-items:center; gap:6px; background:#f1f5f9; color:#0f172a; padding:4px 10px; border-radius:9999px; }
-    .result-footer { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+
     .view-link {
-      display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.05);
-      border:1px solid rgba(148,163,184,.35); backdrop-filter:blur(6px); color:#0f172a; padding:6px 12px; border-radius:9999px;
-      text-decoration:none; font-size:13px; font-weight:500; transition:all .15s ease-out;
+      width: 100%;
+      justify-content: center;
     }
-    .view-link span[aria-hidden="true"] { font-weight:600; }
-    .view-link:hover { background:rgba(226,232,255,.65); border-color:rgba(148,163,184,.7); transform:translateY(-1px); box-shadow:0 5px 14px rgba(15,23,42,.08); }
-    .vacancy-pill { background:#e0f2fe; color:#075985; padding:5px 12px; border-radius:9999px; font-size:13px; }
-    .empty { background:#f8fafc; border:1px dashed #cbd5f5; border-radius:12px; padding:32px 24px; text-align:center; color:#94a3b8; }
-    .navigation a { margin-right:12px; text-decoration:none; color:#0f172a; font-size:14px; }
+  }
+</style>
+{% endblock %}
 
-    @media (max-width:600px){
-      .result-footer { flex-direction:column; align-items:flex-start; }
-      .view-link { width:100%; justify-content:center; }
-    }
-  </style>
-</head>
-<body>
-  {% include "auth/header_auth.html" %}
-  <div class="container">
-    <div class="card">
-
-      <div class="header-row" style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
-        <div>
-          <h1>📁 Результаты сверки</h1>
-          <p class="subtitle">Всего обработано: {{ results|length }} файл(ов).</p>
-        </div>
-        <div class="vacancy-pill">Вакансия: {{ vacancy_id }}</div>
-      </div>
-
-      {% if results and results|length > 0 %}
-        {# ---- ГРУППИРОВКА ПО ВЕРДИКТУ ---- #}
-        {% set ns = namespace(ok=[], partial=[], no=[], unknown=[]) %}
-        {% for item in results %}
-          {% set idx = loop.index0 %}
-          {% set r = item.resume_json if item.resume_json is mapping else {} %}
-          {% set verdict = (r.summary.verdict if r and r.summary is defined and r.summary and r.summary.verdict is defined else '') %}
-          {% set pair = {'item': item, 'idx': idx} %}
-          {% if verdict and 'Полностью подходит' in verdict %}
-            {% set _ = ns.ok.append(pair) %}
-          {% elif verdict and 'Частично подходит' in verdict %}
-            {% set _ = ns.partial.append(pair) %}
-          {% elif verdict and 'Не подходит' in verdict %}
-            {% set _ = ns.no.append(pair) %}
+{% block content %}
+<div class="result-list-container">
+  <div class="result-list-card">
+    <div class="header-row">
+      <div>
+        <h1>📁 Результаты сверки{% if is_admin_view %} пользователя{% endif %}</h1>
+        <p class="subtitle">
+          {% if is_admin_view %}
+          Рекрутер: <strong>{{ user_email }}</strong> | Всего обработано: {{ results|length }} файл(ов).
           {% else %}
-            {% set _ = ns.unknown.append(pair) %}
+          Всего обработано: {{ results|length }} файл(ов).
           {% endif %}
-        {% endfor %}
-
-        {# ---- РЕНДЕР ГРУПП ---- #}
-        {% macro render_group(title, cls, pairs) -%}
-          {% if pairs|length > 0 %}
-            <h2 class="group-title {{ cls }}">{{ title }} ({{ pairs|length }})</h2>
-            <div class="results-grid">
-              {% for p in pairs %}
-                {% set item = p.item %}
-                {% set idx = p.idx %}
-                {% set fullname = item.candidate_fullname or (item.resume_json.candidate.full_name if item.resume_json is mapping and item.resume_json.candidate is defined and item.resume_json.candidate else '') %}
-                {% set have_name = fullname|length > 0 %}
-
-                {# ЛОКАЦИЯ #}
-                {% set city = (item.resume_json.candidate.location.city if item.resume_json is mapping and item.resume_json.candidate is defined and item.resume_json.candidate and item.resume_json.candidate.location is defined and item.resume_json.candidate.location and item.resume_json.candidate.location.city is defined else '') %}
-                {% set country = (item.resume_json.candidate.location.country if item.resume_json is mapping and item.resume_json.candidate is defined and item.resume_json.candidate and item.resume_json.candidate.location is defined and item.resume_json.candidate.location and item.resume_json.candidate.location.country is defined else '') %}
-                {% set location_text = (city ~ (', ' if city and country else '') ~ country) if (city or country) else 'нужно уточнить' %}
-
-                {# ЗАРПЛАТНЫЕ ОЖИДАНИЯ #}
-                {% set salary_summary = (item.resume_json.summary.salary_expectations if item.resume_json is mapping and item.resume_json.summary is defined and item.resume_json.summary and item.resume_json.summary.salary_expectations is defined else '') %}
-                {% set salary_candidate = (item.resume_json.candidate.salary_expectations if item.resume_json is mapping and item.resume_json.candidate is defined and item.resume_json.candidate and item.resume_json.candidate.salary_expectations is defined else '') %}
-                {% set salary_text = salary_summary if salary_summary else (salary_candidate if salary_candidate else 'нужно уточнить') %}
-
-                <div class="result-item">
-                  <h3>{{ have_name and fullname or 'Кандидат не определён' }}</h3>
-
-                  <div class="file-tag">📄 {{ item.filename or "без_названия" }}</div>
-
-                  {% if have_name %}
-                    <span class="status-badge status-ok">ФИО определено</span>
-                  {% else %}
-                    <span class="status-badge status-missing">Нужно уточнить ФИО</span>
-                  {% endif %}
-
-                  <div class="meta-row">
-                    <span class="meta-chip">📍 Локация: <strong>{{ location_text }}</strong></span>
-                    <span class="meta-chip">💰 Ожидания: <strong>{{ salary_text }}</strong></span>
-                  </div>
-
-                  <div class="result-footer">
-                    <a class="view-link" href="/sverka/result/{{ task_id }}/{{ idx }}?tg_username={{tg_username}}">
-                      Открыть сверку <span aria-hidden="true">→</span>
-                    </a>
-                  </div>
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {%- endmacro %}
-
-        {{ render_group('✅ Полностью подходит', 'group-ok', ns.ok) }}
-        {{ render_group('🟡 Частично подходит (нужны уточнения)', 'group-partial', ns.partial) }}
-        {{ render_group('⛔ Не подходит', 'group-no', ns.no) }}
-        {{ render_group('ℹ️ Без вердикта', 'group-unknown', ns.unknown) }}
-
-      {% else %}
-        <div class="empty">Пока нет результатов для этого запроса.</div>
-      {% endif %}
-
-      <div class="navigation" style="margin-top:22px;">
-        <a href="/vacancy">📤 Открыть вакансии</a>
-        <a href="/">🏠 Главная</a>
+        </p>
       </div>
+      <div class="vacancy-pill">Вакансия: {{ vacancy_id }}</div>
+    </div>
+
+    {% if results and results|length > 0 %}
+      {# ---- ГРУППИРОВКА ПО ВЕРДИКТУ ---- #}
+      {% set ns = namespace(ok=[], partial=[], no=[], unknown=[]) %}
+      {% for item in results %}
+        {% set idx = loop.index0 %}
+        {% set r = item.resume_json if item.resume_json is mapping else {} %}
+        {% set verdict = (r.summary.verdict if r and r.summary is defined and r.summary and r.summary.verdict is defined else '') %}
+        {% set pair = {'item': item, 'idx': idx} %}
+        {% if verdict and 'Полностью подходит' in verdict %}
+          {% set _ = ns.ok.append(pair) %}
+        {% elif verdict and 'Частично подходит' in verdict %}
+          {% set _ = ns.partial.append(pair) %}
+        {% elif verdict and 'Не подходит' in verdict %}
+          {% set _ = ns.no.append(pair) %}
+        {% else %}
+          {% set _ = ns.unknown.append(pair) %}
+        {% endif %}
+      {% endfor %}
+
+      {# ---- РЕНДЕР ГРУПП ---- #}
+      {% macro render_group(title, cls, pairs) -%}
+        {% if pairs|length > 0 %}
+          <h2 class="group-title {{ cls }}">{{ title }} ({{ pairs|length }})</h2>
+          <div class="results-grid">
+            {% for p in pairs %}
+              {% set item = p.item %}
+              {% set idx = p.idx %}
+              {% set fullname = item.candidate_fullname or (item.resume_json.candidate.full_name if item.resume_json is mapping and item.resume_json.candidate is defined and item.resume_json.candidate else '') %}
+              {% set have_name = fullname|length > 0 %}
+
+              {# ЛОКАЦИЯ #}
+              {% set city = (item.resume_json.candidate.location.city if item.resume_json is mapping and item.resume_json.candidate is defined and item.resume_json.candidate and item.resume_json.candidate.location is defined and item.resume_json.candidate.location and item.resume_json.candidate.location.city is defined else '') %}
+              {% set country = (item.resume_json.candidate.location.country if item.resume_json is mapping and item.resume_json.candidate is defined and item.resume_json.candidate and item.resume_json.candidate.location is defined and item.resume_json.candidate.location and item.resume_json.candidate.location.country is defined else '') %}
+              {% set location_text = (city ~ (', ' if city and country else '') ~ country) if (city or country) else 'нужно уточнить' %}
+
+              {# ЗАРПЛАТНЫЕ ОЖИДАНИЯ #}
+              {% set salary_summary = (item.resume_json.summary.salary_expectations if item.resume_json is mapping and item.resume_json.summary is defined and item.resume_json.summary and item.resume_json.summary.salary_expectations is defined else '') %}
+              {% set salary_candidate = (item.resume_json.candidate.salary_expectations if item.resume_json is mapping and item.resume_json.candidate is defined and item.resume_json.candidate and item.resume_json.candidate.salary_expectations is defined else '') %}
+              {% set salary_text = salary_summary if salary_summary else (salary_candidate if salary_candidate else 'нужно уточнить') %}
+
+              <div class="result-item">
+                <h3>{{ have_name and fullname or 'Кандидат не определён' }}</h3>
+
+                <div class="file-tag">📄 {{ item.filename or "без_названия" }}</div>
+
+                {% if have_name %}
+                  <span class="status-badge status-ok">ФИО определено</span>
+                {% else %}
+                  <span class="status-badge status-missing">Нужно уточнить ФИО</span>
+                {% endif %}
+
+                <div class="meta-row">
+                  <span class="meta-chip">📍 Локация: <strong>{{ location_text }}</strong></span>
+                  <span class="meta-chip">💰 Ожидания: <strong>{{ salary_text }}</strong></span>
+                </div>
+
+                <div class="result-footer">
+                  {# ВМЕСТО idx ИСПОЛЬЗУЕМ slug ИЗ БД #}
+                  <a class="view-link"
+                     href="{% if is_admin_view %}/admin/user/{{ user_id }}/sverka-history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% else %}/sverka/history/result-{{vacancy_id}}/{{ item.slug }}?tg_username={{ tg_username }}{% endif %}">
+                    Открыть сверку <span aria-hidden="true">→</span>
+                  </a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {%- endmacro %}
+
+      {{ render_group('✅ Полностью подходит', 'group-ok', ns.ok) }}
+      {{ render_group('🟡 Частично подходит (нужны уточнения)', 'group-partial', ns.partial) }}
+      {{ render_group('⛔ Не подходит', 'group-no', ns.no) }}
+      {{ render_group('ℹ️ Без вердикта', 'group-unknown', ns.unknown) }}
+
+    {% else %}
+      <div class="empty">Пока нет результатов для этого запроса.</div>
+    {% endif %}
+
+    <div class="navigation">
+      {% if is_admin_view %}
+      <a href="/admin/user/{{ user_id }}/sverka-history">← Назад к истории сверок</a>
+      <a href="/admin/dashboard">🏠 Админ-панель</a>
+      {% else %}
+      <a href="/vacancy">📤 Открыть вакансии</a>
+      <a href="/">🏠 Главная</a>
+      {% endif %}
     </div>
   </div>
-</body>
-</html>
+</div>
+{% endblock %}

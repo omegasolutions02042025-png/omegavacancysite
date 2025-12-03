@@ -16,10 +16,28 @@ logger = logging.getLogger(__name__)
 
 
 def _looks_like_html(s: str) -> bool:
+    """
+    Проверить, выглядит ли строка как HTML.
+    
+    Args:
+        s: Строка для проверки
+        
+    Returns:
+        bool: True если строка содержит HTML теги
+    """
     return bool(re.search(r'</?[a-z][\s\S]*?>', s or '', re.I))
 
 
 def _plain_to_html_preserve_breaks(text: str) -> str:
+    """
+    Преобразовать обычный текст в HTML с сохранением переносов строк.
+    
+    Args:
+        text: Обычный текст
+        
+    Returns:
+        str: HTML строка с экранированными символами и сохраненными переносами
+    """
     if text is None:
         text = ""
     esc = _html.escape(text).replace("\r\n", "\n").replace("\r", "\n").replace("\n", "<br>\n")
@@ -27,6 +45,17 @@ def _plain_to_html_preserve_breaks(text: str) -> str:
 
 
 def _html_to_plain_fallback(html: str) -> str:
+    """
+    Преобразовать HTML в обычный текст для plain-text версии письма.
+    
+    Удаляет HTML теги, конвертирует ссылки в формат "текст (url)".
+    
+    Args:
+        html: HTML строка
+        
+    Returns:
+        str: Обычный текст или "(пустое письмо)" если HTML пустой
+    """
     if not html:
         return "(пустое письмо)"
     text = re.sub(r'(?i)</(p|div|h[1-6]|li|br)\s*>', '\n', html)
@@ -45,6 +74,17 @@ def _html_to_plain_fallback(html: str) -> str:
 
 
 def sanitize_header(value: Optional[str]) -> str:
+    """
+    Очистить заголовок email от недопустимых символов.
+    
+    Удаляет переносы строк и лишние пробелы.
+    
+    Args:
+        value: Значение заголовка
+        
+    Returns:
+        str: Очищенное значение или пустая строка
+    """
     if not value:
         return ""
     value = re.sub(r'[\r\n\t]+', ' ', value)
@@ -69,6 +109,26 @@ async def send_email_smtp(
 ) -> bool:
     """
     Универсальная отправка письма через любой SMTP-сервер с логами.
+    
+    Поддерживает HTML и plain-text письма, вложения, автоматически определяет HTML.
+    Создает multipart письмо с альтернативными версиями (HTML и plain-text).
+    
+    Args:
+        sender_email: Email отправителя
+        recipient_email: Email получателя
+        subject: Тема письма
+        body: Тело письма (может быть HTML или plain-text)
+        html: Принудительно использовать HTML (если False, определяется автоматически)
+        attachments: Список путей к файлам для вложения
+        smtp_host: Хост SMTP сервера
+        smtp_port: Порт SMTP сервера
+        smtp_username: Имя пользователя для SMTP
+        smtp_password: Пароль для SMTP
+        use_tls: Использовать TLS (для порта 465)
+        use_starttls: Использовать STARTTLS (для порта 587)
+        
+    Returns:
+        bool: True если письмо успешно отправлено, False в случае ошибки
     """
 
     # --- входные параметры (без пароля) ---
@@ -205,5 +265,18 @@ async def send_email_smtp(
 
 
 # Пример вызова
-
+# import asyncio
+# asyncio.run(send_email_smtp(
+#     sender_email='zakaz@omega-solutions.ru',
+#     recipient_email='artursimoncik@gmail.com',
+#     subject='test',
+#     body='test',
+#     html=True,
+#     smtp_host='mailbe07.hoster.by',
+#     smtp_port=465,
+#     smtp_username='zakaz@omega-solutions.ru',
+#     smtp_password='Zakazomega2025!',
+#     use_tls=True,
+#     use_starttls=False,
+# ))
 

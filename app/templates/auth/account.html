@@ -1,135 +1,320 @@
-{# templates/auth_account.html #}
-{% extends "base.html" %}
+{% extends "layouts/base.html" %}
 
-{% block title %}Аккаунт — OmegaVac{% endblock %}
+{% block title %}Аккаунт — Omega Hire{% endblock %}
 
-{% block content %}
-<div class="card" style="background:#fff;border-radius:16px;padding:24px;box-shadow:0 12px 35px rgba(15,23,42,.08);max-width:700px;margin:0 auto;">
-  <h1 style="margin-top:0;font-size:1.4rem;">Аккаунт</h1>
-  <p style="color:#6b7280;font-size:0.9rem;margin-bottom:18px;">
-    Управление рабочими настройками интеграций: Telegram и e-mail.
-  </p>
-
-  <div id="acc_loading" style="font-size:0.9rem;color:#6b7280;">Загружаем профиль…</div>
-  <form id="account_form" style="display:none;">
-    <div class="form-group">
-      <label>Логин (username)</label>
-      <input type="text" id="acc_username" disabled
-             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;background:#f3f4f6;">
-    </div>
-
-    <h3 style="margin-top:18px;font-size:1rem;">Telegram</h3>
-    <div class="form-group" style="margin-top:6px;">
-      <label for="work_telegram">Рабочий Telegram (@username)</label>
-      <input type="text" id="work_telegram" name="work_telegram"
-             placeholder="@DmitriyOmega"
-             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;">
-    </div>
-    <div class="form-group" style="margin-top:6px;">
-      <label for="work_telegram_session_name">Имя файла сессии Telegram</label>
-      <input type="text" id="work_telegram_session_name" name="work_telegram_session_name"
-             placeholder="omega_session"
-             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;">
-    </div>
-
-    <h3 style="margin-top:18px;font-size:1rem;">E-mail</h3>
-    <div class="form-group" style="margin-top:6px;">
-      <label for="work_email">Рабочий e-mail</label>
-      <input type="email" id="work_email" name="work_email"
-             placeholder="cv@omega-solutions.ru"
-             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;">
-    </div>
-    <div class="form-group" style="margin-top:6px;">
-      <label for="work_email_app_pass">Пароль приложения e-mail</label>
-      <input type="password" id="work_email_app_pass" name="work_email_app_pass"
-             placeholder="••••••••"
-             style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;">
-    </div>
-
-    <button type="submit" style="margin-top:18px;width:100%;padding:10px 14px;border:none;border-radius:999px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:600;cursor:pointer;">
-      Сохранить настройки
-    </button>
-    <p id="acc_message" style="margin-top:10px;font-size:0.85rem;color:#6b7280;"></p>
-  </form>
-</div>
+{% block head %}
+  <style>
+    .page-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+    .account-card {
+      background: var(--color-bg-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 16px;
+      padding: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 30px rgba(255, 215, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .account-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--color-accent-gold) 50%, 
+        transparent 100%);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--color-text-heading);
+      margin: 0 0 12px;
+      text-shadow: 
+        0 0 20px rgba(255, 215, 0, 0.3),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .page-subtitle {
+      color: var(--color-text-primary);
+      font-size: 1rem;
+      margin: 0 0 32px;
+      opacity: 0.95;
+    }
+    .form-group {
+      margin-bottom: 24px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-text-heading);
+      margin-bottom: 8px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: var(--color-bg-surface-2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--color-text-heading);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .form-group input::placeholder {
+      color: var(--color-text-muted);
+      opacity: 0.7;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--color-accent-gold);
+      background: var(--color-bg-surface);
+      box-shadow: 
+        0 0 0 2px rgba(255, 215, 0, 0.2),
+        0 0 20px rgba(255, 215, 0, 0.15),
+        0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .form-group input:disabled {
+      background: var(--color-bg-surface-2);
+      color: var(--color-text-muted);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--color-text-heading);
+      margin: 32px 0 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      text-shadow: 
+        0 0 15px rgba(255, 215, 0, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    .section-title:first-of-type {
+      margin-top: 0;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 14px 0;
+      border-radius: 12px;
+      border: none;
+      background: var(--gradient-gold);
+      color: #0A1929;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 
+        0 8px 24px rgba(255, 215, 0, 0.4),
+        0 0 30px rgba(255, 215, 0, 0.2);
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-submit::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+    .btn-submit:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 32px rgba(255, 215, 0, 0.6),
+        0 0 40px rgba(255, 215, 0, 0.4);
+    }
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .message {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .message-success {
+      background: linear-gradient(135deg, rgba(46, 204, 113, 0.2) 0%, rgba(46, 204, 113, 0.1) 100%);
+      border: 1px solid rgba(46, 204, 113, 0.3);
+      color: #2ECC71;
+      box-shadow: 
+        0 0 15px rgba(46, 204, 113, 0.2),
+        0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    .message-error {
+      background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(231, 76, 60, 0.1) 100%);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+      color: #E74C3C;
+      box-shadow: 
+        0 0 15px rgba(231, 76, 60, 0.2),
+        0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    .loading {
+      font-size: 1rem;
+      color: var(--color-text-primary);
+      padding: 20px;
+      text-align: center;
+    }
+  </style>
 {% endblock %}
 
-{% block extra_scripts %}
-{{ super() }}
-<script>
-  const TOKEN_KEY = 'omega_access_token';
-  function getToken() { return window.localStorage.getItem(TOKEN_KEY); }
+{% block content %}
+  <div class="page-wrapper">
+    <div class="account-card">
+      <h1 class="page-title">
+        <i class="bi bi-gear-fill me-2"></i>Аккаунт
+      </h1>
+      <p class="page-subtitle">Управление рабочими настройками интеграций: Telegram и e-mail</p>
 
-  async function loadAccount() {
-    const token = getToken();
-    const loadingEl = document.getElementById('acc_loading');
-    const formEl = document.getElementById('account_form');
-    const msgEl = document.getElementById('acc_message');
+      <div id="acc_loading" class="loading">Загружаем профиль…</div>
+      <form id="account_form" style="display:none;">
+        <div class="form-group">
+          <label>Логин (username)</label>
+          <input type="text" id="acc_username" disabled>
+        </div>
 
-    if (!token) {
-      loadingEl.textContent = 'Вы не авторизованы. Пожалуйста, войдите.';
-      return;
-    }
+        <h3 class="section-title">
+          <i class="bi bi-telegram me-2"></i>Telegram
+        </h3>
+        <div class="form-group">
+          <label for="work_telegram">Рабочий Telegram (@username)</label>
+          <input type="text" id="work_telegram" name="work_telegram" placeholder="@DmitriyOmega">
+        </div>
+        <div class="form-group">
+          <label for="work_telegram_session_name">Имя файла сессии Telegram</label>
+          <input type="text" id="work_telegram_session_name" name="work_telegram_session_name" placeholder="omega_session">
+        </div>
 
-    try {
-      const res = await fetch('/auth/me', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      if (!res.ok) {
-        loadingEl.textContent = 'Ошибка загрузки профиля (' + res.status + ').';
-        if (res.status === 401) {
-          window.localStorage.removeItem(TOKEN_KEY);
-          setTimeout(() => { window.location.href = '/auth/login-page'; }, 800);
-        }
+        <h3 class="section-title">
+          <i class="bi bi-envelope me-2"></i>E-mail
+        </h3>
+        <div class="form-group">
+          <label for="work_email">Рабочий e-mail</label>
+          <input type="email" id="work_email" name="work_email" placeholder="cv@omega-solutions.ru">
+        </div>
+        <div class="form-group">
+          <label for="work_email_app_pass">Пароль приложения e-mail</label>
+          <input type="password" id="work_email_app_pass" name="work_email_app_pass" placeholder="••••••••">
+          <p style="margin-top: 8px; font-size: 0.85rem; color: var(--color-text-muted);">
+            Вот ссылка как создать пароль приложения: 
+            <a href="https://support.google.com/accounts/answer/185833" target="_blank" style="color: var(--color-accent-gold); text-decoration: none;">Перейти</a>
+          </p>
+        </div>
+
+        <button type="submit" class="btn-submit">
+          <i class="bi bi-save me-2"></i>Сохранить настройки
+        </button>
+        <p id="acc_message" style="margin-top:16px;font-size:0.9rem;"></p>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    const TOKEN_KEY = 'omega_access_token';
+    function getToken() { return window.localStorage.getItem(TOKEN_KEY); }
+
+    async function loadAccount() {
+      const token = getToken();
+      const loadingEl = document.getElementById('acc_loading');
+      const formEl = document.getElementById('account_form');
+      const msgEl = document.getElementById('acc_message');
+
+      if (!token) {
+        loadingEl.textContent = 'Вы не авторизованы. Пожалуйста, войдите.';
         return;
       }
-      const data = await res.json();
-      loadingEl.style.display = 'none';
-      formEl.style.display = 'block';
 
-      document.getElementById('acc_username').value = data.username || '';
-      document.getElementById('work_telegram').value = data.work_telegram || '';
-      document.getElementById('work_telegram_session_name').value = data.work_telegram_session_name || '';
-      document.getElementById('work_email').value = data.work_email || '';
-      document.getElementById('work_email_app_pass').value = data.work_email_app_pass || '';
-
-      formEl.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        msgEl.textContent = 'Сохраняем...';
-        try {
-          const payload = {
-            work_telegram: document.getElementById('work_telegram').value || null,
-            work_telegram_session_name: document.getElementById('work_telegram_session_name').value || null,
-            work_email: document.getElementById('work_email').value || null,
-            work_email_app_pass: document.getElementById('work_email_app_pass').value || null,
-          };
-          const resUpd = await fetch('/auth/me', {
-            method: 'POST',
-            headers: {
-              'Authorization': 'Bearer ' + token,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-          const updData = await resUpd.json();
-          if (!resUpd.ok) {
-            msgEl.style.color = '#dc2626';
-            msgEl.textContent = updData.detail || 'Ошибка сохранения';
-            return;
+      try {
+        const res = await fetch('/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) {
+          loadingEl.textContent = 'Ошибка загрузки профиля (' + res.status + ').';
+          if (res.status === 401) {
+            window.localStorage.removeItem(TOKEN_KEY);
+            setTimeout(() => { window.location.href = '/auth/login-page'; }, 800);
           }
-          msgEl.style.color = '#16a34a';
-          msgEl.textContent = 'Настройки сохранены';
-        } catch (e) {
-          msgEl.style.color = '#dc2626';
-          msgEl.textContent = 'Ошибка: ' + e.message;
+          return;
         }
-      });
+        const data = await res.json();
+        loadingEl.style.display = 'none';
+        formEl.style.display = 'block';
 
-    } catch (e) {
-      loadingEl.textContent = 'Ошибка: ' + e.message;
+        document.getElementById('acc_username').value = data.username || '';
+        document.getElementById('work_telegram').value = data.work_telegram || '';
+        document.getElementById('work_telegram_session_name').value = data.work_telegram_session_name || '';
+        document.getElementById('work_email').value = data.work_email || '';
+        document.getElementById('work_email_app_pass').value = data.work_email_app_pass || '';
+
+        formEl.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          msgEl.textContent = 'Сохраняем...';
+          msgEl.className = '';
+          try {
+            const payload = {
+              work_telegram: document.getElementById('work_telegram').value || null,
+              work_telegram_session_name: document.getElementById('work_telegram_session_name').value || null,
+              work_email: document.getElementById('work_email').value || null,
+              work_email_app_pass: document.getElementById('work_email_app_pass').value || null,
+            };
+            const resUpd = await fetch('/auth/me', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(payload)
+            });
+            const updData = await resUpd.json();
+            if (!resUpd.ok) {
+              msgEl.className = 'message message-error';
+              msgEl.textContent = updData.detail || 'Ошибка сохранения';
+              return;
+            }
+            msgEl.className = 'message message-success';
+            msgEl.textContent = 'Настройки сохранены';
+          } catch (e) {
+            msgEl.className = 'message message-error';
+            msgEl.textContent = 'Ошибка: ' + e.message;
+          }
+        });
+
+      } catch (e) {
+        loadingEl.textContent = 'Ошибка: ' + e.message;
+      }
     }
-  }
 
-  document.addEventListener('DOMContentLoaded', loadAccount);
-</script>
+    document.addEventListener('DOMContentLoaded', loadAccount);
+  </script>
 {% endblock %}

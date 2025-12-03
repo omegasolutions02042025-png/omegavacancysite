@@ -18,7 +18,8 @@ vacancy_repository = VacancyRepository()
 dropdown_options = DropdownOptions()
 
 # BASE_DIR = app/
-templates = Jinja2Templates(directory="templates")
+templates_dir = str(Path(__file__).resolve().parent.parent / "templates")
+templates = Jinja2Templates(directory=templates_dir)
 router = APIRouter()
 
 
@@ -47,10 +48,15 @@ async def search_vacancies(
     specializations: Optional[str] = Query(None),
     skills: Optional[str] = Query(None),
     domains: Optional[str] = Query(None),
+    categories: Optional[str] = Query(None),
+    subcategories: Optional[str] = Query(None),
     location: Optional[str] = Query(None),
     manager: Optional[str] = Query(None),
     customer: Optional[str] = Query(None),
     title: Optional[str] = Query(None),
+    days_ago: Optional[int] = Query(None, ge=1, le=365),  # Фильтр по дате (1, 3, 7, 14, 21 дней)
+    sort_by: Optional[str] = Query(None),  # Сортировка: "newest", "date_desc", "date_asc", "salary_desc", "salary_asc"
+    filter_by: Optional[str] = Query(None),  # Дополнительный фильтр: "with_salary", "recent_week", "recent_month"
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     repo: VacancyRepository = Depends(get_repo),
@@ -61,6 +67,8 @@ async def search_vacancies(
     - work_format=remote,office
     - grade=middle,senior
     - specializations=Backend,Data Science
+    - days_ago=7 (вакансии за последние 7 дней)
+    - sort_by=newest (сортировка по новизне) или sort_by=salary_desc (по ставке убывание)
     и т.д.
     """
     return await repo.search_vacancies(
@@ -72,10 +80,15 @@ async def search_vacancies(
         specializations=specializations,
         skills=skills,
         domains=domains,
+        categories=categories,
+        subcategories=subcategories,
         location=location,
         manager=manager,
         customer=customer,
         title=title,
+        days_ago=days_ago,
+        sort_by=sort_by,
+        filter_by=filter_by,
         page=page,
         page_size=page_size,
     )
@@ -165,7 +178,19 @@ async def vacancy_post(vacancy:list[VacancyIn] = Body(...)):
     location = await dropdown_options.add_location(vacancy)
     manager = await dropdown_options.add_manager(vacancy)
     customer = await dropdown_options.add_customer(vacancy)
-    if success and skill and spec and domain and location and manager and customer:
+    categories = await dropdown_options.add_category(vacancy)
+    subcategories = await dropdown_options.add_subcategory(vacancy)
+    if (
+        success
+        and skill
+        and spec
+        and domain
+        and location
+        and manager
+        and customer
+        and categories
+        and subcategories
+    ):
         return {"message": "Vacancy added successfully"}
     else:
         return {"message": "Failed to add vacancy"}
@@ -180,4 +205,6 @@ async def get_all_vacancies():
     c = await dropdown_options.add_location(vacancies)
     await dropdown_options.add_manager(vacancies)
     await dropdown_options.add_customer(vacancies)
+    await dropdown_options.add_category(vacancies)
+    await dropdown_options.add_subcategory(vacancies)
     return c

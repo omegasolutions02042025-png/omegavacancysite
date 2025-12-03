@@ -32,5 +32,8 @@ Thumbs.db
 # Logs
 *.log
 
+# Admin credentials
+admin_credentials.txt
+
 app/sessions/
 app/core/config.py

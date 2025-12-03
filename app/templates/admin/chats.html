@@ -1,0 +1,137 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Чаты — Omega Hire{% endblock %}
+
+{% block head %}
+  <style>
+    .user-card {
+      background: var(--color-bg-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 20px rgba(255, 215, 0, 0.05);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .user-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--color-accent-gold) 50%, 
+        transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .user-card:hover::before {
+      opacity: 1;
+    }
+    .user-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.3),
+        0 0 30px rgba(255, 215, 0, 0.15);
+      border-color: rgba(255, 215, 0, 0.3);
+    }
+    .user-card h5 {
+      margin: 0 0 8px 0;
+      color: var(--color-text-heading);
+      font-weight: 700;
+    }
+    .stats {
+      display: flex;
+      gap: 24px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--color-text-primary);
+      font-size: 0.875rem;
+    }
+    .stat-item i {
+      color: var(--color-accent-gold);
+    }
+    .badge-custom {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--color-text-muted);
+    }
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--color-text-muted);
+      margin-bottom: 1rem;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="container-fluid p-4">
+    <div class="card">
+      <h2 class="mb-4" style="color: var(--color-text-heading);">
+        <i class="bi bi-people me-2" style="color: var(--color-accent-gold);"></i>Пользователи с диалогами
+      </h2>
+      
+      {% if users_with_chats %}
+        {% for user_data in users_with_chats %}
+        <div class="user-card" onclick="window.location.href='/admin/user/{{ user_data.user_id }}/chats'">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+              <h5>
+                <i class="bi bi-person-circle me-2" style="color: var(--color-accent-gold);"></i>
+                <span class="text-readable-primary">{{ user_data.email }}</span>
+              </h5>
+              <div class="stats">
+                <div class="stat-item">
+                  <i class="bi bi-chat-dots"></i>
+                  <span><strong>{{ user_data.chats_count }}</strong> диалогов</span>
+                </div>
+                <div class="stat-item">
+                  <i class="bi bi-envelope"></i>
+                  <span><strong>{{ user_data.total_messages }}</strong> сообщений</span>
+                </div>
+                {% if user_data.unread_count > 0 %}
+                <div class="stat-item">
+                  <i class="bi bi-bell-fill" style="color: #FFC107;"></i>
+                  <span class="chip chip-warning">{{ user_data.unread_count }} непрочитанных</span>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            <div>
+              <i class="bi bi-chevron-right" style="color: var(--color-text-muted); font-size: 1.5rem;"></i>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <i class="bi bi-chat-dots"></i>
+          <h4 class="text-muted">Нет пользователей с диалогами</h4>
+          <p class="text-muted small">Пока нет активных переписок</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

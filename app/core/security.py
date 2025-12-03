@@ -18,4 +18,5 @@ config.JWT_COOKIE_SECURE = False
 # На время отладки удобно выключить CSRF-проверку, чтобы не ловить ошибку Missing CSRF token
 config.JWT_COOKIE_CSRF_PROTECT = False
 
+
 auth = AuthX(config)

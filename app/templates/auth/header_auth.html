@@ -43,6 +43,24 @@
       background:transparent;
     }
 
+    .topbar-section-upload{
+      padding:7px 18px;
+      border-radius:10px;
+      background:linear-gradient(135deg,#facc15,#f97316);
+      color:#111827;
+      font-size:.9rem;
+      font-weight:700;
+      text-decoration:none;
+      box-shadow:0 8px 18px rgba(248,181,0,.45);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      white-space:nowrap;
+    }
+    .topbar-section-upload:hover{
+      filter:brightness(1.06);
+      transform:translateY(-1px);
+    }
     .topbar-section-vacancy{
       padding:7px 18px;
       border-radius:10px;
@@ -253,23 +271,29 @@
   <div class="topbar-inner">
     <div class="topbar-left">
       <a href="/" class="topbar-brand">
-        <img src="/static/img/omega-logo.png" alt="OmegaSolutions">
-        <span>OMEGASOLUTIONS</span>
+        <img src="/static/img/omega-logo.png" alt="Omega Hire">
+        <span>OMEGA HIRE</span>
       </a>
       <a href="/vacancy" class="topbar-section-vacancy">Вакансии</a>
+      <a href="/candidate" class="topbar-section-upload">Мои кандидаты</a>
     </div>
 
     <nav class="topbar-nav">
       {% if user_email %}
         <div class="notif-wrapper">
-          <button type="button" class="notif-bell" id="notif-bell" title="Уведомления">
-            🔔
-            <span class="notif-badge" id="notif-badge" style="display:none;">0</span>
-          </button>
-          <div class="notif-dropdown" id="notif-dropdown">
-            <div class="notif-header">Уведомления</div>
-            <div class="notif-empty" id="notif-empty">Уведомлений нет</div>
-            <ul class="notif-list" id="notif-list"></ul>
+          <a href="/chat" class="notif-bell" id="chat-bell" title="Сообщения" style="text-decoration:none;">
+            💬
+            <span class="notif-badge" id="chat-badge" style="display:none;">0</span>
+          </a>
+          <div class="notif-dropdown" id="chat-dropdown">
+            <div class="notif-header">Новые сообщения</div>
+            <div class="notif-empty" id="chat-empty">Нет новых сообщений</div>
+            <ul class="notif-list" id="chat-list"></ul>
+            <div style="padding:8px 12px;border-top:1px solid rgba(31,41,55,.85);">
+              <a href="/chat" style="color:#facc15;text-decoration:none;font-size:.85rem;font-weight:600;">
+                Открыть все чаты →
+              </a>
+            </div>
           </div>
         </div>
 
@@ -286,11 +310,11 @@
 
   <script>
     (function(){
-      const bell      = document.getElementById("notif-bell");
-      const badge     = document.getElementById("notif-badge");
-      const dropdown  = document.getElementById("notif-dropdown");
-      const listEl    = document.getElementById("notif-list");
-      const emptyEl   = document.getElementById("notif-empty");
+      const bell      = document.getElementById("chat-bell");
+      const badge     = document.getElementById("chat-badge");
+      const dropdown  = document.getElementById("chat-dropdown");
+      const listEl    = document.getElementById("chat-list");
+      const emptyEl   = document.getElementById("chat-empty");
       const toastEl   = document.getElementById("notif-toast");
       const soundEl   = document.getElementById("notif-sound");
 
@@ -298,89 +322,84 @@
         return;
       }
 
-      let notifCache = [];
+      let unreadChats = [];
       let toastTimer = null;
 
-      async function loadNotifications(){
+      // Загрузка списка чатов с непрочитанными сообщениями
+      async function loadUnreadChats(){
         try{
-          const resp = await fetch("/api/get_notif", {cache:"no-store"});
+          const resp = await fetch("/chat/chats-list", {cache:"no-store"});
           if(!resp.ok){
-            console.warn("get_notif status", resp.status);
+            console.warn("chats-list status", resp.status);
             return;
           }
           const data = await resp.json();
-          notifCache = Array.isArray(data) ? data : [];
-          renderNotifications();
+          
+          // Объединяем telegram и email чаты, фильтруем только с непрочитанными
+          const allChats = [
+            ...(data.telegram_chats || []),
+            ...(data.email_chats || [])
+          ];
+          
+          unreadChats = allChats.filter(chat => chat.unread_count > 0);
+          renderUnreadChats();
         }catch(e){
-          console.error("get_notif error", e);
+          console.error("chats-list error", e);
         }
       }
 
-      async function deleteNotification(notificationText){
-        try{
-          const resp = await fetch("/api/del_notif",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({notification: notificationText})
-          });
-          if(!resp.ok){
-            console.warn("del_notif status", resp.status);
-            return;
-          }
-          notifCache = notifCache.filter(function(n){
-            return n.notification !== notificationText;
-          });
-          renderNotifications();
-        }catch(e){
-          console.error("del_notif error", e);
-        }
-      }
-
-      function renderNotifications(){
+      function renderUnreadChats(){
         listEl.innerHTML = "";
-        if(!notifCache.length){
+        
+        if(!unreadChats.length){
           emptyEl.style.display = "block";
           badge.style.display   = "none";
           return;
         }
+        
         emptyEl.style.display = "none";
         badge.style.display   = "flex";
-        badge.textContent     = notifCache.length > 9 ? "9+" : String(notifCache.length);
+        
+        // Подсчитываем общее количество непрочитанных сообщений
+        const totalUnread = unreadChats.reduce((sum, chat) => sum + chat.unread_count, 0);
+        badge.textContent = totalUnread > 9 ? "9+" : String(totalUnread);
 
-        notifCache.forEach(function(n){
+        unreadChats.forEach(function(chat){
           const li = document.createElement("li");
           li.className = "notif-item";
+          li.style.cursor = "pointer";
 
           const textDiv = document.createElement("div");
           textDiv.className = "notif-item-text";
-          textDiv.textContent = n.notification || "";
-
-          // URL теперь приходит напрямую с бэка в n.url
-          const url = (n.url && typeof n.url === "string" && n.url.trim() !== "") ? n.url : null;
-          if (url){
-            textDiv.style.textDecoration = "underline";
-            textDiv.title = url;
-            textDiv.addEventListener("click", function(){
-              window.open(url, "_blank");
-            });
-          }
-
-          const btn = document.createElement("button");
-          btn.className = "notif-close";
-          btn.type = "button";
-          btn.innerHTML = "✕";
-          btn.addEventListener("click", function(ev){
-            ev.stopPropagation();
-            deleteNotification(n.notification);
+          
+          const icon = chat.message_type === 'telegram' ? '📱' : '✉️';
+          const preview = chat.last_message ? chat.last_message.substring(0, 40) + '...' : 'Новое сообщение';
+          
+          textDiv.innerHTML = `
+            <div style="font-weight:600;margin-bottom:2px;">${icon} ${chat.candidate_fullname}</div>
+            <div style="font-size:0.8rem;color:#9ca3af;">${preview}</div>
+          `;
+          
+          // При клике открываем чат
+          li.addEventListener("click", function(){
+            window.location.href = "/chat";
           });
 
           li.appendChild(textDiv);
-          li.appendChild(btn);
+          
+          // Показываем количество непрочитанных
+          if (chat.unread_count > 0) {
+            const countSpan = document.createElement("span");
+            countSpan.style.cssText = "background:#ef4444;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 6px;border-radius:999px;min-width:18px;text-align:center;";
+            countSpan.textContent = chat.unread_count;
+            li.appendChild(countSpan);
+          }
+          
           listEl.appendChild(li);
         });
       }
 
-      function showToast(notification){
+      function showToast(message){
         if(!toastEl) return;
 
         if(toastTimer){
@@ -388,24 +407,14 @@
           toastTimer = null;
         }
 
-        const candidate = notification && notification.candidate_fullname
-          ? notification.candidate_fullname
-          : "кандидата";
-
-        const vacancy  = notification && notification.vacancy_id
-          ? notification.vacancy_id
-          : "";
-
-        let text;
-
-        if (notification && notification.candidate_fullname && notification.vacancy_id){
-          text = "Сообщение от кандидата " + candidate + " по вакансии " + vacancy;
-        } else if (notification && notification.message){
-          text = notification.message;
-        } else if (notification && notification.notification){
-          text = notification.notification;
-        } else {
-          text = "Новое уведомление";
+        const msg = message.message || {};
+        const candidate = msg.candidate_fullname || "кандидата";
+        const vacancy = msg.vacancy_id || "";
+        const messageType = msg.message_type === 'telegram' ? 'Telegram' : 'Email';
+        
+        let text = `💬 Новое сообщение в ${messageType} от ${candidate}`;
+        if (vacancy) {
+          text += ` (${vacancy})`;
         }
 
         toastEl.textContent = text;
@@ -428,11 +437,13 @@
         }
       }
 
+      // Открытие/закрытие dropdown
       bell.addEventListener("click", async function(e){
+        e.preventDefault();
         e.stopPropagation();
         const isOpen = dropdown.classList.contains("open");
         if(!isOpen){
-          await loadNotifications();
+          await loadUnreadChats();
           dropdown.classList.add("open");
         }else{
           dropdown.classList.remove("open");
@@ -448,40 +459,64 @@
       const USER_ID_RAW = "{{ user_id }}";
       const USER_ID = Number(USER_ID_RAW || "0") || 0;
 
+      // Подключаемся к WebSocket для чата
       if (USER_ID > 0) {
         try{
           const proto = (window.location.protocol === "https:") ? "wss://" : "ws://";
-          const wsUrl = proto + window.location.host + "/ws/notifications?user_id=" + encodeURIComponent(USER_ID);
+          const wsUrl = proto + window.location.host + "/chat/ws/" + USER_ID;
           const ws = new WebSocket(wsUrl);
 
           ws.onopen = function(){
-            console.log("WS notifications connected");
+            console.log("✅ [HEADER] Chat WebSocket connected");
           };
+          
           ws.onclose = function(){
-            console.log("WS notifications closed");
+            console.log("🔌 [HEADER] Chat WebSocket closed, reconnecting...");
+            // Переподключение через 5 секунд
+            setTimeout(function(){
+              window.location.reload();
+            }, 5000);
           };
+          
           ws.onerror = function(ev){
-            console.error("WS notifications error", ev);
+            console.error("❌ [HEADER] Chat WebSocket error", ev);
           };
+          
           ws.onmessage = async function(event){
             try{
               const data = JSON.parse(event.data);
-              console.log("[notify] from WS:", data);
+              console.log("📨 [HEADER] New message from chat WS:", data);
 
-              // данные по WS: после прихода обновляем список
-              await loadNotifications();
-              showToast(data);
-              playSound();
+              // Обрабатываем только новые сообщения
+              if (data.type === 'new_message') {
+                // Обновляем список непрочитанных чатов
+                await loadUnreadChats();
+                
+                // Показываем toast уведомление
+                showToast(data);
+                
+                // Воспроизводим звук
+                playSound();
+              }
             }catch(e){
-              console.error("WS notifications parse error", e);
+              console.error("❌ [HEADER] Chat WS parse error", e);
             }
           };
+          
+          // Отправляем ping каждые 30 секунд
+          setInterval(function(){
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send('ping');
+            }
+          }, 30000);
+          
         }catch(e){
-          console.error("WS notifications init error", e);
+          console.error("❌ [HEADER] Chat WebSocket init error", e);
         }
       }
 
-      loadNotifications();
+      // Загружаем непрочитанные чаты при загрузке страницы
+      loadUnreadChats();
     })();
   </script>
   {% endif %}
