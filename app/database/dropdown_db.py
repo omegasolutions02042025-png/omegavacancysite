@@ -495,3 +495,110 @@ class DropdownOptions:
                             unique_specs.add(norm)
             
             return sorted(list(unique_specs))
+    
+    async def get_candidate_grades(self, user_id: int) -> list[str]:
+        """Получить все уникальные грейды из кандидатов пользователя."""
+        from .database import RecruiterCandidates
+        
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(
+                select(RecruiterCandidates.grade).where(
+                    RecruiterCandidates.user_id == user_id,
+                    RecruiterCandidates.grade.isnot(None),
+                    RecruiterCandidates.grade != ""
+                ).distinct()
+            )
+            grades = result.scalars().all()
+            return sorted([g for g in grades if g])
+    
+    async def get_candidate_work_formats(self, user_id: int) -> list[str]:
+        """Получить все уникальные форматы работы из кандидатов пользователя."""
+        from .database import RecruiterCandidates
+        
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(
+                select(RecruiterCandidates.work_format).where(
+                    RecruiterCandidates.user_id == user_id,
+                    RecruiterCandidates.work_format.isnot(None),
+                    RecruiterCandidates.work_format != ""
+                ).distinct()
+            )
+            formats = result.scalars().all()
+            return sorted([f for f in formats if f])
+    
+    async def get_candidate_employment_types(self, user_id: int) -> list[str]:
+        """Получить все уникальные типы занятости из кандидатов пользователя."""
+        from .database import RecruiterCandidates
+        
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(
+                select(RecruiterCandidates.employment_type).where(
+                    RecruiterCandidates.user_id == user_id,
+                    RecruiterCandidates.employment_type.isnot(None),
+                    RecruiterCandidates.employment_type != ""
+                ).distinct()
+            )
+            types = result.scalars().all()
+            return sorted([t for t in types if t])
+    
+    async def get_candidate_english_levels(self, user_id: int) -> list[str]:
+        """Получить все уникальные уровни английского из кандидатов пользователя."""
+        from .database import RecruiterCandidates
+        
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(
+                select(RecruiterCandidates.english_level).where(
+                    RecruiterCandidates.user_id == user_id,
+                    RecruiterCandidates.english_level.isnot(None),
+                    RecruiterCandidates.english_level != ""
+                ).distinct()
+            )
+            levels = result.scalars().all()
+            return sorted([l for l in levels if l])
+    
+    async def get_candidate_statuses(self, user_id: int) -> list[str]:
+        """Получить все уникальные статусы из кандидатов пользователя."""
+        from .database import RecruiterCandidates, CandidateStatus
+        
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(
+                select(RecruiterCandidates.status).where(
+                    RecruiterCandidates.user_id == user_id,
+                    RecruiterCandidates.status.isnot(None)
+                ).distinct()
+            )
+            statuses = result.scalars().all()
+            # Преобразуем enum в строки
+            status_list = []
+            for status in statuses:
+                if status:
+                    if hasattr(status, 'value'):
+                        status_list.append(status.value)
+                    else:
+                        status_list.append(str(status))
+            return sorted(list(set(status_list)))
+    
+    async def get_candidate_skills(self, user_id: int) -> list[str]:
+        """Получить все уникальные навыки из кандидатов пользователя."""
+        from .database import RecruiterCandidates
+        
+        async with AsyncSession(self.engine) as session:
+            result = await session.execute(
+                select(RecruiterCandidates.skills).where(
+                    RecruiterCandidates.user_id == user_id,
+                    RecruiterCandidates.skills.isnot(None)
+                )
+            )
+            all_skills = result.scalars().all()
+            
+            # Собираем все навыки в один set
+            unique_skills = set()
+            for skill_str in all_skills:
+                if skill_str:
+                    skill_list = self._extract_list(skill_str)
+                    for skill in skill_list:
+                        norm = self._normalize_name(skill)
+                        if norm:
+                            unique_skills.add(norm)
+            
+            return sorted(list(unique_skills))

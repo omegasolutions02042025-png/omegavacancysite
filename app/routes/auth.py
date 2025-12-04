@@ -13,6 +13,7 @@ from app.models.user import UserCreate
 from fastapi import HTTPException
 from app.database.user_db import UserRepository
 from app.database.registration_db import registration_repository
+from app.database.database import UserRole
 from pathlib import Path
 from app.core.email_send import send_email_smtp
 from app.core.config import settings
@@ -93,13 +94,21 @@ async def get_profile_data(
     current_user=Depends(get_current_user_from_cookie),
 ):
     """
-    Получить данные профиля пользователя (включая photo_path и все поля профиля) для JS
+    Получить данные профиля пользователя (включая photo_path и все поля профиля) для JS.
+    Также возвращает данные профиля кандидата или подрядчика, если они есть.
     """
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
     from fastapi.responses import JSONResponse
-    return JSONResponse(content={
+    from app.database.database import UserRole
+    from app.database.candidate_profile_db import CandidateProfileRepository
+    from app.models.users import ContractorProfile
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from app.database.database import engine
+    
+    response_data = {
         "photo_path": current_user.photo_path if current_user.photo_path else None,
         "email": current_user.email,
         "first_name": current_user.first_name,
@@ -109,7 +118,44 @@ async def get_profile_data(
         "specialization": current_user.specialization,
         "experience": current_user.experience,
         "resume": current_user.resume,
-    })
+    }
+    
+    # Загружаем профиль кандидата, если роль CANDIDATE
+    if current_user.role == UserRole.CANDIDATE:
+        candidate_profile_repo = CandidateProfileRepository()
+        candidate_profile = await candidate_profile_repo.get_by_user_id(current_user.id)
+        if candidate_profile:
+            response_data["candidate_profile"] = {
+                "grade": candidate_profile.grade.value if candidate_profile.grade else None,
+                "experience_years": candidate_profile.experience_years,
+                "stack": candidate_profile.stack if candidate_profile.stack else [],
+                "resume_url": candidate_profile.resume_url,
+                "bio": candidate_profile.bio,
+            }
+        else:
+            response_data["candidate_profile"] = None
+    
+    # Загружаем профиль подрядчика, если роль CONTRACTOR
+    elif current_user.role == UserRole.CONTRACTOR:
+        async with AsyncSession(engine) as session:
+            result = await session.execute(
+                select(ContractorProfile).where(ContractorProfile.user_id == current_user.id)
+            )
+            contractor_profile = result.scalar_one_or_none()
+            if contractor_profile:
+                response_data["contractor_profile"] = {
+                    "grade": contractor_profile.grade.value if contractor_profile.grade else None,
+                    "experience_years": contractor_profile.experience_years,
+                    "stack": contractor_profile.stack if contractor_profile.stack else [],
+                    "hourly_rate_usd": contractor_profile.hourly_rate_usd,
+                    "is_available": contractor_profile.is_available,
+                    "portfolio_url": contractor_profile.portfolio_url,
+                    "bio": contractor_profile.bio,
+                }
+            else:
+                response_data["contractor_profile"] = None
+    
+    return JSONResponse(content=response_data)
 
 
 @router.get("/profile", response_class=HTMLResponse)
@@ -120,6 +166,11 @@ async def profile(
     """
     Страница профиля пользователя.
     
+    Выбирает шаблон в зависимости от роли пользователя:
+    - CANDIDATE -> profile_candidate.html
+    - CONTRACTOR -> profile_contractor.html
+    - RECRUITER/ADMIN -> profile.html (стандартный)
+    
     Args:
         request: FastAPI Request объект
         current_user: Текущий авторизованный пользователь (из cookie)
@@ -129,25 +180,69 @@ async def profile(
     """
     if not current_user:
         return RedirectResponse("/auth/login", status_code=303)
-    print('Telegram username:', current_user.work_telegram)
     
-    return templates.TemplateResponse(
-        "auth/profile.html",
-        {
-            "request": request,
-            "user_id": current_user.id,
-            "user_email": current_user.email,
-            "user_first_name": current_user.first_name,
-            "user_last_name": current_user.last_name,
-            "user_middle_name": current_user.middle_name,
-            "user_phone": current_user.phone,
-            "user_specialization": current_user.specialization,
-            "user_experience": current_user.experience,
-            "user_resume": current_user.resume,
-            "telegram_username": current_user.work_telegram,
-            "linked_email": current_user.work_email,
-        },
-    )
+    from app.database.database import UserRole
+    from app.database.candidate_profile_db import CandidateProfileRepository
+    from app.models.users import ContractorProfile
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from app.database.database import engine
+    
+    user_role = current_user.role
+    template_name = "auth/profile.html"
+    template_context = {
+        "request": request,
+        "user_id": current_user.id,
+        "user_email": current_user.email,
+        "user_first_name": current_user.first_name,
+        "user_last_name": current_user.last_name,
+        "user_middle_name": current_user.middle_name,
+        "user_phone": current_user.phone,
+        "user_specialization": current_user.specialization,
+        "user_experience": current_user.experience,
+        "user_resume": current_user.resume,
+        "telegram_username": current_user.work_telegram,
+        "linked_email": current_user.work_email,
+    }
+    
+    # Для кандидатов загружаем профиль кандидата
+    if user_role == UserRole.CANDIDATE:
+        template_name = "auth/profile_candidate.html"
+        candidate_profile_repo = CandidateProfileRepository()
+        candidate_profile = await candidate_profile_repo.get_by_user_id(current_user.id)
+        if candidate_profile:
+            template_context["candidate_profile"] = {
+                "grade": candidate_profile.grade.value if candidate_profile.grade else None,
+                "experience_years": candidate_profile.experience_years,
+                "stack": candidate_profile.stack if candidate_profile.stack else [],
+                "resume_url": candidate_profile.resume_url,
+                "bio": candidate_profile.bio,
+            }
+        else:
+            template_context["candidate_profile"] = None
+    
+    # Для подрядчиков загружаем профиль подрядчика
+    elif user_role == UserRole.CONTRACTOR:
+        template_name = "auth/profile_contractor.html"
+        async with AsyncSession(engine) as session:
+            result = await session.execute(
+                select(ContractorProfile).where(ContractorProfile.user_id == current_user.id)
+            )
+            contractor_profile = result.scalar_one_or_none()
+            if contractor_profile:
+                template_context["contractor_profile"] = {
+                    "grade": contractor_profile.grade.value if contractor_profile.grade else None,
+                    "experience_years": contractor_profile.experience_years,
+                    "stack": contractor_profile.stack if contractor_profile.stack else [],
+                    "hourly_rate_usd": contractor_profile.hourly_rate_usd,
+                    "is_available": contractor_profile.is_available,
+                    "portfolio_url": contractor_profile.portfolio_url,
+                    "bio": contractor_profile.bio,
+                }
+            else:
+                template_context["contractor_profile"] = None
+    
+    return templates.TemplateResponse(template_name, template_context)
 
 
 
@@ -363,6 +458,7 @@ async def register_request(
     last_name: str = Form(...),
     phone: str = Form(...),
     middle_name: str = Form(None),
+    role: str = Form(...),
     specialization: str = Form(None),
     experience: str = Form(None),
     resume: str = Form(None),
@@ -393,7 +489,45 @@ async def register_request(
     Raises:
         HTTPException: Если пользователь уже существует или заявка уже подана
     """
-    print(f"[REGISTRATION] Заявка на регистрацию: email={email}")
+    print(f"[REGISTRATION] Заявка на регистрацию: email={email}, role={role}")
+    
+    # Валидация роли
+    try:
+        user_role = UserRole(role)
+        if user_role == UserRole.ADMIN:
+            return templates.TemplateResponse(
+                "auth/register.html",
+                {
+                    "request": request,
+                    "error": "Недопустимая роль",
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "middle_name": middle_name,
+                    "phone": phone,
+                    "role": role,
+                    "specialization": specialization,
+                    "experience": experience,
+                    "resume": resume
+                }
+            )
+    except ValueError:
+        return templates.TemplateResponse(
+            "auth/register.html",
+            {
+                "request": request,
+                "error": "Недопустимая роль",
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "middle_name": middle_name,
+                "phone": phone,
+                "role": role,
+                "specialization": specialization,
+                "experience": experience,
+                "resume": resume
+            }
+        )
     
     # Проверяем согласие на обработку персональных данных
     if not pd_consent or pd_consent != "on":
@@ -407,6 +541,7 @@ async def register_request(
                 "last_name": last_name,
                 "middle_name": middle_name,
                 "phone": phone,
+                "role": role,
                 "specialization": specialization,
                 "experience": experience,
                 "resume": resume
@@ -424,6 +559,7 @@ async def register_request(
                 "last_name": last_name,
                 "middle_name": middle_name,
                 "phone": phone,
+                "role": role,
                 "specialization": specialization,
                 "experience": experience,
                 "resume": resume
@@ -454,6 +590,7 @@ async def register_request(
         last_name=last_name,
         middle_name=middle_name,
         phone=phone,
+        role=user_role,
         specialization=specialization,
         experience=experience,
         resume=resume,
@@ -473,6 +610,7 @@ async def register_request(
                 "last_name": last_name,
                 "middle_name": middle_name,
                 "phone": phone,
+                "role": role,
                 "specialization": specialization,
                 "experience": experience,
                 "resume": resume
@@ -597,9 +735,12 @@ async def update_profile(
     current_user=Depends(get_current_user_from_cookie),
 ):
     """
-    Обновить профиль рекрутера.
+    Обновить профиль пользователя.
     
-    Позволяет рекрутеру обновить свои данные: ФИО, телефон, опыт, специализацию, резюме.
+    Позволяет пользователю обновить свои данные в зависимости от роли:
+    - RECRUITER: ФИО, телефон, опыт, специализацию, резюме
+    - CANDIDATE: ФИО, телефон + профиль кандидата (grade, experience_years, stack, resume_url, bio)
+    - CONTRACTOR: ФИО, телефон + профиль подрядчика (grade, experience_years, stack, hourly_rate_usd, is_available, portfolio_url, bio)
     
     Args:
         request: FastAPI Request объект с JSON телом
@@ -619,7 +760,14 @@ async def update_profile(
     except:
         raise HTTPException(status_code=400, detail="Invalid JSON")
     
-    # Обновляем профиль через репозиторий
+    from app.database.database import UserRole
+    from app.database.candidate_profile_db import CandidateProfileRepository
+    from app.models.users import ContractorProfile, Grade
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from app.database.database import engine
+    
+    # Обновляем базовые поля пользователя
     updated_user = await user_repo.update_profile(
         user_id=current_user.id,
         first_name=body.get("first_name"),
@@ -633,6 +781,76 @@ async def update_profile(
     
     if not updated_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Обновляем профиль кандидата, если роль CANDIDATE
+    if current_user.role == UserRole.CANDIDATE and "candidate_profile" in body:
+        candidate_profile_repo = CandidateProfileRepository()
+        profile_data = body["candidate_profile"]
+        
+        grade = None
+        if profile_data.get("grade"):
+            try:
+                grade = Grade(profile_data["grade"])
+            except ValueError:
+                pass
+        
+        await candidate_profile_repo.create_or_update(
+            user_id=current_user.id,
+            grade=grade,
+            experience_years=profile_data.get("experience_years"),
+            stack=profile_data.get("stack"),
+            resume_url=profile_data.get("resume_url"),
+            bio=profile_data.get("bio"),
+        )
+    
+    # Обновляем профиль подрядчика, если роль CONTRACTOR
+    elif current_user.role == UserRole.CONTRACTOR and "contractor_profile" in body:
+        profile_data = body["contractor_profile"]
+        
+        async with AsyncSession(engine) as session:
+            result = await session.execute(
+                select(ContractorProfile).where(ContractorProfile.user_id == current_user.id)
+            )
+            contractor_profile = result.scalar_one_or_none()
+            
+            grade = None
+            if profile_data.get("grade"):
+                try:
+                    grade = Grade(profile_data["grade"])
+                except ValueError:
+                    pass
+            
+            if contractor_profile:
+                # Обновляем существующий профиль
+                if grade is not None:
+                    contractor_profile.grade = grade
+                if "experience_years" in profile_data:
+                    contractor_profile.experience_years = profile_data["experience_years"]
+                if "stack" in profile_data:
+                    contractor_profile.stack = profile_data["stack"]
+                if "hourly_rate_usd" in profile_data:
+                    contractor_profile.hourly_rate_usd = profile_data["hourly_rate_usd"]
+                if "is_available" in profile_data:
+                    contractor_profile.is_available = profile_data["is_available"]
+                if "portfolio_url" in profile_data:
+                    contractor_profile.portfolio_url = profile_data["portfolio_url"]
+                if "bio" in profile_data:
+                    contractor_profile.bio = profile_data["bio"]
+            else:
+                # Создаем новый профиль
+                contractor_profile = ContractorProfile(
+                    user_id=current_user.id,
+                    grade=grade,
+                    experience_years=profile_data.get("experience_years"),
+                    stack=profile_data.get("stack"),
+                    hourly_rate_usd=profile_data.get("hourly_rate_usd"),
+                    is_available=profile_data.get("is_available", True),
+                    portfolio_url=profile_data.get("portfolio_url"),
+                    bio=profile_data.get("bio"),
+                )
+                session.add(contractor_profile)
+            
+            await session.commit()
     
     from fastapi.responses import JSONResponse
     return JSONResponse(content={

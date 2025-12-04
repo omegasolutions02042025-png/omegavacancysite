@@ -13,6 +13,7 @@ from app.database.database import (
     CustomerDropdown,
     CategoryDropdown,
     SubcategoryDropdown,
+    RecruiterCandidates,
 )
 
 router = APIRouter(prefix="/dropdown", tags=["dropdowns"])
@@ -156,3 +157,138 @@ async def get_subcategories(
     stmt = stmt.order_by(SubcategoryDropdown.subcategory_name).limit(limit)
     res = await session.execute(stmt)
     return list(res.scalars().all())
+
+
+# Endpoints для фильтров кандидатов
+@router.get("/candidate-grades")
+async def get_candidate_grades(
+    q: str | None = Query(None),
+    current_user = Depends(get_current_user_from_cookie),
+):
+    """Получить список фиксированных грейдов."""
+    if not current_user:
+        return []
+    
+    # Фиксированный список грейдов по требованию (в указанном порядке)
+    grades = ["Senior", "Middle", "Junior", "Lead"]
+    
+    if q:
+        q_lower = q.lower()
+        grades = [g for g in grades if q_lower in g.lower()]
+    
+    return grades
+
+
+@router.get("/candidate-work-formats")
+async def get_candidate_work_formats(
+    q: str | None = Query(None),
+    current_user = Depends(get_current_user_from_cookie),
+):
+    """Получить уникальные форматы работы из кандидатов пользователя."""
+    if not current_user:
+        return []
+    
+    dropdown_repo = DropdownOptions()
+    formats = await dropdown_repo.get_candidate_work_formats(current_user.id)
+    
+    if q:
+        q_lower = q.lower()
+        formats = [f for f in formats if q_lower in f.lower()]
+    
+    return formats
+
+
+@router.get("/candidate-employment-types")
+async def get_candidate_employment_types(
+    q: str | None = Query(None),
+    current_user = Depends(get_current_user_from_cookie),
+):
+    """Получить уникальные типы занятости из кандидатов пользователя."""
+    if not current_user:
+        return []
+    
+    dropdown_repo = DropdownOptions()
+    types = await dropdown_repo.get_candidate_employment_types(current_user.id)
+    
+    if q:
+        q_lower = q.lower()
+        types = [t for t in types if q_lower in t.lower()]
+    
+    return types
+
+
+@router.get("/candidate-english-levels")
+async def get_candidate_english_levels(
+    q: str | None = Query(None),
+    current_user = Depends(get_current_user_from_cookie),
+):
+    """Получить уникальные уровни английского из кандидатов пользователя."""
+    if not current_user:
+        return []
+    
+    dropdown_repo = DropdownOptions()
+    levels = await dropdown_repo.get_candidate_english_levels(current_user.id)
+    
+    if q:
+        q_upper = q.upper()
+        levels = [l for l in levels if q_upper in l.upper()]
+    
+    return levels
+
+
+@router.get("/candidate-statuses")
+async def get_candidate_statuses(
+    q: str | None = Query(None),
+    current_user = Depends(get_current_user_from_cookie),
+):
+    """Получить уникальные статусы из кандидатов пользователя."""
+    if not current_user:
+        return []
+    
+    dropdown_repo = DropdownOptions()
+    statuses = await dropdown_repo.get_candidate_statuses(current_user.id)
+    
+    if q:
+        q_lower = q.lower()
+        statuses = [s for s in statuses if q_lower in s.lower()]
+    
+    return statuses
+
+
+@router.get("/candidate-skills")
+async def get_candidate_skills(
+    q: str | None = Query(None),
+    limit: int = Query(100, ge=1, le=500),
+    current_user = Depends(get_current_user_from_cookie),
+):
+    """Получить уникальные навыки из кандидатов пользователя."""
+    if not current_user:
+        return []
+    
+    dropdown_repo = DropdownOptions()
+    skills = await dropdown_repo.get_candidate_skills(current_user.id)
+    
+    if q:
+        q_lower = q.lower()
+        skills = [s for s in skills if q_lower in s.lower()]
+    
+    return skills[:limit]
+
+
+@router.get("/candidate-specializations")
+async def get_candidate_specializations(
+    q: str | None = Query(None),
+    current_user = Depends(get_current_user_from_cookie),
+):
+    """Получить уникальные специализации из кандидатов пользователя."""
+    if not current_user:
+        return []
+    
+    dropdown_repo = DropdownOptions()
+    specializations = await dropdown_repo.get_candidate_specializations(current_user.id)
+    
+    if q:
+        q_lower = q.lower()
+        specializations = [s for s in specializations if q_lower in s.lower()]
+    
+    return specializations

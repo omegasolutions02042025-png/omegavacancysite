@@ -221,6 +221,14 @@ async def get_candidates(
     current_user=Depends(get_current_user_from_cookie),
     search: Optional[str] = Query(None, alias="search"),
     specialization: Optional[str] = Query(None, alias="specialization"),
+    grade: Optional[str] = Query(None),
+    work_format: Optional[str] = Query(None),
+    employment_type: Optional[str] = Query(None),
+    english_level: Optional[str] = Query(None),
+    specializations: Optional[str] = Query(None),
+    skills: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query(None),
 ):
     if not current_user:
         return RedirectResponse("/auth/login", status_code=303)
@@ -232,8 +240,16 @@ async def get_candidates(
         current_user.id,
         search_query=search,
         specialization_filter=specialization,
+        grade=grade,
+        work_format=work_format,
+        employment_type=employment_type,
+        english_level=english_level,
+        specializations=specializations,
+        skills=skills,
+        status=status,
+        sort_by=sort_by,
     )
-    specializations = await dropdown_repo.get_candidate_specializations(current_user.id)
+    specializations_list = await dropdown_repo.get_candidate_specializations(current_user.id)
     
     # Проверяем полноту заполнения для каждого кандидата
     candidates_with_completeness = []
@@ -270,7 +286,7 @@ async def get_candidates(
             "user_email": current_user.email,
             "user_id": current_user.id,
             "candidates": candidates_with_completeness,
-            "specializations": specializations,
+            "specializations": specializations_list,
             "current_search": search or "",
             "current_specialization": specialization or "",
         },

@@ -378,6 +378,11 @@ class RecruiterCandidates(SQLModel, table=True):
         default=None,
         description="Дата до которой кандидат временно неактивен (ISO format). Когда наступит эта дата, статус автоматически переключится на 'В активном поиске'",
     )
+    created_at: Optional[str] = Field(
+        default=None,
+        index=True,
+        description="Дата и время добавления кандидата в систему (ISO format)",
+    )
 
     # связь с пользователем
     user: Optional["User"] = Relationship(back_populates="user_candidates")
@@ -412,6 +417,12 @@ class RegistrationRequest(SQLModel, table=True):
     pd_consent_at: Optional[str] = Field(default=None, description="Дата и время предоставления согласия")
     pd_consent_email: Optional[str] = Field(default=None, description="Email, с которого было предоставлено согласие")
     pd_consent_ip: Optional[str] = Field(default=None, description="IP-адрес, с которого было предоставлено согласие")
+    # Поле роли пользователя
+    role: Optional[UserRole] = Field(
+        default=UserRole.RECRUITER,
+        sa_column=Column(SQLEnum(UserRole), nullable=True),
+        description="Роль пользователя в системе (CANDIDATE, RECRUITER, CONTRACTOR)"
+    )
 
 
 class PasswordResetToken(SQLModel, table=True):

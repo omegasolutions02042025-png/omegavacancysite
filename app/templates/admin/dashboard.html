@@ -101,7 +101,7 @@
         <div class="col-lg-8">
             <div class="card h-100">
                 <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-3">
-                    <h3 class="mb-0 fs-4">Список рекрутеров</h3>
+                    <h3 class="mb-0 fs-4">Список пользователей</h3>
                     
                     <!-- Filter Buttons -->
                     <div class="btn-group" role="group">
@@ -124,6 +124,7 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Email / Пароль</th>
+                                <th>Роль</th>
                                 <th>Статус</th>
                                 <th>Даты</th>
                                 <th class="text-end">Действия</th>
@@ -138,6 +139,21 @@
                                     <div class="mt-1">
                                         <code class="px-2 py-1 rounded fw-bold" style="background: rgba(255,255,255,0.1); color: var(--color-accent-gold); font-size: 0.85em;">{{ recruiter.password }}</code>
                                     </div>
+                                </td>
+                                <td>
+                                    {% if recruiter.role %}
+                                        {% if recruiter.role|string == 'CANDIDATE' or recruiter.role == 'CANDIDATE' %}
+                                        <span class="chip" style="background: rgba(52, 152, 219, 0.2); color: #3498db; border: 1px solid #3498db;">Кандидат</span>
+                                        {% elif recruiter.role|string == 'RECRUITER' or recruiter.role == 'RECRUITER' %}
+                                        <span class="chip" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71;">Рекрутер</span>
+                                        {% elif recruiter.role|string == 'CONTRACTOR' or recruiter.role == 'CONTRACTOR' %}
+                                        <span class="chip" style="background: rgba(155, 89, 182, 0.2); color: #9b59b6; border: 1px solid #9b59b6;">Подрядчик</span>
+                                        {% else %}
+                                        <span class="chip chip-secondary">{{ recruiter.role|string }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                    <span class="chip chip-secondary">Не указана</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     {% if recruiter.is_archived %}

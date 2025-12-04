@@ -1,6 +1,7 @@
 from typing import Optional, Dict, Any
 from sqlmodel import select, func, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
+import sqlalchemy as sa
 
 from app.database.database import RecruiterCandidates, CandidateStatus
 from app.models.candidate import GPTCandidateProfile
@@ -186,6 +187,9 @@ class CandidateRepository:
                 
                 # статус по умолчанию
                 status=CandidateStatus.ACTIVE_SEARCH,
+                
+                # дата добавления
+                created_at=datetime.now().isoformat(),
             )
 
             session.add(db_obj)
@@ -393,16 +397,33 @@ class CandidateRepository:
         user_id: int,
         search_query: Optional[str] = None,
         specialization_filter: Optional[str] = None,
+        grade: Optional[str] = None,
+        work_format: Optional[str] = None,
+        employment_type: Optional[str] = None,
+        english_level: Optional[str] = None,
+        specializations: Optional[str] = None,
+        skills: Optional[str] = None,
+        status: Optional[str] = None,
+        sort_by: Optional[str] = None,
     ):
         """
-        Получить всех кандидатов пользователя с опциональной фильтрацией.
+        Получить всех кандидатов пользователя с опциональной фильтрацией и сортировкой.
         
         Args:
             user_id: ID пользователя
             search_query: Поиск по имени (first_name, last_name, middle_name) и title
-            specialization_filter: Фильтр по специализации (точное совпадение или вхождение)
+            specialization_filter: Фильтр по специализации (устаревший, используйте specializations)
+            grade: Список грейдов через запятую (например, "Junior,Middle,Senior")
+            work_format: Список форматов работы через запятую (например, "remote,office")
+            employment_type: Список типов занятости через запятую (например, "full-time,part-time")
+            english_level: Список уровней английского через запятую (например, "B1,B2,C1")
+            specializations: Список специализаций через запятую
+            skills: Список навыков через запятую
+            status: Список статусов через запятую
+            sort_by: Тип сортировки ("rate_asc", "rate_desc", "date_asc", "date_desc")
         """
-        from sqlalchemy import or_
+        from sqlalchemy import or_, case
+        from sqlalchemy.sql import func as sql_func
         
         async with AsyncSession(self.engine) as session:
             query = select(RecruiterCandidates).where(
@@ -421,18 +442,118 @@ class CandidateRepository:
                     )
                 )
             
-            # Фильтр по специализации
+            # Фильтр по специализации (старый параметр для обратной совместимости)
             if specialization_filter:
-                # Ищем специализацию в строке specializations (может быть через запятую, точку с запятой и т.д.)
                 query = query.where(
                     func.lower(RecruiterCandidates.specializations).ilike(
                         f"%{specialization_filter.lower()}%"
                     )
                 )
             
-            result = await session.exec(
-                query.order_by(RecruiterCandidates.number_for_user.desc())
-            )
+            # Фильтр по грейду
+            if grade:
+                grade_list = [g.strip().lower() for g in grade.split(",") if g.strip()]
+                if grade_list:
+                    conditions = []
+                    for g in grade_list:
+                        # Используем ilike для нестрогого поиска (чтобы "Senior" находил "Senior+")
+                        conditions.append(func.lower(RecruiterCandidates.grade).ilike(f"%{g}%"))
+                    query = query.where(or_(*conditions))
+            
+            # Фильтр по формату работы
+            if work_format:
+                work_format_list = [wf.strip().lower() for wf in work_format.split(",") if wf.strip()]
+                if work_format_list:
+                    conditions = []
+                    for wf in work_format_list:
+                        conditions.append(func.lower(RecruiterCandidates.work_format).ilike(f"%{wf}%"))
+                    query = query.where(or_(*conditions))
+            
+            # Фильтр по типу занятости
+            if employment_type:
+                employment_type_list = [et.strip().lower() for et in employment_type.split(",") if et.strip()]
+                if employment_type_list:
+                    conditions = []
+                    for et in employment_type_list:
+                        conditions.append(func.lower(RecruiterCandidates.employment_type).ilike(f"%{et}%"))
+                    query = query.where(or_(*conditions))
+            
+            # Фильтр по уровню английского
+            if english_level:
+                english_level_list = [el.strip().upper() for el in english_level.split(",") if el.strip()]
+                if english_level_list:
+                    conditions = []
+                    for el in english_level_list:
+                        # Используем ilike для надежности
+                        conditions.append(func.upper(RecruiterCandidates.english_level).ilike(f"%{el}%"))
+                    query = query.where(or_(*conditions))
+            
+            # Фильтр по специализациям (новый параметр)
+            if specializations:
+                spec_list = [s.strip().lower() for s in specializations.split(",") if s.strip()]
+                if spec_list:
+                    conditions = []
+                    for spec in spec_list:
+                        conditions.append(func.lower(RecruiterCandidates.specializations).ilike(f"%{spec}%"))
+                    query = query.where(or_(*conditions))
+            
+            # Фильтр по навыкам
+            if skills:
+                skills_list = [s.strip().lower() for s in skills.split(",") if s.strip()]
+                if skills_list:
+                    conditions = []
+                    for skill in skills_list:
+                        conditions.append(func.lower(RecruiterCandidates.skills).ilike(f"%{skill}%"))
+                    query = query.where(or_(*conditions))
+            
+            # Фильтр по статусу
+            if status:
+                status_list = [s.strip() for s in status.split(",") if s.strip()]
+                if status_list:
+                    conditions = []
+                    for st in status_list:
+                        # Используем ilike для поиска подстроки в статусе
+                        # Приводим статус к строке для поиска
+                        conditions.append(func.cast(RecruiterCandidates.status, sa.String).ilike(f"%{st}%"))
+                    query = query.where(or_(*conditions))
+            
+            # Сортировка
+            if sort_by == "rate_asc" or sort_by == "rate_desc":
+                # Вычисляем максимальную ставку из всех валют
+                # Используем GREATEST для PostgreSQL, для SQLite будет использован fallback
+                try:
+                    max_rate = sql_func.greatest(
+                        sql_func.coalesce(RecruiterCandidates.rate_rub, 0),
+                        sql_func.coalesce(RecruiterCandidates.rate_usd, 0),
+                        sql_func.coalesce(RecruiterCandidates.rate_eur, 0),
+                        sql_func.coalesce(RecruiterCandidates.rate_byn, 0),
+                        sql_func.coalesce(RecruiterCandidates.base_rate_amount, 0),
+                        sql_func.coalesce(RecruiterCandidates.salary_usd, 0),
+                    )
+                except:
+                    # Fallback для SQLite: используем приоритет rate_usd > salary_usd > rate_rub > остальные
+                    max_rate = sql_func.coalesce(
+                        RecruiterCandidates.rate_usd,
+                        RecruiterCandidates.salary_usd,
+                        RecruiterCandidates.rate_rub,
+                        RecruiterCandidates.rate_eur,
+                        RecruiterCandidates.rate_byn,
+                        RecruiterCandidates.base_rate_amount,
+                        0
+                    )
+                if sort_by == "rate_asc":
+                    query = query.order_by(max_rate.asc().nulls_last())
+                else:
+                    query = query.order_by(max_rate.desc().nulls_last())
+            elif sort_by == "date_asc":
+                query = query.order_by(RecruiterCandidates.created_at.asc().nulls_last())
+            elif sort_by == "date_desc":
+                query = query.order_by(RecruiterCandidates.created_at.desc().nulls_last())
+            else:
+                # Сортировка по умолчанию
+                query = query.order_by(RecruiterCandidates.number_for_user.desc())
+            
+            result = await session.exec(query)
             candidates = result.all()
             
             # Проверяем и обновляем статусы для всех кандидатов
@@ -459,9 +580,7 @@ class CandidateRepository:
             if updated:
                 await session.commit()
                 # Перезагружаем кандидатов после обновления
-                result = await session.exec(
-                    query.order_by(RecruiterCandidates.number_for_user.desc())
-                )
+                result = await session.exec(query)
                 candidates = result.all()
             
             return candidates

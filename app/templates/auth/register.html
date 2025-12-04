@@ -53,6 +53,15 @@
     <!-- Профессиональные данные -->
     <h5 class="mb-3 text-gold text-uppercase fs-7 ls-1">Профиль</h5>
     <div class="mb-3">
+        <label class="form-label small text-muted fw-bold">РОЛЬ *</label>
+        <select name="role" class="form-input" required>
+            <option value="">Выберите роль</option>
+            <option value="CANDIDATE" {% if role == 'CANDIDATE' %}selected{% endif %}>Кандидат</option>
+            <option value="RECRUITER" {% if role == 'RECRUITER' or not role %}selected{% endif %}>Рекрутер</option>
+            <option value="CONTRACTOR" {% if role == 'CONTRACTOR' %}selected{% endif %}>Подрядчик</option>
+        </select>
+    </div>
+    <div class="mb-3">
         <label class="form-label small text-muted fw-bold">СПЕЦИАЛИЗАЦИЯ</label>
         <input name="specialization" type="text" placeholder="IT Recruiter, HR Manager..." class="form-input" value="{{ specialization or '' }}">
     </div>

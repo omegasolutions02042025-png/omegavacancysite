@@ -4,18 +4,269 @@
 
 {% block head %}
 <style>
+  /* Page Layout */
   .candidates-page {
     max-width: 1400px;
     margin: 0 auto;
   }
 
-  .page-header {
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 992px) {
+    .layout-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .filters-sidebar {
+      position: static;
+      margin-bottom: 24px;
+      max-height: none;
+      overflow-y: visible;
+    }
+  }
+
+  /* Filters Sidebar */
+  .filters-sidebar {
+    background: var(--color-bg-surface);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: sticky;
+    top: 90px;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+  }
+
+  .filter-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .filter-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .filter-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-heading);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Custom MultiSelect Dropdown */
+  .custom-dropdown {
+    position: relative;
+    width: 100%;
+  }
+
+  .dropdown-header {
+    background-color: var(--color-bg-surface-2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    min-height: 38px;
+  }
+  
+  .dropdown-header::after {
+    content: '';
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    display: inline-block;
+    padding: 3px;
+    transform: rotate(45deg);
+    transition: transform 0.2s;
+    margin-left: 8px;
+  }
+  
+  .custom-dropdown.open .dropdown-header::after {
+    transform: rotate(-135deg);
+  }
+
+  .selected-chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    min-height: 24px;
+  }
+
+  .selected-chip {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 215, 0, 0.15);
+    border: 1px solid var(--color-accent-gold);
+    color: var(--color-accent-gold);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+
+  .selected-chip .close-btn {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1rem;
+    line-height: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    transition: background 0.2s;
+  }
+  
+  .selected-chip .close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .dropdown-body {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    background-color: var(--color-bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: none;
+    max-height: 300px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  
+  .custom-dropdown.open .dropdown-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dropdown-search {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    background-color: var(--color-bg-surface);
+    z-index: 1;
+  }
+  
+  .dropdown-search input {
+    width: 100%;
+    background: var(--color-bg-surface-2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: white;
+    font-size: 0.9rem;
+    outline: none;
+  }
+
+  .dropdown-search input:focus {
+    border-color: var(--color-accent-gold);
+    box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+  }
+
+  .dropdown-list {
+    overflow-y: auto;
+    max-height: 240px;
+  }
+
+  .dropdown-list-item {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    user-select: none;
+  }
+  
+  .dropdown-list-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .dropdown-list-item input[type="checkbox"] {
+    margin-right: 10px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-accent-gold);
+  }
+
+  .dropdown-list-item.selected {
+    background-color: rgba(255, 215, 0, 0.1);
+  }
+
+  .dropdown-loading {
+    padding: 12px;
+    text-align: center;
+    color: var(--color-text-primary);
+    font-size: 0.85rem;
+  }
+
+  .dropdown-empty {
+    padding: 12px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+  }
+
+  /* Main Content */
+  .candidates-list-header {
+    display: flex;
     justify-content: space-between;
-    margin-bottom: 32px;
+    align-items: center;
+    margin-bottom: 24px;
     flex-wrap: wrap;
     gap: 16px;
+  }
+
+  .search-sort-container {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
+  .search-input-wrapper {
+    flex: 1;
+    min-width: 250px;
+    position: relative;
+  }
+
+  .search-input-wrapper i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+  }
+
+  .search-input-wrapper input {
+    padding-left: 36px;
+    width: 100%;
+  }
+
+  .sort-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
   }
 
   .candidates-count {
@@ -26,32 +277,6 @@
     font-size: 0.95rem;
     font-weight: 500;
     border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .filters-card {
-    margin-bottom: 24px;
-  }
-
-  .filters-form {
-    display: flex;
-    gap: 20px;
-    align-items: flex-end;
-    flex-wrap: wrap;
-  }
-
-  .filter-group {
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .filter-label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   .candidates-list {
@@ -69,6 +294,9 @@
     transition: all 0.2s;
     border-left: 3px solid transparent;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
   }
 
   .candidate-item:hover {
@@ -80,14 +308,6 @@
 
   .candidate-item:last-child {
     margin-bottom: 0;
-  }
-
-  .candidate-left {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-    flex: 1;
-    min-width: 0;
   }
 
   .candidate-avatar {
@@ -117,7 +337,23 @@
     display: block;
   }
 
-  .candidate-info {
+  .candidate-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .candidate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 4px;
+  }
+
+  .candidate-header-info {
     flex: 1;
     min-width: 0;
   }
@@ -126,20 +362,46 @@
     font-size: 1.2rem;
     font-weight: 700;
     color: var(--color-text-heading);
-    margin: 0 0 6px;
+    margin: 0 0 4px;
   }
 
   .candidate-position {
     font-size: 0.95rem;
     color: var(--color-text-primary);
-    margin: 0 0 8px;
+    margin: 0;
   }
 
   .candidate-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     flex-shrink: 0;
+  }
+
+  .candidate-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .candidate-row.single-line {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .candidate-row.single-line::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .candidate-row.single-line::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .candidate-row.single-line::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
   }
 
   .empty-state {
@@ -176,161 +438,103 @@
     font-weight: 600;
     border: 1px solid rgba(255, 215, 0, 0.3);
   }
-
-  @media (max-width: 768px) {
-    .candidate-item {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .candidate-actions {
-      width: 100%;
-      justify-content: space-between;
-    }
-    
-    .filters-form {
-      flex-direction: column;
-      gap: 16px;
-    }
-    
-    .filter-group {
-      width: 100%;
-      min-width: 100%;
-    }
-    
-    .filters-card .d-flex {
-      width: 100%;
-    }
-    
-    .filters-card .btn {
-      width: 100%;
-    }
-  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="candidates-page">
-  <header class="page-header">
-    <h1 class="h2 mb-0">👥 Мои кандидаты</h1>
-    <div class="d-flex align-items-center gap-3">
-      <div class="candidates-count">
-        {{ candidates|length if candidates is defined else 0 }} кандидатов
+  <div class="layout-grid">
+    <!-- Sidebar -->
+    <aside class="filters-sidebar">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h5 mb-0 text-white">Фильтры</h2>
+        <button id="btn_reset_filters" class="btn btn-ghost btn-sm text-gold">Сбросить</button>
       </div>
-      <a href="/candidate/add" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-2"></i>Добавить кандидата
-      </a>
-    </div>
-  </header>
 
-  <!-- Фильтры -->
-  <div class="card filters-card">
-    <form id="filter-form" method="get" action="/candidate" class="filters-form">
-      <div class="filter-group">
-        <label for="search-input" class="filter-label">🔍 Поиск</label>
-        <input
-          type="text"
-          id="search-input"
-          name="search"
-          class="form-input"
-          placeholder="Поиск по имени или должности..."
-          value="{{ current_search }}"
-        >
+      <!-- Specializations -->
+      <div class="filter-section">
+        <div class="filter-title">Специализация</div>
+        <div class="custom-dropdown" id="dd_specializations"></div>
       </div>
-      <div class="filter-group">
-        <label for="specialization-select" class="filter-label">🎯 Специализация</label>
-        <select
-          id="specialization-select"
-          name="specialization"
-          class="form-input"
-        >
-          <option value="">Все специализации</option>
-          {% for spec in specializations %}
-            <option value="{{ spec }}" {% if current_specialization == spec %}selected{% endif %}>
-              {{ spec }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="filter-group">
-        <label for="grade-select" class="filter-label">📊 Грейд</label>
-        <select
-          id="grade-select"
-          name="grade"
-          class="form-input"
-        >
-          <option value="">Все грейды</option>
-          <option value="Junior">Junior</option>
-          <option value="Junior+">Junior+</option>
-          <option value="Middle">Middle</option>
-          <option value="Middle+">Middle+</option>
-          <option value="Senior">Senior</option>
-          <option value="Senior+">Senior+</option>
-          <option value="Lead">Lead</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label for="work_format-select" class="filter-label">💼 Формат работы</label>
-        <select
-          id="work_format-select"
-          name="work_format"
-          class="form-input"
-        >
-          <option value="">Все форматы</option>
-          <option value="office">Office</option>
-          <option value="remote">Remote</option>
-          <option value="hybrid">Hybrid</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label for="employment_type-select" class="filter-label">⏰ Тип занятости</label>
-        <select
-          id="employment_type-select"
-          name="employment_type"
-          class="form-input"
-        >
-          <option value="">Все типы</option>
-          <option value="full-time">Full-time</option>
-          <option value="part-time">Part-time</option>
-          <option value="project">Project</option>
-          <option value="internship">Internship</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label for="english_level-select" class="filter-label">🌐 Английский</label>
-        <select
-          id="english_level-select"
-          name="english_level"
-          class="form-input"
-        >
-          <option value="">Все уровни</option>
-          <option value="A1">A1</option>
-          <option value="A2">A2</option>
-          <option value="B1">B1</option>
-          <option value="B2">B2</option>
-          <option value="C1">C1</option>
-          <option value="C2">C2</option>
-        </select>
-      </div>
-      <div class="d-flex align-items-end">
-        <a href="/candidate" class="btn btn-secondary">
-          <i class="bi bi-arrow-clockwise me-2"></i>Сбросить
-        </a>
-      </div>
-    </form>
-  </div>
 
-  <!-- Список кандидатов -->
-  <div class="card">
-    {% if candidates and candidates|length > 0 %}
-      <div class="table-container">
-        <ul class="candidates-list">
-          {% for item in candidates %}
-            {% set c = item.candidate %}
-            {% set completeness = item.completeness %}
-            <li class="candidate-item">
-              <div class="d-flex align-items-start justify-content-between gap-4 flex-wrap">
-                <div class="candidate-left">
+      <!-- Grade -->
+      <div class="filter-section">
+        <div class="filter-title">Грейд</div>
+        <div class="custom-dropdown" id="dd_grades"></div>
+      </div>
+
+      <!-- Work Format -->
+      <div class="filter-section">
+        <div class="filter-title">Формат работы</div>
+        <div class="custom-dropdown" id="dd_work_formats"></div>
+      </div>
+
+      <!-- Employment Type -->
+      <div class="filter-section">
+        <div class="filter-title">Тип занятости</div>
+        <div class="custom-dropdown" id="dd_employment_types"></div>
+      </div>
+
+      <!-- English Level -->
+      <div class="filter-section">
+        <div class="filter-title">Уровень английского</div>
+        <div class="custom-dropdown" id="dd_english_levels"></div>
+      </div>
+
+      <!-- Skills -->
+      <div class="filter-section">
+        <div class="filter-title">Навыки</div>
+        <div class="custom-dropdown" id="dd_skills"></div>
+      </div>
+
+      <!-- Status -->
+      <div class="filter-section">
+        <div class="filter-title">Статус</div>
+        <div class="custom-dropdown" id="dd_statuses"></div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main>
+      <div class="candidates-list-header">
+        <h1 class="h2 mb-0 text-white">👥 Мои кандидаты <span id="candidate_counter" class="text-muted fs-5 ms-2">({{ candidates|length if candidates is defined else 0 }})</span></h1>
+        <div class="d-flex align-items-center gap-3">
+          <a href="/candidate/add" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Добавить кандидата
+          </a>
+        </div>
+      </div>
+
+      <div class="search-sort-container mb-4">
+        <div class="search-input-wrapper">
+          <i class="bi bi-search"></i>
+          <input
+            type="text"
+            id="search-input"
+            class="form-input"
+            placeholder="Поиск по имени или должности..."
+            value="{{ current_search }}"
+          >
+        </div>
+        <div class="sort-controls">
+          <select id="sort_by" class="form-select form-select-sm" style="background-color: var(--color-bg-surface); border-color: rgba(255,255,255,0.1); color: white; width: auto;">
+            <option value="">Без сортировки</option>
+            <option value="rate_asc">По ставке ↑</option>
+            <option value="rate_desc">По ставке ↓</option>
+            <option value="date_asc">По дате добавления ↑</option>
+            <option value="date_desc">По дате добавления ↓</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="candidates_list" class="card">
+        {% if candidates and candidates|length > 0 %}
+          <div class="table-container">
+            <ul class="candidates-list">
+              {% for item in candidates %}
+                {% set c = item.candidate %}
+                {% set completeness = item.completeness %}
+                <li class="candidate-item">
                   <div class="candidate-avatar {% if c.photo_path %}has-photo{% endif %}">
                     {% if c.photo_path %}
                       <img src="{{ c.photo_path }}" alt="{{ c.first_name or '' }} {{ c.last_name or '' }}" onerror="this.style.display='none'; this.parentElement.classList.remove('has-photo');">
@@ -338,23 +542,38 @@
                     {% set initials = (c.first_name[0] if c.first_name else "") ~ (c.last_name[0] if c.last_name else "") %}
                     <span {% if c.photo_path %}style="display:none;"{% endif %}>{{ initials if initials else "👤" }}</span>
                   </div>
-                  <div class="candidate-info">
-                    <h3 class="candidate-name">
-                      {% if c.first_name and c.last_name and c.middle_name %}
-                        {{ c.first_name ~ " " ~ c.last_name ~ " " ~ c.middle_name }}
-                      {% elif c.first_name and c.last_name %}
-                        {{ c.first_name ~ " " ~ c.last_name }}
-                      {% else %}
-                        {{ c.first_name or c.last_name or "Без имени" }}
-                      {% endif %}
-                    </h3>
-                    {% if c.title %}
-                      <p class="candidate-position">{{ c.title }}</p>
-                    {% endif %}
+                  <div class="candidate-content">
+                    <div class="candidate-header">
+                      <div class="candidate-header-info">
+                        <h3 class="candidate-name">
+                          {% if c.first_name and c.last_name and c.middle_name %}
+                            {{ c.first_name ~ " " ~ c.last_name ~ " " ~ c.middle_name }}
+                          {% elif c.first_name and c.last_name %}
+                            {{ c.first_name ~ " " ~ c.last_name }}
+                          {% else %}
+                            {{ c.first_name or c.last_name or "Без имени" }}
+                          {% endif %}
+                        </h3>
+                        {% if c.title %}
+                          <p class="candidate-position">{{ c.title }}</p>
+                        {% endif %}
+                      </div>
+                      <div class="candidate-actions">
+                        <a href="/candidate/open/{{ c.number_for_user }}" class="btn btn-primary btn-sm">
+                          <i class="bi bi-eye me-1"></i>Открыть
+                        </a>
+                        <a href="/candidate/edit/{{ c.number_for_user }}" class="btn btn-secondary btn-sm">
+                          <i class="bi bi-pencil me-1"></i>Редактировать
+                        </a>
+                        <button class="btn btn-ghost btn-sm text-danger" type="button" data-id="{{ c.number_for_user }}" onclick="deleteCandidate(this.dataset.id)">
+                          <i class="bi bi-trash me-1"></i>Удалить
+                        </button>
+                      </div>
+                    </div>
                     
-                    <!-- Специализации -->
+                    <!-- Специализации в строку -->
                     {% if c.specializations %}
-                    <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                    <div class="candidate-row">
                       {% set specs = c.specializations.split(',') %}
                       {% for spec in specs %}
                         <span class="chip chip-neutral">{{ spec.strip() }}</span>
@@ -362,9 +581,9 @@
                     </div>
                     {% endif %}
                     
-                    <!-- Скиллы -->
+                    <!-- Скиллы в строку -->
                     {% if c.skills %}
-                    <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                    <div class="candidate-row">
                       {% set skills_list = c.skills.split(',') %}
                       {% for skill in skills_list[:5] %}
                         <span class="chip chip-neutral" style="font-size: 0.75rem;">{{ skill.strip() }}</span>
@@ -375,8 +594,8 @@
                     </div>
                     {% endif %}
 
-                    <!-- Статус заполненности -->
-                    <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                    <!-- Статус заполненности и статус кандидата в одну строку -->
+                    <div class="candidate-row">
                       {% if completeness == "complete" %}
                         <span class="chip chip-success">
                           <i class="bi bi-check-circle me-1"></i>Все поля заполнены
@@ -386,40 +605,37 @@
                           <i class="bi bi-exclamation-triangle me-1"></i>Есть незаполненные поля
                         </span>
                       {% endif %}
-                    </div>
-                    
-                    <!-- Статус кандидата -->
-                    {% if c.status %}
-                    <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
-                      {% if c.status == "В активном поиске" %}
-                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
-                          <i class="bi bi-search me-1"></i>В активном поиске
-                        </span>
-                      {% elif c.status == "Рассматривает предложения" %}
-                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
-                          <i class="bi bi-eye me-1"></i>Рассматривает предложения
-                        </span>
-                      {% elif c.status == "Не ищет работу" %}
-                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
-                          <i class="bi bi-pause-circle me-1"></i>Не ищет работу
-                        </span>
-                      {% elif c.status == "Временно неактивен" %}
-                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
-                          <i class="bi bi-clock me-1"></i>Временно неактивен
-                          {% if c.status_until %}
-                            <span style="font-size: 0.85em; opacity: 0.9;">(до {{ c.status_until[:10] }})</span>
-                          {% endif %}
-                        </span>
-                      {% else %}
-                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
-                          {{ c.status }}
-                        </span>
+                      
+                      {% if c.status %}
+                        {% if c.status == "В активном поиске" %}
+                          <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                            <i class="bi bi-search me-1"></i>В активном поиске
+                          </span>
+                        {% elif c.status == "Рассматривает предложения" %}
+                          <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                            <i class="bi bi-eye me-1"></i>Рассматривает предложения
+                          </span>
+                        {% elif c.status == "Не ищет работу" %}
+                          <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                            <i class="bi bi-pause-circle me-1"></i>Не ищет работу
+                          </span>
+                        {% elif c.status == "Временно неактивен" %}
+                          <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                            <i class="bi bi-clock me-1"></i>Временно неактивен
+                            {% if c.status_until %}
+                              <span style="font-size: 0.85em; opacity: 0.9;">(до {{ c.status_until[:10] }})</span>
+                            {% endif %}
+                          </span>
+                        {% else %}
+                          <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                            {{ c.status }}
+                          </span>
+                        {% endif %}
                       {% endif %}
                     </div>
-                    {% endif %}
                     
-                    <!-- Контакты -->
-                    <div class="d-flex flex-wrap gap-2 align-items-center mt-3">
+                    <!-- Контакты в строку -->
+                    <div class="candidate-row">
                       {% if c.email %}
                         <div class="d-flex align-items-center gap-2 bg-surface p-2 rounded" style="font-size: 0.85rem;">
                           <i class="bi bi-envelope text-gold"></i>
@@ -463,75 +679,60 @@
                       {% endif %}
                     </div>
 
-                    <!-- Ставка -->
+                    <!-- Ставка в строку -->
                     {% if c.base_rate_amount is not none or c.rate_rub is not none or c.rate_usd is not none or c.rate_eur is not none or c.rate_byn is not none or c.salary_usd is not none %}
-                    <div class="mt-3 p-2 rounded candidate-rate-block">
-                      <div class="d-flex align-items-center gap-2 mb-2">
-                        <i class="bi bi-currency-exchange text-gold" style="font-size: 1.1rem;"></i>
-                        <strong class="text-gold" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">Ставка</strong>
-                      </div>
-                      <div class="d-flex gap-2 flex-wrap">
-                        {% if c.rate_rub is not none %}
-                          <span class="chip candidate-rate-chip">
-                            ₽ {{ c.rate_rub|round|int }} RUB
-                          </span>
-                        {% endif %}
-                        {% if c.rate_usd is not none %}
-                          <span class="chip candidate-rate-chip">
-                            $ {{ c.rate_usd|round|int }} USD
-                          </span>
-                        {% elif c.salary_usd is not none %}
-                          <span class="chip candidate-rate-chip">
-                            $ {{ c.salary_usd|round|int }} USD
-                          </span>
-                        {% endif %}
-                        {% if c.rate_eur is not none %}
-                          <span class="chip candidate-rate-chip">
-                            € {{ c.rate_eur|round|int }} EUR
-                          </span>
-                        {% endif %}
-                        {% if c.rate_byn is not none %}
-                          <span class="chip candidate-rate-chip">
-                            Br {{ c.rate_byn|round|int }} BYN
-                          </span>
-                        {% endif %}
-                        {% if c.base_rate_amount is not none and c.base_rate_currency and c.rate_rub is none and c.rate_usd is none and c.rate_eur is none and c.rate_byn is none and c.salary_usd is none %}
-                          <span class="chip candidate-rate-chip">
-                            {% if c.base_rate_currency == "RUB" %}₽{% elif c.base_rate_currency == "USD" %}${% elif c.base_rate_currency == "EUR" %}€{% elif c.base_rate_currency == "BYN" %}Br{% endif %}
-                            {{ c.base_rate_amount|round|int }} {{ c.base_rate_currency }}
-                          </span>
-                        {% endif %}
-                      </div>
+                    <div class="candidate-row">
+                      <i class="bi bi-currency-exchange text-gold" style="font-size: 1rem;"></i>
+                      <strong class="text-gold" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 8px;">Ставка:</strong>
+                      {% if c.rate_rub is not none %}
+                        <span class="chip candidate-rate-chip">
+                          ₽ {{ c.rate_rub|round|int }} RUB
+                        </span>
+                      {% endif %}
+                      {% if c.rate_usd is not none %}
+                        <span class="chip candidate-rate-chip">
+                          $ {{ c.rate_usd|round|int }} USD
+                        </span>
+                      {% elif c.salary_usd is not none %}
+                        <span class="chip candidate-rate-chip">
+                          $ {{ c.salary_usd|round|int }} USD
+                        </span>
+                      {% endif %}
+                      {% if c.rate_eur is not none %}
+                        <span class="chip candidate-rate-chip">
+                          € {{ c.rate_eur|round|int }} EUR
+                        </span>
+                      {% endif %}
+                      {% if c.rate_byn is not none %}
+                        <span class="chip candidate-rate-chip">
+                          Br {{ c.rate_byn|round|int }} BYN
+                        </span>
+                      {% endif %}
+                      {% if c.base_rate_amount is not none and c.base_rate_currency and c.rate_rub is none and c.rate_usd is none and c.rate_eur is none and c.rate_byn is none and c.salary_usd is none %}
+                        <span class="chip candidate-rate-chip">
+                          {% if c.base_rate_currency == "RUB" %}₽{% elif c.base_rate_currency == "USD" %}${% elif c.base_rate_currency == "EUR" %}€{% elif c.base_rate_currency == "BYN" %}Br{% endif %}
+                          {{ c.base_rate_amount|round|int }} {{ c.base_rate_currency }}
+                        </span>
+                      {% endif %}
                     </div>
                     {% endif %}
                   </div>
-                </div>
-                <div class="candidate-actions">
-                  <a href="/candidate/open/{{ c.number_for_user }}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-eye me-1"></i>Открыть
-                  </a>
-                  <a href="/candidate/edit/{{ c.number_for_user }}" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-pencil me-1"></i>Редактировать
-                  </a>
-                  <button class="btn btn-ghost btn-sm text-danger" type="button" data-id="{{ c.number_for_user }}" onclick="deleteCandidate(this.dataset.id)">
-                    <i class="bi bi-trash me-1"></i>Удалить
-                  </button>
-                </div>
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3 class="empty-title">Пока нет кандидатов</h3>
+            <p class="empty-text">Начните с добавления первого кандидата</p>
+            <a href="/candidate/add" class="btn btn-primary">
+              <i class="bi bi-plus-lg me-2"></i>Добавить кандидата
+            </a>
+          </div>
+        {% endif %}
       </div>
-    {% else %}
-      <div class="empty-state">
-        <div class="empty-icon">📋</div>
-        <h3 class="empty-title">Пока нет кандидатов</h3>
-        <p class="empty-text">Начните с добавления первого кандидата</p>
-        <a href="/candidate/add" class="btn btn-primary">
-          <i class="bi bi-plus-lg me-2"></i>Добавить кандидата
-        </a>
-      </div>
-    {% endif %}
+    </main>
   </div>
 </div>
 {% endblock %}
@@ -556,187 +757,6 @@
       alert("Ошибка сети при удалении кандидата");
     }
   }
-
-  // Клиентская фильтрация кандидатов
-  (function() {
-    const filterForm = document.getElementById('filter-form');
-    const searchInput = document.getElementById('search-input');
-    const specializationSelect = document.getElementById('specialization-select');
-    const gradeSelect = document.getElementById('grade-select');
-    const workFormatSelect = document.getElementById('work_format-select');
-    const employmentTypeSelect = document.getElementById('employment_type-select');
-    const englishLevelSelect = document.getElementById('english_level-select');
-    
-    let searchTimeout = null;
-    let allCandidates = []; // Храним все кандидаты для клиентской фильтрации
-    
-    // Сохраняем все кандидаты при загрузке
-    const candidateItems = document.querySelectorAll('.candidate-item');
-    candidateItems.forEach(item => {
-      const candidateData = {
-        element: item,
-        name: item.querySelector('.candidate-name')?.textContent?.toLowerCase() || '',
-        title: item.querySelector('.candidate-position')?.textContent?.toLowerCase() || '',
-        specialization: Array.from(item.querySelectorAll('.chip')).map(chip => chip.textContent.toLowerCase()),
-        grade: extractGrade(item),
-        workFormat: extractWorkFormat(item),
-        employmentType: extractEmploymentType(item),
-        englishLevel: extractEnglishLevel(item)
-      };
-      allCandidates.push(candidateData);
-    });
-    
-    function extractGrade(item) {
-      // Ищем грейд в тексте или тегах
-      const text = item.textContent.toLowerCase();
-      // Проверяем варианты с "+" первыми
-      if (text.includes('senior+') || text.includes('senior +')) return 'senior+';
-      if (text.includes('middle+') || text.includes('middle +')) return 'middle+';
-      if (text.includes('junior+') || text.includes('junior +')) return 'junior+';
-      if (text.includes('junior')) return 'junior';
-      if (text.includes('middle')) return 'middle';
-      if (text.includes('senior')) return 'senior';
-      if (text.includes('lead')) return 'lead';
-      return '';
-    }
-    
-    function extractWorkFormat(item) {
-      const text = item.textContent.toLowerCase();
-      if (text.includes('office')) return 'office';
-      if (text.includes('remote')) return 'remote';
-      if (text.includes('hybrid')) return 'hybrid';
-      return '';
-    }
-    
-    function extractEmploymentType(item) {
-      const text = item.textContent.toLowerCase();
-      if (text.includes('full-time') || text.includes('fulltime')) return 'full-time';
-      if (text.includes('part-time') || text.includes('parttime')) return 'part-time';
-      if (text.includes('project')) return 'project';
-      if (text.includes('internship')) return 'internship';
-      return '';
-    }
-    
-    function extractEnglishLevel(item) {
-      const text = item.textContent.toLowerCase();
-      const levels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
-      for (const level of levels) {
-        if (text.includes(level)) return level.toUpperCase();
-      }
-      return '';
-    }
-    
-    function filterCandidates() {
-      const searchQuery = (searchInput?.value || '').toLowerCase().trim();
-      const specialization = (specializationSelect?.value || '').toLowerCase();
-      const grade = (gradeSelect?.value || '').toLowerCase();
-      const workFormat = (workFormatSelect?.value || '').toLowerCase();
-      const employmentType = (employmentTypeSelect?.value || '').toLowerCase();
-      const englishLevel = (englishLevelSelect?.value || '').toLowerCase();
-      
-      let visibleCount = 0;
-      
-      allCandidates.forEach(candidate => {
-        let visible = true;
-        
-        // Поиск по имени/должности
-        if (searchQuery) {
-          const matchesSearch = 
-            candidate.name.includes(searchQuery) || 
-            candidate.title.includes(searchQuery);
-          if (!matchesSearch) visible = false;
-        }
-        
-        // Фильтр по специализации
-        if (specialization && visible) {
-          const matchesSpec = candidate.specialization.some(spec => 
-            spec.includes(specialization) || specialization.includes(spec)
-          );
-          if (!matchesSpec) visible = false;
-        }
-        
-        // Фильтр по грейду
-        if (grade && visible) {
-          if (candidate.grade !== grade) visible = false;
-        }
-        
-        // Фильтр по формату работы
-        if (workFormat && visible) {
-          if (candidate.workFormat !== workFormat) visible = false;
-        }
-        
-        // Фильтр по типу занятости
-        if (employmentType && visible) {
-          if (candidate.employmentType !== employmentType) visible = false;
-        }
-        
-        // Фильтр по английскому
-        if (englishLevel && visible) {
-          if (candidate.englishLevel !== englishLevel) visible = false;
-        }
-        
-        // Показываем/скрываем элемент
-        candidate.element.style.display = visible ? '' : 'none';
-        if (visible) visibleCount++;
-      });
-      
-      // Обновляем счетчик
-      const countElement = document.querySelector('.candidates-count');
-      if (countElement) {
-        countElement.textContent = `${visibleCount} кандидатов`;
-      }
-      
-      // Показываем сообщение, если ничего не найдено
-      const emptyState = document.querySelector('.empty-state');
-      const candidatesList = document.querySelector('.candidates-list');
-      if (visibleCount === 0 && candidatesList) {
-        if (!emptyState || emptyState.style.display === 'none') {
-          const newEmptyState = document.createElement('div');
-          newEmptyState.className = 'empty-state';
-          newEmptyState.innerHTML = `
-            <div class="empty-icon">🔍</div>
-            <h3 class="empty-title">Ничего не найдено</h3>
-            <p class="empty-text">Попробуйте изменить параметры фильтрации</p>
-          `;
-          candidatesList.parentElement.appendChild(newEmptyState);
-        }
-      } else if (emptyState && emptyState.parentElement) {
-        emptyState.remove();
-      }
-    }
-    
-    // Обработчики событий
-    if (searchInput) {
-      searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(filterCandidates, 300);
-      });
-    }
-    
-    [specializationSelect, gradeSelect, workFormatSelect, employmentTypeSelect, englishLevelSelect].forEach(select => {
-      if (select) {
-        select.addEventListener('change', filterCandidates);
-      }
-    });
-    
-    // Применяем фильтры при загрузке, если есть значения в URL
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('grade') && gradeSelect) {
-      gradeSelect.value = urlParams.get('grade');
-    }
-    if (urlParams.has('work_format') && workFormatSelect) {
-      workFormatSelect.value = urlParams.get('work_format');
-    }
-    if (urlParams.has('employment_type') && employmentTypeSelect) {
-      employmentTypeSelect.value = urlParams.get('employment_type');
-    }
-    if (urlParams.has('english_level') && englishLevelSelect) {
-      englishLevelSelect.value = urlParams.get('english_level');
-    }
-    
-    // Применяем фильтры после небольшой задержки для инициализации
-    setTimeout(filterCandidates, 100);
-  })();
 
   async function copyToClipboard(text, el) {
     if (!text) return;
@@ -795,5 +815,458 @@
       buttonElement.disabled = false;
     }
   }
+
+  // Debounce Helper
+  function debounce(fn, delay) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  // Main Search Trigger - AJAX загрузка без перезагрузки страницы
+  async function triggerSearch() {
+    collectFilters();
+    updateURL();
+    
+    // Показываем индикатор загрузки
+    const candidatesList = document.getElementById('candidates_list');
+    const originalContent = candidatesList.innerHTML;
+    candidatesList.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-gold" role="status"><span class="visually-hidden">Загрузка...</span></div></div>';
+    
+    try {
+      // Делаем AJAX запрос
+      const url = buildURL();
+      const response = await fetch(url, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Ошибка загрузки данных');
+      }
+      
+      const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      
+      // Извлекаем только блок с карточками
+      const newCandidatesList = doc.getElementById('candidates_list');
+      if (newCandidatesList) {
+        candidatesList.innerHTML = newCandidatesList.innerHTML;
+        
+        // Обновляем счетчик
+        const counter = doc.getElementById('candidate_counter');
+        if (counter) {
+          document.getElementById('candidate_counter').textContent = counter.textContent;
+        }
+        
+        // Переинициализируем обработчики событий для новых элементов
+        reinitializeEventHandlers();
+      } else {
+        candidatesList.innerHTML = originalContent;
+        throw new Error('Не удалось найти список кандидатов в ответе');
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки кандидатов:', error);
+      candidatesList.innerHTML = originalContent;
+      alert('Ошибка загрузки данных. Попробуйте обновить страницу.');
+    }
+  }
+  
+  // Переинициализация обработчиков событий после AJAX загрузки
+  function reinitializeEventHandlers() {
+    // Обработчики для кнопок удаления уже работают через onclick, но можно добавить дополнительные если нужно
+    // Обработчики для кнопок чата уже работают через onclick
+  }
+
+  // Collect Filters
+  function collectFilters() {
+    filters.search = document.getElementById('search-input')?.value.trim() || '';
+    filters.sort_by = document.getElementById('sort_by')?.value || '';
+    
+    filters.specializations = dropdowns['dd_specializations']?.getValue() || '';
+    filters.grades = dropdowns['dd_grades']?.getValue() || '';
+    filters.work_formats = dropdowns['dd_work_formats']?.getValue() || '';
+    filters.employment_types = dropdowns['dd_employment_types']?.getValue() || '';
+    filters.english_levels = dropdowns['dd_english_levels']?.getValue() || '';
+    filters.skills = dropdowns['dd_skills']?.getValue() || '';
+    filters.statuses = dropdowns['dd_statuses']?.getValue() || '';
+  }
+
+  function buildURL() {
+    const params = new URLSearchParams();
+    if (filters.search) params.set('search', filters.search);
+    if (filters.sort_by) params.set('sort_by', filters.sort_by);
+    if (filters.specializations) params.set('specializations', filters.specializations);
+    if (filters.grades) params.set('grade', filters.grades);
+    if (filters.work_formats) params.set('work_format', filters.work_formats);
+    if (filters.employment_types) params.set('employment_type', filters.employment_types);
+    if (filters.english_levels) params.set('english_level', filters.english_levels);
+    if (filters.skills) params.set('skills', filters.skills);
+    if (filters.statuses) params.set('status', filters.statuses);
+    
+    return '/candidate' + (params.toString() ? '?' + params.toString() : '');
+  }
+
+  function updateURL() {
+    const newURL = buildURL();
+    window.history.pushState({}, '', newURL);
+  }
+
+  const filters = {
+    search: '',
+    sort_by: '',
+    specializations: '',
+    grades: '',
+    work_formats: '',
+    employment_types: '',
+    english_levels: '',
+    skills: '',
+    statuses: '',
+  };
+
+  // MultiSelect Dropdown Class
+  class MultiSelectDropdown {
+    constructor(containerId, apiUrl, placeholder = 'Выберите...') {
+      this.container = document.getElementById(containerId);
+      this.selectedValues = new Set();
+      this.allItems = [];
+      this.filteredItems = [];
+      this.placeholder = placeholder;
+      this.apiUrl = apiUrl;
+      this.isLoading = false;
+      this.searchTimeout = null;
+      
+      if (!this.container) return;
+      
+      this.renderStructure();
+      this.attachEvents();
+      this.loadInitialItems();
+    }
+
+    renderStructure() {
+      this.container.innerHTML = `
+        <div class="dropdown-header">
+          <span class="header-text">${this.placeholder}</span>
+        </div>
+        <div class="selected-chips-container"></div>
+        <div class="dropdown-body">
+          <div class="dropdown-search">
+            <input type="text" placeholder="Поиск..." autocomplete="off">
+          </div>
+          <div class="dropdown-list"></div>
+        </div>
+      `;
+      
+      this.header = this.container.querySelector('.dropdown-header');
+      this.headerText = this.container.querySelector('.header-text');
+      this.chipsContainer = this.container.querySelector('.selected-chips-container');
+      this.listContainer = this.container.querySelector('.dropdown-list');
+      this.searchInput = this.container.querySelector('.dropdown-search input');
+      this.body = this.container.querySelector('.dropdown-body');
+    }
+
+    attachEvents() {
+      this.header.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggle();
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!this.container.contains(e.target)) {
+          this.close();
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.container.classList.contains('open')) {
+          this.close();
+        }
+      });
+
+      this.searchInput.addEventListener('input', debounce((e) => {
+        const query = e.target.value.trim();
+        if (query.length >= 2) {
+          this.searchItems(query);
+        } else if (query.length === 0) {
+          this.loadInitialItems();
+        } else {
+          this.filterItemsLocally(query);
+        }
+      }, 300));
+
+      this.body.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    async loadInitialItems() {
+      try {
+        this.showLoading();
+        const res = await fetch(this.apiUrl);
+        const data = await res.json();
+        this.allItems = data;
+        this.filteredItems = data;
+        this.renderItems();
+      } catch (e) {
+        console.error(`Error loading items for ${this.apiUrl}:`, e);
+        this.showError('Ошибка загрузки');
+      }
+    }
+
+    async searchItems(query) {
+      if (this.isLoading) return;
+      this.isLoading = true;
+      this.showLoading();
+      
+      try {
+        const url = `${this.apiUrl}?q=${encodeURIComponent(query)}&limit=100`;
+        const res = await fetch(url);
+        const data = await res.json();
+        this.filteredItems = data;
+        this.renderItems();
+      } catch (e) {
+        console.error(`Error searching items:`, e);
+        this.showError('Ошибка поиска');
+      } finally {
+        this.isLoading = false;
+      }
+    }
+
+    filterItemsLocally(query) {
+      const lower = query.toLowerCase();
+      this.filteredItems = this.allItems.filter(item => 
+        item.toLowerCase().includes(lower)
+      );
+      this.renderItems();
+    }
+
+    showLoading() {
+      this.listContainer.innerHTML = '<div class="dropdown-loading">Загрузка...</div>';
+    }
+
+    showError(message) {
+      this.listContainer.innerHTML = `<div class="dropdown-empty">${message}</div>`;
+    }
+
+    toggle() {
+      document.querySelectorAll('.custom-dropdown.open').forEach(el => {
+        if (el.id !== this.container.id) {
+          el.classList.remove('open');
+        }
+      });
+      
+      this.container.classList.toggle('open');
+      if (this.container.classList.contains('open')) {
+        this.searchInput.focus();
+        if (this.filteredItems.length === 0 && !this.isLoading) {
+          this.loadInitialItems();
+        }
+      }
+    }
+
+    close() {
+      this.container.classList.remove('open');
+      this.searchInput.value = '';
+    }
+
+    renderItems() {
+      this.listContainer.innerHTML = '';
+      
+      if (this.filteredItems.length === 0) {
+        this.listContainer.innerHTML = '<div class="dropdown-empty">Ничего не найдено</div>';
+        return;
+      }
+
+      this.filteredItems.forEach(item => {
+        const div = document.createElement('div');
+        const isSelected = this.selectedValues.has(item);
+        div.className = `dropdown-list-item ${isSelected ? 'selected' : ''}`;
+        
+        div.innerHTML = `
+          <input type="checkbox" ${isSelected ? 'checked' : ''} value="${this.escapeHtml(item)}">
+          <span>${this.escapeHtml(item)}</span>
+        `;
+        
+        const checkbox = div.querySelector('input');
+        
+        div.addEventListener('click', (e) => {
+          if (e.target === checkbox) return;
+          checkbox.checked = !checkbox.checked;
+          this.toggleSelection(item, checkbox.checked);
+        });
+
+        checkbox.addEventListener('change', (e) => {
+          e.stopPropagation();
+          this.toggleSelection(item, e.target.checked);
+        });
+        
+        this.listContainer.appendChild(div);
+      });
+    }
+
+    escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    toggleSelection(value, isSelected) {
+      if (isSelected) {
+        this.selectedValues.add(value);
+      } else {
+        this.selectedValues.delete(value);
+      }
+      this.updateChips();
+      this.updateHeader();
+      this.renderItems();
+      triggerSearch();
+    }
+
+    updateChips() {
+      this.chipsContainer.innerHTML = '';
+      this.selectedValues.forEach(val => {
+        const chip = document.createElement('div');
+        chip.className = 'selected-chip';
+        chip.innerHTML = `
+          <span>${this.escapeHtml(val)}</span>
+          <span class="close-btn" title="Удалить">&times;</span>
+        `;
+        
+        chip.querySelector('.close-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleSelection(val, false);
+        });
+        
+        this.chipsContainer.appendChild(chip);
+      });
+    }
+
+    updateHeader() {
+      const count = this.selectedValues.size;
+      if (count > 0) {
+        this.headerText.textContent = `Выбрано: ${count}`;
+      } else {
+        this.headerText.textContent = this.placeholder;
+      }
+    }
+
+    getValue() {
+      return Array.from(this.selectedValues).join(',');
+    }
+    
+    reset() {
+      this.selectedValues.clear();
+      this.searchInput.value = '';
+      this.updateChips();
+      this.updateHeader();
+      this.loadInitialItems();
+    }
+
+    setValue(value) {
+      if (!value) return;
+      const values = value.split(',').map(v => v.trim()).filter(v => v);
+      values.forEach(v => this.selectedValues.add(v));
+      this.updateChips();
+      this.updateHeader();
+    }
+  }
+
+  const dropdowns = {};
+
+  // Init Dropdowns
+  dropdowns['dd_specializations'] = new MultiSelectDropdown('dd_specializations', '/dropdown/candidate-specializations', 'Все специализации');
+  dropdowns['dd_grades'] = new MultiSelectDropdown('dd_grades', '/dropdown/candidate-grades', 'Все грейды');
+  dropdowns['dd_work_formats'] = new MultiSelectDropdown('dd_work_formats', '/dropdown/candidate-work-formats', 'Все форматы');
+  dropdowns['dd_employment_types'] = new MultiSelectDropdown('dd_employment_types', '/dropdown/candidate-employment-types', 'Все типы');
+  dropdowns['dd_english_levels'] = new MultiSelectDropdown('dd_english_levels', '/dropdown/candidate-english-levels', 'Все уровни');
+  dropdowns['dd_skills'] = new MultiSelectDropdown('dd_skills', '/dropdown/candidate-skills', 'Все навыки');
+  dropdowns['dd_statuses'] = new MultiSelectDropdown('dd_statuses', '/dropdown/candidate-statuses', 'Все статусы');
+
+  // Event Listeners
+  document.getElementById('search-input')?.addEventListener('input', debounce(() => triggerSearch(), 500));
+  document.getElementById('sort_by')?.addEventListener('change', () => triggerSearch());
+
+  // Reset Filters
+  document.getElementById('btn_reset_filters')?.addEventListener('click', () => {
+    document.getElementById('search-input').value = '';
+    document.getElementById('sort_by').value = '';
+    
+    Object.values(dropdowns).forEach(dd => {
+      if (dd && typeof dd.reset === 'function') {
+        dd.reset();
+      }
+    });
+    
+    filters.search = '';
+    filters.sort_by = '';
+    filters.specializations = '';
+    filters.grades = '';
+    filters.work_formats = '';
+    filters.employment_types = '';
+    filters.english_levels = '';
+    filters.skills = '';
+    filters.statuses = '';
+    
+    triggerSearch();
+  });
+
+  // Load filters from URL on page load
+  function loadFiltersFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    
+    if (params.has('search')) {
+      document.getElementById('search-input').value = params.get('search');
+      filters.search = params.get('search');
+    }
+    
+    if (params.has('sort_by')) {
+      document.getElementById('sort_by').value = params.get('sort_by');
+      filters.sort_by = params.get('sort_by');
+    }
+    
+    if (params.has('specializations') && dropdowns['dd_specializations']) {
+      dropdowns['dd_specializations'].setValue(params.get('specializations'));
+      filters.specializations = params.get('specializations');
+    }
+    
+    if (params.has('grade') && dropdowns['dd_grades']) {
+      dropdowns['dd_grades'].setValue(params.get('grade'));
+      filters.grades = params.get('grade');
+    }
+    
+    if (params.has('work_format') && dropdowns['dd_work_formats']) {
+      dropdowns['dd_work_formats'].setValue(params.get('work_format'));
+      filters.work_formats = params.get('work_format');
+    }
+    
+    if (params.has('employment_type') && dropdowns['dd_employment_types']) {
+      dropdowns['dd_employment_types'].setValue(params.get('employment_type'));
+      filters.employment_types = params.get('employment_type');
+    }
+    
+    if (params.has('english_level') && dropdowns['dd_english_levels']) {
+      dropdowns['dd_english_levels'].setValue(params.get('english_level'));
+      filters.english_levels = params.get('english_level');
+    }
+    
+    if (params.has('skills') && dropdowns['dd_skills']) {
+      dropdowns['dd_skills'].setValue(params.get('skills'));
+      filters.skills = params.get('skills');
+    }
+    
+    if (params.has('status') && dropdowns['dd_statuses']) {
+      dropdowns['dd_statuses'].setValue(params.get('status'));
+      filters.statuses = params.get('status');
+    }
+  }
+
+  // Wait for dropdowns to initialize, then load filters from URL
+  setTimeout(() => {
+    loadFiltersFromURL();
+  }, 500);
 </script>
 {% endblock %}

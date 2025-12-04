@@ -1,0 +1,819 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Профиль подрядчика — Omega Hire{% endblock %}
+
+{% block head %}
+  <style>
+    .profile-page{
+      max-width:100%;
+      margin:0;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      gap:20px;
+    }
+    .profile-main{
+      flex:1;
+    }
+    .profile-card {
+      background: var(--color-bg-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 16px;
+      padding: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 30px rgba(155, 89, 182, 0.1);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        #9b59b6 50%, 
+        transparent 100%);
+      box-shadow: 0 0 20px rgba(155, 89, 182, 0.5);
+    }
+    .profile-title{
+      margin:0 0 10px;
+      font-size:1.6rem;
+      font-weight:700;
+      color: var(--color-text-heading);
+      text-shadow: 
+        0 0 20px rgba(155, 89, 182, 0.3),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .profile-email{
+      font-size:1rem;
+      color: var(--color-text-primary);
+      font-weight:600;
+      margin-bottom:8px;
+    }
+    .profile-sub{
+      font-size:0.9rem;
+      color: var(--color-text-muted);
+      margin-bottom:18px;
+    }
+    .profile-actions{
+      display:flex;
+      justify-content:center;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:10px;
+    }
+    .btn-outline {
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: var(--color-bg-surface-2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--color-text-heading);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .btn-outline:hover {
+      background: var(--color-bg-surface);
+      border-color: rgba(155, 89, 182, 0.3);
+      color: #9b59b6;
+      transform: translateY(-2px);
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.2),
+        0 0 20px rgba(155, 89, 182, 0.15);
+    }
+    .btn-primary-link {
+      border: none;
+      background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+      color: white;
+      box-shadow: 
+        0 8px 24px rgba(155, 89, 182, 0.4),
+        0 0 30px rgba(155, 89, 182, 0.2);
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-primary-link:hover {
+      background: linear-gradient(135deg, #af7ac5 0%, #9b59b6 100%);
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 32px rgba(155, 89, 182, 0.6),
+        0 0 40px rgba(155, 89, 182, 0.4);
+    }
+    .btn-logout {
+      margin-top: 24px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    .btn-logout:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    }
+    .profile-field{
+      margin-bottom:12px;
+      font-size:0.95rem;
+      line-height:1.5;
+      color: var(--color-text-primary);
+    }
+    .profile-field strong{
+      color: var(--color-text-heading);
+      display:inline-block;
+      min-width:180px;
+    }
+    .stack-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .stack-tag {
+      padding: 4px 12px;
+      border-radius: 12px;
+      background: rgba(155, 89, 182, 0.2);
+      color: #9b59b6;
+      border: 1px solid rgba(155, 89, 182, 0.3);
+      font-size: 0.85rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 16px;
+      background: rgba(155, 89, 182, 0.2);
+      color: #9b59b6;
+      border: 1px solid rgba(155, 89, 182, 0.3);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .availability-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .availability-badge.available {
+      background: rgba(46, 204, 113, 0.2);
+      color: #2ecc71;
+      border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+    .availability-badge.unavailable {
+      background: rgba(231, 76, 60, 0.2);
+      color: #e74c3c;
+      border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    /* ========= ОБЩИЕ СТИЛИ МОДАЛОК ========= */
+    body.modal-open {
+      overflow: hidden;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      background: var(--color-bg-surface);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      color: var(--color-text-heading);
+      border-radius: 24px;
+      padding: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(155, 89, 182, 0.1);
+      overflow-y: auto;
+      margin: auto;
+      position: relative;
+    }
+    .modal-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        #9b59b6 50%, 
+        transparent 100%);
+      box-shadow: 0 0 20px rgba(155, 89, 182, 0.5);
+    }
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--color-text-heading);
+      text-shadow: 
+        0 0 20px rgba(155, 89, 182, 0.3),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .modal-close:hover {
+      color: #9b59b6;
+      transform: scale(1.1);
+    }
+    .modal-card p {
+      font-size: 0.95rem;
+      color: var(--color-text-primary);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    .modal-field{
+      text-align:left;
+      margin-bottom:10px;
+    }
+    .modal-label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--color-text-heading);
+    }
+    .modal-input, .modal-select {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      background: var(--color-bg-surface-2) !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--color-text-heading) !important;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .modal-input::placeholder,
+    .modal-input::-webkit-input-placeholder,
+    .modal-input::-moz-placeholder,
+    .modal-input:-ms-input-placeholder,
+    .modal-input::-ms-input-placeholder {
+      color: var(--color-text-muted) !important;
+      opacity: 0.7 !important;
+    }
+    .modal-input:focus, .modal-select:focus {
+      outline: none;
+      border-color: #9b59b6 !important;
+      background: var(--color-bg-surface) !important;
+      box-shadow: 
+        0 0 0 2px rgba(155, 89, 182, 0.2),
+        0 0 20px rgba(155, 89, 182, 0.15),
+        0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+    textarea.modal-input {
+      resize: vertical;
+      font-family: inherit;
+    }
+    .modal-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-checkbox input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:12px;
+    }
+    .modal-btn{
+      padding:8px 14px;
+      border-radius:12px;
+      border:none;
+      font-size:0.85rem;
+      font-weight:600;
+      cursor:pointer;
+      transition: all 0.3s ease;
+    }
+    .modal-btn-primary {
+      background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+      color: white;
+      box-shadow: 
+        0 4px 15px rgba(155, 89, 182, 0.4),
+        0 0 20px rgba(155, 89, 182, 0.2);
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+    .modal-btn-primary:hover {
+      background: linear-gradient(135deg, #af7ac5 0%, #9b59b6 100%);
+      transform: translateY(-2px);
+      box-shadow: 
+        0 8px 24px rgba(155, 89, 182, 0.6),
+        0 0 30px rgba(155, 89, 182, 0.4);
+    }
+    .modal-btn-secondary {
+      background: var(--color-bg-surface-2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--color-text-heading);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .modal-btn-secondary:hover {
+      background: var(--color-bg-surface);
+      border-color: rgba(155, 89, 182, 0.3);
+      color: #9b59b6;
+      transform: translateY(-2px);
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.2),
+        0 0 20px rgba(155, 89, 182, 0.15);
+    }
+    .modal-status{
+      margin-top:8px;
+      font-size:0.8rem;
+      min-height:1em;
+    }
+    .modal-status-error {
+      color: #E74C3C;
+      font-weight: 600;
+    }
+    .modal-status-ok {
+      color: #2ECC71;
+      font-weight: 600;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="container-fluid p-4">
+    <div class="row">
+      <div class="col-lg-3 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title mb-3" style="color: #9b59b6;">Личный кабинет</h5>
+            <nav class="d-flex flex-column gap-2">
+              <a href="/contractor/dashboard" class="btn btn-ghost text-start">
+                <i class="bi bi-speedometer2 me-2"></i>Дашборд
+              </a>
+            </nav>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-9">
+        <div class="card">
+          <div class="card-body">
+            <main class="profile-page" style="max-width: 100%; margin: 0; padding: 0;">
+              <section class="profile-main">
+                <div class="profile-card">
+                  <!-- Загрузка фото пользователя -->
+                  <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 24px;">
+                    <div id="user-photo-preview" style="width: 120px; height: 120px; border-radius: 50%; background: var(--color-bg-surface-2); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 3px solid rgba(155, 89, 182, 0.3); margin-bottom: 12px; box-shadow: 0 0 20px rgba(155, 89, 182, 0.2);">
+                      <img id="user-photo-img" src="" alt="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                      <i class="bi bi-person-fill" id="user-photo-placeholder" style="font-size: 3rem; color: var(--color-text-muted);"></i>
+                    </div>
+                    <input type="file" id="user-photo-input" accept="image/*" style="display: none;">
+                    <button type="button" onclick="document.getElementById('user-photo-input').click()" class="btn-outline" style="margin-bottom: 8px;">
+                      <i class="bi bi-camera me-2"></i>Изменить фото
+                    </button>
+                    <div id="user-photo-status" style="font-size: 0.85rem; color: var(--color-text-muted); min-height: 1.2em;"></div>
+                  </div>
+
+                  <h1 class="profile-title">Профиль подрядчика</h1>
+                  
+                  <!-- Информация о профиле -->
+                  <div id="profile-info" style="text-align: left; margin: 24px 0;">
+                    <div class="profile-field">
+                      <strong>ФИО:</strong> 
+                      <span id="profile-fullname">
+                        {% if user_first_name or user_last_name or user_middle_name %}
+                          {% set parts = [] %}
+                          {% if user_last_name %}{% set _ = parts.append(user_last_name) %}{% endif %}
+                          {% if user_first_name %}{% set _ = parts.append(user_first_name) %}{% endif %}
+                          {% if user_middle_name %}{% set _ = parts.append(user_middle_name) %}{% endif %}
+                          {{ parts|join(' ') }}
+                        {% else %}
+                          <span style="color: var(--color-text-muted);">Не указано</span>
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="profile-field">
+                      <strong>Email:</strong> 
+                      <span id="profile-email">{{ user_email or "email не найден" }}</span>
+                    </div>
+                    <div class="profile-field">
+                      <strong>Телефон:</strong> 
+                      <span id="profile-phone">
+                        {% if user_phone %}
+                          {{ user_phone }}
+                        {% else %}
+                          <span style="color: var(--color-text-muted);">Не указан</span>
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="profile-field">
+                      <strong>Уровень (Grade):</strong> 
+                      <span id="profile-grade">
+                        {% if contractor_profile and contractor_profile.grade %}
+                          <span class="grade-badge">{{ contractor_profile.grade }}</span>
+                        {% else %}
+                          <span style="color: var(--color-text-muted);">Не указан</span>
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="profile-field">
+                      <strong>Опыт работы:</strong> 
+                      <span id="profile-experience-years">
+                        {% if contractor_profile and contractor_profile.experience_years %}
+                          {{ contractor_profile.experience_years }} {% if contractor_profile.experience_years == 1 %}год{% elif contractor_profile.experience_years < 5 %}года{% else %}лет{% endif %}
+                        {% else %}
+                          <span style="color: var(--color-text-muted);">Не указан</span>
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="profile-field">
+                      <strong>Технологический стек:</strong> 
+                      <div id="profile-stack" class="stack-tags" style="margin-top: 4px;">
+                        {% if contractor_profile and contractor_profile.stack %}
+                          {% for tech in contractor_profile.stack %}
+                            <span class="stack-tag">{{ tech }}</span>
+                          {% endfor %}
+                        {% else %}
+                          <span style="color: var(--color-text-muted);">Не указан</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="profile-field">
+                      <strong>Почасовая ставка:</strong> 
+                      <span id="profile-hourly-rate">
+                        {% if contractor_profile and contractor_profile.hourly_rate_usd %}
+                          ${{ contractor_profile.hourly_rate_usd }}/час
+                        {% else %}
+                          <span style="color: var(--color-text-muted);">Не указана</span>
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="profile-field">
+                      <strong>Доступность:</strong> 
+                      <span id="profile-availability">
+                        {% if contractor_profile %}
+                          {% if contractor_profile.is_available %}
+                            <span class="availability-badge available">Доступен</span>
+                          {% else %}
+                            <span class="availability-badge unavailable">Недоступен</span>
+                          {% endif %}
+                        {% else %}
+                          <span style="color: var(--color-text-muted);">Не указана</span>
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="profile-field">
+                      <strong>Портфолио (URL):</strong> 
+                      <span id="profile-portfolio-url">
+                        {% if contractor_profile and contractor_profile.portfolio_url %}
+                          <a href="{{ contractor_profile.portfolio_url }}" target="_blank" style="color: #9b59b6; text-decoration: none;">{{ contractor_profile.portfolio_url }}</a>
+                        {% else %}
+                          <span style="color: var(--color-text-muted);">Не указано</span>
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="profile-field">
+                      <strong>Биография:</strong> 
+                      <div id="profile-bio" style="margin-top: 4px; color: var(--color-text-primary); white-space: pre-wrap;">
+                        {% if contractor_profile and contractor_profile.bio %}
+                          {{ contractor_profile.bio }}
+                        {% else %}
+                          <span style="color: var(--color-text-muted);">Не указана</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p class="profile-sub">
+                    Заполните свой профиль, чтобы клиенты могли найти вас и предложить проекты.
+                  </p>
+
+                  <div class="profile-actions">
+                    <button type="button" class="btn-outline btn-primary-link" onclick="openEditProfileModal()">
+                      <i class="bi bi-pencil me-2"></i>Редактировать профиль
+                    </button>
+                  </div>
+
+                  <button class="btn-logout" onclick="logout()">Выйти</button>
+                </div>
+              </section>
+            </main>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= МОДАЛКА РЕДАКТИРОВАНИЯ ПРОФИЛЯ ========= -->
+  <div id="edit-profile-modal-root" style="display:none;">
+    <div class="modal-backdrop" onclick="if(event.target === this) closeEditProfileModal()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title">Редактировать профиль</div>
+          <button class="modal-close" type="button" onclick="closeEditProfileModal()">×</button>
+        </div>
+        <p>Заполните информацию о себе. Все поля необязательны.</p>
+
+        <form id="edit-profile-form" onsubmit="saveProfile(event)">
+          <div class="modal-field">
+            <label class="modal-label">Фамилия</label>
+            <input class="modal-input" type="text" name="last_name" id="edit-last-name" placeholder="Иванов">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Имя</label>
+            <input class="modal-input" type="text" name="first_name" id="edit-first-name" placeholder="Иван">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Отчество</label>
+            <input class="modal-input" type="text" name="middle_name" id="edit-middle-name" placeholder="Иванович">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Телефон</label>
+            <input class="modal-input" type="text" name="phone" id="edit-phone" placeholder="+375XXXXXXXXX">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Уровень (Grade)</label>
+            <select class="modal-select" name="grade" id="edit-grade">
+              <option value="">Выберите уровень</option>
+              <option value="JUNIOR">Junior</option>
+              <option value="MIDDLE">Middle</option>
+              <option value="SENIOR">Senior</option>
+              <option value="LEAD">Lead</option>
+            </select>
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Опыт работы (лет)</label>
+            <input class="modal-input" type="number" name="experience_years" id="edit-experience-years" placeholder="3" min="0">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Технологический стек (через запятую)</label>
+            <input class="modal-input" type="text" name="stack" id="edit-stack" placeholder="Python, JavaScript, React, PostgreSQL">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Почасовая ставка (USD)</label>
+            <input class="modal-input" type="number" name="hourly_rate_usd" id="edit-hourly-rate" placeholder="50" min="0" step="0.01">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Доступность</label>
+            <div class="modal-checkbox">
+              <input type="checkbox" name="is_available" id="edit-is-available" checked>
+              <label for="edit-is-available" style="margin: 0; cursor: pointer;">Доступен для работы</label>
+            </div>
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">URL портфолио</label>
+            <input class="modal-input" type="url" name="portfolio_url" id="edit-portfolio-url" placeholder="https://github.com/...">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Биография</label>
+            <textarea class="modal-input" name="bio" id="edit-bio" rows="6" placeholder="Расскажите о себе, своих навыках и опыте..."></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-secondary" onclick="closeEditProfileModal()">Отмена</button>
+            <button type="submit" class="modal-btn modal-btn-primary">Сохранить</button>
+          </div>
+        </form>
+
+        <div id="edit-profile-status" class="modal-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function logout(){
+        window.location.href = "/auth/logout";
+    }
+
+    // Загрузка фото пользователя
+    const userPhotoInput = document.getElementById('user-photo-input');
+    const userPhotoImg = document.getElementById('user-photo-img');
+    const userPhotoPlaceholder = document.getElementById('user-photo-placeholder');
+    const userPhotoStatus = document.getElementById('user-photo-status');
+
+    async function loadUserPhoto() {
+      try {
+        const resp = await fetch('/auth/profile-data');
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.photo_path) {
+            userPhotoImg.src = data.photo_path;
+            userPhotoImg.style.display = 'block';
+            userPhotoPlaceholder.style.display = 'none';
+          } else {
+            userPhotoImg.style.display = 'none';
+            userPhotoPlaceholder.style.display = 'flex';
+          }
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки фото:', err);
+        userPhotoImg.style.display = 'none';
+        userPhotoPlaceholder.style.display = 'flex';
+      }
+    }
+
+    userPhotoInput.addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert('Пожалуйста, выберите изображение');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Размер файла не должен превышать 5 МБ');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      userPhotoStatus.textContent = 'Загрузка...';
+      userPhotoStatus.style.color = 'var(--color-text-muted)';
+
+      try {
+        const resp = await fetch('/photo/upload/user', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!resp.ok) {
+          const error = await resp.json();
+          throw new Error(error.detail || 'Ошибка загрузки');
+        }
+
+        const data = await resp.json();
+
+        userPhotoImg.src = data.photo_path;
+        userPhotoImg.style.display = 'block';
+        userPhotoPlaceholder.style.display = 'none';
+
+        userPhotoStatus.textContent = '✓ Фото загружено';
+        userPhotoStatus.style.color = '#2ECC71';
+      } catch (err) {
+        userPhotoStatus.textContent = '✗ Ошибка: ' + err.message;
+        userPhotoStatus.style.color = '#E74C3C';
+      }
+    });
+
+    loadUserPhoto();
+
+    /* ===== РЕДАКТИРОВАНИЕ ПРОФИЛЯ ===== */
+
+    function openEditProfileModal(){
+      const root = document.getElementById('edit-profile-modal-root');
+      const statusEl = document.getElementById('edit-profile-status');
+      
+      loadProfileData();
+      
+      statusEl.textContent = '';
+      statusEl.className = 'modal-status';
+      root.style.display = 'block';
+      document.body.classList.add('modal-open');
+    }
+
+    function closeEditProfileModal(){
+      document.getElementById('edit-profile-modal-root').style.display = 'none';
+      document.body.classList.remove('modal-open');
+    }
+
+    async function loadProfileData(){
+      try {
+        const resp = await fetch('/auth/profile-data');
+        if (resp.ok) {
+          const data = await resp.json();
+          document.getElementById('edit-first-name').value = data.first_name || '';
+          document.getElementById('edit-last-name').value = data.last_name || '';
+          document.getElementById('edit-middle-name').value = data.middle_name || '';
+          document.getElementById('edit-phone').value = data.phone || '';
+          
+          // Загружаем данные профиля подрядчика
+          if (data.contractor_profile) {
+            document.getElementById('edit-grade').value = data.contractor_profile.grade || '';
+            document.getElementById('edit-experience-years').value = data.contractor_profile.experience_years || '';
+            document.getElementById('edit-stack').value = data.contractor_profile.stack ? data.contractor_profile.stack.join(', ') : '';
+            document.getElementById('edit-hourly-rate').value = data.contractor_profile.hourly_rate_usd || '';
+            document.getElementById('edit-is-available').checked = data.contractor_profile.is_available !== false;
+            document.getElementById('edit-portfolio-url').value = data.contractor_profile.portfolio_url || '';
+            document.getElementById('edit-bio').value = data.contractor_profile.bio || '';
+          }
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки данных профиля:', err);
+      }
+    }
+
+    async function saveProfile(event){
+      event.preventDefault();
+      const form = document.getElementById('edit-profile-form');
+      const statusEl = document.getElementById('edit-profile-status');
+
+      const stackValue = form.stack.value.trim();
+      const stackArray = stackValue ? stackValue.split(',').map(s => s.trim()).filter(s => s) : null;
+
+      const data = {
+        first_name: form.first_name.value.trim() || null,
+        last_name: form.last_name.value.trim() || null,
+        middle_name: form.middle_name.value.trim() || null,
+        phone: form.phone.value.trim() || null,
+        contractor_profile: {
+          grade: form.grade.value || null,
+          experience_years: form.experience_years.value ? parseInt(form.experience_years.value) : null,
+          stack: stackArray,
+          hourly_rate_usd: form.hourly_rate_usd.value ? parseFloat(form.hourly_rate_usd.value) : null,
+          is_available: form.is_available.checked,
+          portfolio_url: form.portfolio_url.value.trim() || null,
+          bio: form.bio.value.trim() || null,
+        }
+      };
+
+      statusEl.textContent = 'Сохранение...';
+      statusEl.className = 'modal-status';
+
+      try {
+        const resp = await fetch('/auth/update-profile', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
+
+        const result = await resp.json();
+
+        if (resp.ok && result.ok){
+          statusEl.textContent = result.message || 'Профиль успешно обновлен.';
+          statusEl.className = 'modal-status modal-status-ok';
+          
+          setTimeout(() => {
+            document.body.classList.remove('modal-open');
+            closeEditProfileModal();
+            location.reload();
+          }, 800);
+        } else {
+          statusEl.textContent = result.detail || result.message || 'Ошибка при сохранении профиля';
+          statusEl.className = 'modal-status modal-status-error';
+        }
+      } catch(e){
+        statusEl.textContent = 'Сетевая ошибка: ' + e;
+        statusEl.className = 'modal-status modal-status-error';
+      }
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        const editModal = document.getElementById('edit-profile-modal-root');
+        if (editModal && editModal.style.display === 'block') {
+          closeEditProfileModal();
+        }
+      }
+    });
+  </script>
+{% endblock %}
+
