@@ -233,11 +233,31 @@
 <script>
   const loginForm = document.getElementById("admin_login_form");
   const errorDiv = document.getElementById("error-message");
+  let isSubmitting = false; // Флаг для предотвращения множественных отправок
 
   // Обработка формы логина
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    
+    // Предотвращаем множественные отправки
+    if (isSubmitting) {
+      console.log('[ADMIN_LOGIN] ⚠️ Форма уже отправляется, игнорируем повторную отправку');
+      return;
+    }
+    
+    isSubmitting = true;
     errorDiv.style.display = 'none';
+    
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.textContent : 'Войти';
+    
+    // Блокируем кнопку и форму
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Вход...';
+      submitBtn.style.opacity = '0.6';
+      submitBtn.style.cursor = 'not-allowed';
+    }
     
     const formData = new FormData(loginForm);
     
@@ -246,35 +266,69 @@
     try {
       const resp = await fetch("/admin/login", {
         method: "POST",
-        body: formData,
-        redirect: 'manual'
+        body: formData
+        // redirect: 'follow' по умолчанию - fetch сам перейдет по редиректу
       });
       
       console.log('[ADMIN_LOGIN] Статус ответа:', resp.status);
+      console.log('[ADMIN_LOGIN] URL:', resp.url);
       
-      // Если редирект (успешный вход)
-      if (resp.status === 303 || resp.redirected) {
-        console.log('[ADMIN_LOGIN] ✅ Успешный вход, редирект на /admin/dashboard');
+      // Если ошибка (400, 500 и т.д.)
+      if (!resp.ok) {
+        console.log('[ADMIN_LOGIN] ❌ Ошибка:', resp.status);
+        try {
+          const data = await resp.json();
+          errorDiv.textContent = data.detail || "Ошибка входа";
+        } catch (e) {
+          if (resp.status === 400) {
+            errorDiv.textContent = "Неверный логин или пароль";
+          } else if (resp.status === 500) {
+            errorDiv.textContent = "Внутренняя ошибка сервера. Попробуйте позже.";
+          } else {
+            errorDiv.textContent = "Ошибка входа. Попробуйте еще раз.";
+          }
+        }
+        errorDiv.style.display = 'block';
+        
+        // Разблокируем форму через 2 секунды
+        setTimeout(() => {
+          isSubmitting = false;
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+          }
+        }, 2000);
+        return;
+      }
+      
+      // Если успешно (200 OK)
+      // Проверяем, произошел ли редирект или URL изменился
+      if (resp.redirected || resp.url.includes('/admin/dashboard')) {
+        console.log('[ADMIN_LOGIN] ✅ Успешный вход (redirected), переходим на дашборд');
         window.location.href = "/admin/dashboard";
         return;
       }
       
-      // Если ошибка
-      if (!resp.ok) {
-        console.log('[ADMIN_LOGIN] ❌ Ошибка:', resp.status);
-        const data = await resp.json();
-        errorDiv.textContent = data.detail || "Ошибка входа";
-        errorDiv.style.display = 'block';
-        return;
-      }
-      
-      // Если не редирект и не ошибка - все равно пробуем перейти
-      console.log('[ADMIN_LOGIN] ✅ Успех, переходим на /admin/dashboard');
+      // Если статус 200, но мы не на дашборде (странно, но допустим)
+      // Возможно мы получили HTML дашборда в ответе (fetch followed redirect)
+      console.log('[ADMIN_LOGIN] ✅ Успех (200), принудительный переход');
       window.location.href = "/admin/dashboard";
+      
     } catch (error) {
       console.error('[ADMIN_LOGIN] ❌ Исключение:', error);
       errorDiv.textContent = "Ошибка подключения к серверу";
       errorDiv.style.display = 'block';
+      
+      // Разблокируем форму после ошибки
+      isSubmitting = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
+      }
     }
   });
 </script>

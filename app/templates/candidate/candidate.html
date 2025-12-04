@@ -62,18 +62,24 @@
 
   .candidate-item {
     padding: 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: var(--color-bg-surface);
     transition: all 0.2s;
     border-left: 3px solid transparent;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .candidate-item:hover {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: rgba(255, 255, 255, 0.03);
     border-left-color: var(--color-accent-gold);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
   }
 
   .candidate-item:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
   }
 
   .candidate-left {
@@ -157,6 +163,18 @@
     font-size: 1rem;
     color: var(--color-text-muted);
     margin: 0 0 24px;
+  }
+
+  .candidate-rate-block {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+  }
+
+  .candidate-rate-chip {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-text-heading);
+    font-weight: 600;
+    border: 1px solid rgba(255, 215, 0, 0.3);
   }
 
   @media (max-width: 768px) {
@@ -416,23 +434,42 @@
                     </div>
 
                     <!-- Ставка -->
-                    {% if (c.base_rate_amount and c.base_rate_currency) or c.rate_rub or c.rate_usd or c.rate_eur or c.rate_byn or c.salary_usd %}
-                    <div class="mt-2">
-                      <small class="text-muted d-block mb-1">💰 Ставка:</small>
+                    {% if c.base_rate_amount is not none or c.rate_rub is not none or c.rate_usd is not none or c.rate_eur is not none or c.rate_byn is not none or c.salary_usd is not none %}
+                    <div class="mt-3 p-2 rounded candidate-rate-block">
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-currency-exchange text-gold" style="font-size: 1.1rem;"></i>
+                        <strong class="text-gold" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">Ставка</strong>
+                      </div>
                       <div class="d-flex gap-2 flex-wrap">
-                        {% if c.rate_rub %}
-                          <span class="chip chip-neutral">₽ {{ c.rate_rub|round|int }} RUB</span>
+                        {% if c.rate_rub is not none %}
+                          <span class="chip candidate-rate-chip">
+                            ₽ {{ c.rate_rub|round|int }} RUB
+                          </span>
                         {% endif %}
-                        {% if c.rate_usd %}
-                          <span class="chip chip-neutral">$ {{ c.rate_usd|round|int }} USD</span>
-                        {% elif c.salary_usd %}
-                          <span class="chip chip-neutral">$ {{ c.salary_usd|round|int }} USD</span>
+                        {% if c.rate_usd is not none %}
+                          <span class="chip candidate-rate-chip">
+                            $ {{ c.rate_usd|round|int }} USD
+                          </span>
+                        {% elif c.salary_usd is not none %}
+                          <span class="chip candidate-rate-chip">
+                            $ {{ c.salary_usd|round|int }} USD
+                          </span>
                         {% endif %}
-                        {% if c.rate_eur %}
-                          <span class="chip chip-neutral">€ {{ c.rate_eur|round|int }} EUR</span>
+                        {% if c.rate_eur is not none %}
+                          <span class="chip candidate-rate-chip">
+                            € {{ c.rate_eur|round|int }} EUR
+                          </span>
                         {% endif %}
-                        {% if c.rate_byn %}
-                          <span class="chip chip-neutral">Br {{ c.rate_byn|round|int }} BYN</span>
+                        {% if c.rate_byn is not none %}
+                          <span class="chip candidate-rate-chip">
+                            Br {{ c.rate_byn|round|int }} BYN
+                          </span>
+                        {% endif %}
+                        {% if c.base_rate_amount is not none and c.base_rate_currency and c.rate_rub is none and c.rate_usd is none and c.rate_eur is none and c.rate_byn is none and c.salary_usd is none %}
+                          <span class="chip candidate-rate-chip">
+                            {% if c.base_rate_currency == "RUB" %}₽{% elif c.base_rate_currency == "USD" %}${% elif c.base_rate_currency == "EUR" %}€{% elif c.base_rate_currency == "BYN" %}Br{% endif %}
+                            {{ c.base_rate_amount|round|int }} {{ c.base_rate_currency }}
+                          </span>
                         {% endif %}
                       </div>
                     </div>
