@@ -388,6 +388,36 @@
                       {% endif %}
                     </div>
                     
+                    <!-- Статус кандидата -->
+                    {% if c.status %}
+                    <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                      {% if c.status == "В активном поиске" %}
+                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                          <i class="bi bi-search me-1"></i>В активном поиске
+                        </span>
+                      {% elif c.status == "Рассматривает предложения" %}
+                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                          <i class="bi bi-eye me-1"></i>Рассматривает предложения
+                        </span>
+                      {% elif c.status == "Не ищет работу" %}
+                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                          <i class="bi bi-pause-circle me-1"></i>Не ищет работу
+                        </span>
+                      {% elif c.status == "Временно неактивен" %}
+                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                          <i class="bi bi-clock me-1"></i>Временно неактивен
+                          {% if c.status_until %}
+                            <span style="font-size: 0.85em; opacity: 0.9;">(до {{ c.status_until[:10] }})</span>
+                          {% endif %}
+                        </span>
+                      {% else %}
+                        <span class="chip" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%); border-color: var(--color-accent-gold); color: var(--color-accent-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);">
+                          {{ c.status }}
+                        </span>
+                      {% endif %}
+                    </div>
+                    {% endif %}
+                    
                     <!-- Контакты -->
                     <div class="d-flex flex-wrap gap-2 align-items-center mt-3">
                       {% if c.email %}

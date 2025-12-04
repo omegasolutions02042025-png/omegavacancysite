@@ -25,6 +25,14 @@ class UserRole(str, Enum):
     CONTRACTOR = "CONTRACTOR"
     ADMIN = "ADMIN"
 
+
+class CandidateStatus(str, Enum):
+    """Статусы кандидата в системе."""
+    ACTIVE_SEARCH = "В активном поиске"
+    CONSIDERING_OFFERS = "Рассматривает предложения"
+    NOT_LOOKING = "Не ищет работу"
+    TEMPORARILY_INACTIVE = "Временно неактивен"
+
 class Vacancy(SQLModel, table=True):
     __tablename__ = "vacancy"
     id: int | None = Field(default=None, primary_key=True)
@@ -210,7 +218,7 @@ class UserNotification(SQLModel, table=True):
 
 
 
-class CandidateProfileDB(SQLModel, table=True):
+class RecruiterCandidates(SQLModel, table=True):
     """
     Таблица с профилями кандидатов, куда мы сохраняем распарсенный GPT-профиль.
 
@@ -352,6 +360,25 @@ class CandidateProfileDB(SQLModel, table=True):
         description="Уровень английского A1–C2 или None",
     )
 
+    # статус кандидата
+    status: Optional[CandidateStatus] = Field(
+        default=CandidateStatus.ACTIVE_SEARCH,
+        sa_column=Column(
+            SQLEnum(
+                CandidateStatus,
+                values_callable=lambda x: [e.value for e in x],
+                native_enum=False,
+                length=50
+            ),
+            nullable=True
+        ),
+        description="Статус кандидата: В активном поиске, Рассматривает предложения, Не ищет работу, Временно неактивен",
+    )
+    status_until: Optional[str] = Field(
+        default=None,
+        description="Дата до которой кандидат временно неактивен (ISO format). Когда наступит эта дата, статус автоматически переключится на 'В активном поиске'",
+    )
+
     # связь с пользователем
     user: Optional["User"] = Relationship(back_populates="user_candidates")
 
@@ -448,7 +475,7 @@ class User(SQLModel, table=True):
     sverkas: list[Sverka] = Relationship(back_populates="user")
     user_comunications: list[UserComunication] = Relationship(back_populates="user")
     user_notifications: list[UserNotification] = Relationship(back_populates="user")
-    user_candidates: list[CandidateProfileDB] = Relationship(back_populates="user")
+    user_candidates: list[RecruiterCandidates] = Relationship(back_populates="user")
     chats: list[Chat] = Relationship(back_populates="user")
     telegram_dialog_statuses: list[TelegramDialogStatus] = Relationship(back_populates="user")
     # Relationships для профилей ролей (One-to-One)

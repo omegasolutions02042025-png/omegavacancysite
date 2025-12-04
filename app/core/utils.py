@@ -310,13 +310,13 @@ async def send_message_by_username(username: str, text: str, client: TelegramCli
 import json
 from typing import Any, Dict, List
 from pydantic import ValidationError
-from app.database.candidate_db import CandidateProfileDB
+from app.database.candidate_db import RecruiterCandidates
 
 import json
 from typing import Any, Dict
 
 
-def parse_gpt_candidate_profile(gpt_raw: str | Dict[str, Any]) -> CandidateProfileDB:
+def parse_gpt_candidate_profile(gpt_raw: str | Dict[str, Any]) -> RecruiterCandidates:
     # 1. JSON → dict
     if isinstance(gpt_raw, str):
         try:
@@ -329,8 +329,8 @@ def parse_gpt_candidate_profile(gpt_raw: str | Dict[str, Any]) -> CandidateProfi
     # 2. Валидация всей структуры одной моделью
     gpt_model = GPTCandidateProfile(**data)
 
-    # 3. Сборка CandidateProfileDB (user_id и number_for_user задашь снаружи)
-    db_obj = CandidateProfileDB(
+    # 3. Сборка RecruiterCandidates (user_id и number_for_user задашь снаружи)
+    db_obj = RecruiterCandidates(
         # personal
         full_name=gpt_model.personal.full_name,
         title=gpt_model.personal.title,

@@ -3,7 +3,7 @@
 """
 import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.database import engine, CandidateProfileDB
+from app.database.database import engine, RecruiterCandidates
 from app.services.currency_service import CandidateRateService, ExchangeRateService
 from sqlmodel import select
 
@@ -32,7 +32,7 @@ async def test_currency_display():
         
         # 2. Получаем всех кандидатов
         print("\n2. Получение списка кандидатов...")
-        query = select(CandidateProfileDB).limit(5)
+        query = select(RecruiterCandidates).limit(5)
         result = await session.execute(query)
         candidates = result.scalars().all()
         

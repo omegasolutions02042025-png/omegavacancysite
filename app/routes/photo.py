@@ -8,7 +8,7 @@ from app.core.current_user import get_current_user_from_cookie
 from app.database.user_db import UserRepository
 from app.database.candidate_db import CandidateRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.database import engine, User, CandidateProfileDB, Admin
+from app.database.database import engine, User, RecruiterCandidates, Admin
 
 router = APIRouter(prefix="/photo", tags=["photo"])
 
@@ -107,8 +107,8 @@ async def upload_candidate_photo(
         async with AsyncSession(engine) as session:
             from sqlalchemy import update
             await session.execute(
-                update(CandidateProfileDB)
-                .where(CandidateProfileDB.id == candidate.id)
+                update(RecruiterCandidates)
+                .where(RecruiterCandidates.id == candidate.id)
                 .values(photo_path=photo_path)
             )
             await session.commit()

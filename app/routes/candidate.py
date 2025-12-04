@@ -27,7 +27,7 @@ import time
 from app.core.current_user import get_current_user_from_cookie
 from app.core.gpt import gpt_generator
 
-from app.database.candidate_db import CandidateProfileDB, CandidateRepository
+from app.database.candidate_db import RecruiterCandidates, CandidateRepository
 from app.database.candidate_profile_db import CandidateProfileRepository
 from app.database.user_db import UserRepository
 from app.models.candidate import GPTCandidateProfile
@@ -247,6 +247,15 @@ async def get_candidates(
             if k not in ignore_keys
         )
         
+        # Убеждаемся, что статус - это строка (значение enum), а не enum объект
+        # Преобразуем статус в строку для корректного отображения в шаблоне
+        if candidate.status:
+            if hasattr(candidate.status, 'value'):
+                # Если это enum, преобразуем в строку
+                status_value = candidate.status.value
+                # Используем object.__setattr__ для обхода защиты SQLModel от изменений
+                object.__setattr__(candidate, 'status', status_value)
+        
         # Добавляем поле completeness к объекту кандидата
         candidate_dict = {
             "candidate": candidate,
@@ -434,7 +443,16 @@ async def get_candidate_api(
         raise HTTPException(status_code=404, detail="Кандидат не найден")
 
     # SQLModel → dict
-    return JSONResponse(candidate.model_dump())
+    data = candidate.model_dump()
+    # Убеждаемся, что статус возвращается как значение enum (русская строка), а не имя константы
+    if data.get("status") and isinstance(data["status"], str):
+        # Если статус уже строка, оставляем как есть
+        pass
+    elif hasattr(candidate.status, 'value'):
+        # Если это enum, берем его значение
+        data["status"] = candidate.status.value
+    
+    return JSONResponse(data)
 
 
 # ============================================

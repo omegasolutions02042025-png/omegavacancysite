@@ -767,6 +767,7 @@
                 <span><strong>Тип:</strong> ${c.employment_type || "—"}</span>
                 <span><strong>Грейд:</strong> ${c.grade || "—"}</span>
                 <span><strong>Английский:</strong> ${c.english_level || "—"}</span>
+                ${c.status ? `<span><strong>Статус:</strong> ${c.status}${c.status_until ? ` (до ${c.status_until.split('T')[0]})` : ''}</span>` : ''}
               </div>
               ${c.skills ? `<div class="cand-skills"><strong>Навыки:</strong> ${c.skills}</div>` : ""}
               <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">

@@ -2,12 +2,13 @@ from typing import Optional, Dict, Any
 from sqlmodel import select, func, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.database.database import CandidateProfileDB
+from app.database.database import RecruiterCandidates, CandidateStatus
 from app.models.candidate import GPTCandidateProfile
 from app.database.database import engine, Vacancy
 
 import re
 import logging
+from datetime import datetime
 
 # БЫЛО:
 # from rapidfuzz import fuzz
@@ -130,18 +131,18 @@ class CandidateRepository:
         self,
         profile: GPTCandidateProfile,
         user_id: int,
-    ) -> CandidateProfileDB:
+    ) -> RecruiterCandidates:
         async with AsyncSession(self.engine) as session:
             # считаем следующий номер кандидата для пользователя
             result = await session.exec(
-                select(func.max(CandidateProfileDB.number_for_user)).where(
-                    CandidateProfileDB.user_id == user_id
+                select(func.max(RecruiterCandidates.number_for_user)).where(
+                    RecruiterCandidates.user_id == user_id
                 )
             )
             last_num: Optional[int] = result.one_or_none()
             next_number = (last_num or 0) + 1
 
-            db_obj = CandidateProfileDB(
+            db_obj = RecruiterCandidates(
                 user_id=user_id,
                 number_for_user=next_number,
 
@@ -182,6 +183,9 @@ class CandidateRepository:
                 projects=[p.model_dump(exclude_none=True) for p in profile.projects] or None,
 
                 english_level=profile.english_level,
+                
+                # статус по умолчанию
+                status=CandidateStatus.ACTIVE_SEARCH,
             )
 
             session.add(db_obj)
@@ -193,15 +197,40 @@ class CandidateRepository:
         self,
         candidate_id: int,
         user_id: int
-    ) -> CandidateProfileDB:
+    ) -> RecruiterCandidates:
         async with AsyncSession(self.engine) as session:
             result = await session.exec(
-                select(CandidateProfileDB).where(
-                    CandidateProfileDB.number_for_user == candidate_id,
-                    CandidateProfileDB.user_id == user_id
+                select(RecruiterCandidates).where(
+                    RecruiterCandidates.number_for_user == candidate_id,
+                    RecruiterCandidates.user_id == user_id
                 )
             )
-            return result.one_or_none()
+            candidate = result.one_or_none()
+            
+            # Автоматически переключаем статус, если наступила дата status_until
+            if candidate and candidate.status == CandidateStatus.TEMPORARILY_INACTIVE and candidate.status_until:
+                try:
+                    # Парсим дату (может быть в формате ISO или YYYY-MM-DD)
+                    status_until_str = candidate.status_until
+                    if 'T' in status_until_str:
+                        status_until_date = datetime.fromisoformat(status_until_str.replace('Z', '+00:00'))
+                        now = datetime.now(status_until_date.tzinfo) if status_until_date.tzinfo else datetime.now()
+                    else:
+                        # Просто дата без времени
+                        status_until_date = datetime.fromisoformat(status_until_str)
+                        now = datetime.now()
+                    
+                    # Сравниваем только даты (без времени)
+                    if now.date() >= status_until_date.date():
+                        candidate.status = CandidateStatus.ACTIVE_SEARCH
+                        candidate.status_until = None
+                        session.add(candidate)
+                        await session.commit()
+                        await session.refresh(candidate)
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Ошибка при проверке статуса кандидата {candidate_id}: {e}")
+            
+            return candidate
 
     async def get_candidate_id_by_fullname(
         self,
@@ -221,8 +250,8 @@ class CandidateRepository:
         async with AsyncSession(self.engine) as session:
             # Получаем всех кандидатов пользователя
             result = await session.exec(
-                select(CandidateProfileDB).where(
-                    CandidateProfileDB.user_id == user_id
+                select(RecruiterCandidates).where(
+                    RecruiterCandidates.user_id == user_id
                 )
             )
             candidates = result.all()
@@ -259,7 +288,7 @@ class CandidateRepository:
         candidate_id: int,
         user_id: int,
         payload: dict[str, Any],
-    ) -> CandidateProfileDB:
+    ) -> RecruiterCandidates:
         """
         Обновить кандидата полями из payload, если он принадлежит пользователю.
         Бросает ValueError, если кандидат не найден или чужой.
@@ -267,9 +296,9 @@ class CandidateRepository:
         async with AsyncSession(self.engine) as session:
             print(candidate_id)
             res = await session.exec(
-                select(CandidateProfileDB).where(
-                    CandidateProfileDB.number_for_user == candidate_id,
-                    CandidateProfileDB.user_id == user_id
+                select(RecruiterCandidates).where(
+                    RecruiterCandidates.number_for_user == candidate_id,
+                    RecruiterCandidates.user_id == user_id
                 )
             )
             candidate = res.one_or_none()
@@ -303,6 +332,7 @@ class CandidateRepository:
                 "countries",
                 "relocation",
                 "english_level",
+                "status",
             ]
             for field in simple_fields:
                 if field in payload:
@@ -313,6 +343,35 @@ class CandidateRepository:
                         setattr(candidate, field, "")
                     else:
                         setattr(candidate, field, value)
+            
+            # Обработка status_until отдельно (преобразуем дату в ISO формат)
+            if "status_until" in payload:
+                status_until_value = payload.get("status_until")
+                # Получаем текущий статус (может быть строкой или enum)
+                current_status = candidate.status
+                if hasattr(current_status, 'value'):
+                    current_status = current_status.value
+                
+                # Если статус не "Временно неактивен", очищаем status_until
+                if current_status != "Временно неактивен":
+                    candidate.status_until = None
+                elif status_until_value and str(status_until_value).strip():
+                    # Если дата в формате YYYY-MM-DD, преобразуем в ISO формат
+                    try:
+                        status_until_str = str(status_until_value).strip()
+                        # Проверяем формат даты
+                        if len(status_until_str) == 10 and status_until_str.count('-') == 2:
+                            # Формат YYYY-MM-DD, добавляем время для ISO формата
+                            status_until_str = f"{status_until_str}T00:00:00"
+                        # Если уже в ISO формате, оставляем как есть
+                        candidate.status_until = status_until_str
+                        logger.info(f"Установлен status_until для кандидата {candidate_id}: {status_until_str}")
+                    except Exception as e:
+                        logger.warning(f"Ошибка при обработке status_until: {e}")
+                        candidate.status_until = status_until_value
+                else:
+                    # Пустая строка или None - очищаем поле
+                    candidate.status_until = None
 
             # JSON-поля
             if "experience" in payload and isinstance(payload["experience"], list):
@@ -346,8 +405,8 @@ class CandidateRepository:
         from sqlalchemy import or_
         
         async with AsyncSession(self.engine) as session:
-            query = select(CandidateProfileDB).where(
-                CandidateProfileDB.user_id == user_id
+            query = select(RecruiterCandidates).where(
+                RecruiterCandidates.user_id == user_id
             )
             
             # Поиск по имени и title
@@ -355,10 +414,10 @@ class CandidateRepository:
                 search_lower = search_query.lower().strip()
                 query = query.where(
                     or_(
-                        func.lower(CandidateProfileDB.first_name).ilike(f"%{search_lower}%"),
-                        func.lower(CandidateProfileDB.last_name).ilike(f"%{search_lower}%"),
-                        func.lower(CandidateProfileDB.middle_name).ilike(f"%{search_lower}%"),
-                        func.lower(CandidateProfileDB.title).ilike(f"%{search_lower}%"),
+                        func.lower(RecruiterCandidates.first_name).ilike(f"%{search_lower}%"),
+                        func.lower(RecruiterCandidates.last_name).ilike(f"%{search_lower}%"),
+                        func.lower(RecruiterCandidates.middle_name).ilike(f"%{search_lower}%"),
+                        func.lower(RecruiterCandidates.title).ilike(f"%{search_lower}%"),
                     )
                 )
             
@@ -366,22 +425,53 @@ class CandidateRepository:
             if specialization_filter:
                 # Ищем специализацию в строке specializations (может быть через запятую, точку с запятой и т.д.)
                 query = query.where(
-                    func.lower(CandidateProfileDB.specializations).ilike(
+                    func.lower(RecruiterCandidates.specializations).ilike(
                         f"%{specialization_filter.lower()}%"
                     )
                 )
             
             result = await session.exec(
-                query.order_by(CandidateProfileDB.number_for_user.desc())
+                query.order_by(RecruiterCandidates.number_for_user.desc())
             )
-            return result.all()
+            candidates = result.all()
+            
+            # Проверяем и обновляем статусы для всех кандидатов
+            updated = False
+            for candidate in candidates:
+                if candidate.status == CandidateStatus.TEMPORARILY_INACTIVE and candidate.status_until:
+                    try:
+                        status_until_str = candidate.status_until
+                        if 'T' in status_until_str:
+                            status_until_date = datetime.fromisoformat(status_until_str.replace('Z', '+00:00'))
+                            now = datetime.now(status_until_date.tzinfo) if status_until_date.tzinfo else datetime.now()
+                        else:
+                            status_until_date = datetime.fromisoformat(status_until_str)
+                            now = datetime.now()
+                        
+                        if now.date() >= status_until_date.date():
+                            candidate.status = CandidateStatus.ACTIVE_SEARCH
+                            candidate.status_until = None
+                            session.add(candidate)
+                            updated = True
+                    except (ValueError, AttributeError) as e:
+                        logger.warning(f"Ошибка при проверке статуса кандидата {candidate.id}: {e}")
+            
+            if updated:
+                await session.commit()
+                # Перезагружаем кандидатов после обновления
+                result = await session.exec(
+                    query.order_by(RecruiterCandidates.number_for_user.desc())
+                )
+                candidates = result.all()
+            
+            return candidates
 
     async def delete_candidate_for_user(self, candidate_id: int, user_id: int) -> None:
         async with AsyncSession(self.engine) as session:
             result = await session.exec(
-                select(CandidateProfileDB).where(
-                    CandidateProfileDB.number_for_user == candidate_id,
-                    CandidateProfileDB.user_id == user_id
+                select(RecruiterCandidates).where(
+                    RecruiterCandidates.number_for_user == candidate_id,
+                    RecruiterCandidates.user_id == user_id
                 )
             )
             candidate = result.one_or_none()
@@ -402,6 +492,7 @@ class CandidateRepository:
         """
         Подбор кандидатов под вакансию:
 
+        — Статус: только кандидаты со статусом "В активном поиске" или "Рассматривает предложения"
         — 100% совпадение по:
             work_format, employment_type, grade
         — английский: кандидат ДОЛЖЕН БЫТЬ ВЫШЕ либо НА УРОВНЕ
@@ -454,18 +545,53 @@ class CandidateRepository:
             print("Vacancy specs:", v_specs)
 
             # 2) вытаскиваем всех кандидатов пользователя (или всех, если owner_user_id=None)
-            stmt = select(CandidateProfileDB)
+            stmt = select(RecruiterCandidates)
             if owner_user_id:
-                stmt = stmt.where(CandidateProfileDB.user_id == owner_user_id)
+                stmt = stmt.where(RecruiterCandidates.user_id == owner_user_id)
 
             res = await session.exec(stmt)
-            candidates: list[CandidateProfileDB] = list(res.all())
+            candidates: list[RecruiterCandidates] = list(res.all())
             print(f"Total candidates loaded for user {owner_user_id}: {len(candidates)}")
+
+            # Проверяем и обновляем статусы для всех кандидатов (если статус "Временно неактивен" и дата прошла)
+            updated = False
+            for candidate in candidates:
+                if candidate.status == CandidateStatus.TEMPORARILY_INACTIVE and candidate.status_until:
+                    try:
+                        status_until_str = candidate.status_until
+                        if 'T' in status_until_str:
+                            status_until_date = datetime.fromisoformat(status_until_str.replace('Z', '+00:00'))
+                            now = datetime.now(status_until_date.tzinfo) if status_until_date.tzinfo else datetime.now()
+                        else:
+                            status_until_date = datetime.fromisoformat(status_until_str)
+                            now = datetime.now()
+                        
+                        if now.date() >= status_until_date.date():
+                            candidate.status = CandidateStatus.ACTIVE_SEARCH
+                            candidate.status_until = None
+                            session.add(candidate)
+                            updated = True
+                    except (ValueError, AttributeError) as e:
+                        logger.warning(f"Ошибка при проверке статуса кандидата {candidate.id}: {e}")
+            
+            if updated:
+                await session.commit()
+                # Перезагружаем кандидатов после обновления
+                res = await session.exec(stmt)
+                candidates = list(res.all())
 
             result: list[dict] = []
 
-            # 3) фильтр по хард-полям + скиллам/спецам
+            # 3) фильтр по статусу (только "В активном поиске" или "Рассматривает предложения")
+            # 4) фильтр по хард-полям + скиллам/спецам
             for c in candidates:
+                # Проверяем статус кандидата - только ACTIVE_SEARCH или CONSIDERING_OFFERS
+                if c.status not in [CandidateStatus.ACTIVE_SEARCH, CandidateStatus.CONSIDERING_OFFERS]:
+                    print(
+                        f"Skip candidate {c.id}: status is {c.status.value if c.status else 'None'}, "
+                        f"only ACTIVE_SEARCH or CONSIDERING_OFFERS allowed"
+                    )
+                    continue
                 # Формируем полное имя из отдельных полей
                 full_name_parts = []
                 if c.first_name:
@@ -631,6 +757,10 @@ class CandidateRepository:
                             # английский
                             "english_level": c.english_level,
 
+                            # статус кандидата
+                            "status": c.status.value if c.status else None,
+                            "status_until": c.status_until,
+
                             # метрики совпадения
                             "skills_coverage": round(skills_cov, 1),
                             "specs_coverage": round(specs_cov, 1),
@@ -654,20 +784,20 @@ class CandidateRepository:
         self,
         number_for_user: int,
         user_id: int
-    ) -> CandidateProfileDB | None:
+    ) -> RecruiterCandidates | None:
         async with AsyncSession(self.engine) as session:
-            stmt = select(CandidateProfileDB).where(
-                CandidateProfileDB.number_for_user == number_for_user,
-                CandidateProfileDB.user_id == user_id
+            stmt = select(RecruiterCandidates).where(
+                RecruiterCandidates.number_for_user == number_for_user,
+                RecruiterCandidates.user_id == user_id
             )
             res = await session.exec(stmt)
             return res.one_or_none()
 
     async def merge_candidate_profile(
         self,
-        existing_candidate: CandidateProfileDB,
+        existing_candidate: RecruiterCandidates,
         new_profile: GPTCandidateProfile,
-    ) -> CandidateProfileDB:
+    ) -> RecruiterCandidates:
         """
         Объединяет существующий профиль кандидата с новым профилем из обновленного резюме.
         
@@ -679,8 +809,8 @@ class CandidateRepository:
         async with AsyncSession(self.engine) as session:
             # Загружаем кандидата в сессию для отслеживания изменений
             result = await session.exec(
-                select(CandidateProfileDB).where(
-                    CandidateProfileDB.id == existing_candidate.id
+                select(RecruiterCandidates).where(
+                    RecruiterCandidates.id == existing_candidate.id
                 )
             )
             candidate = result.one_or_none()

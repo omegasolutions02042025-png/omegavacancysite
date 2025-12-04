@@ -1045,6 +1045,7 @@
         <nav class="profile-steps">
         <a href="#personal" class="profile-step active">Персональная информация</a>
         <a href="#main" class="profile-step">Основная информация</a>
+        <a href="#status" class="profile-step">Статус</a>
         <a href="#location" class="profile-step">Локация и таймзона</a>
           <a href="#experience" class="profile-step">Опыт работы</a>
         <a href="#education" class="profile-step">Образование</a>
@@ -1263,6 +1264,40 @@
               </div>
             </section>
 
+          <!-- Candidate Status -->
+          <section id="status" class="section-card">
+            <h2 class="section-title">Статус кандидата</h2>
+            <p class="section-subtitle">Укажите текущий статус кандидата в поиске работы</p>
+
+            <div class="field-row">
+              <div class="field">
+                <label>Статус</label>
+                <select name="status" id="status-select" class="form-select">
+                  <option value="В активном поиске">В активном поиске</option>
+                  <option value="Рассматривает предложения">Рассматривает предложения</option>
+                  <option value="Не ищет работу">Не ищет работу</option>
+                  <option value="Временно неактивен">Временно неактивен</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-row" id="status-until-row" style="display: none;">
+              <div class="field">
+                <label>Активен с (дата)</label>
+                <input 
+                  type="date" 
+                  name="status_until" 
+                  id="status-until-input"
+                  class="form-input"
+                  placeholder="Выберите дату"
+                >
+                <small style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 4px; display: block;">
+                  Когда наступит эта дата, статус автоматически переключится на "В активном поиске"
+                </small>
+              </div>
+            </div>
+          </section>
+
           <!-- Location -->
           <section id="location" class="section-card">
             <h2 class="section-title">Локация и таймзона</h2>
@@ -1391,6 +1426,24 @@
         const el = document.querySelector('[name="' + name + '"]');
         return el ? el.value.trim() : "";
       };
+
+      // Функция для показа/скрытия поля status_until
+      function updateStatusUntilVisibility() {
+        const statusSelect = document.getElementById('status-select');
+        const statusUntilRow = document.getElementById('status-until-row');
+        if (statusSelect && statusUntilRow) {
+          if (statusSelect.value === 'Временно неактивен') {
+            statusUntilRow.style.display = 'flex';
+          } else {
+            statusUntilRow.style.display = 'none';
+            // Очищаем поле, если статус не "Временно неактивен"
+            const statusUntilInput = document.getElementById('status-until-input');
+            if (statusUntilInput) {
+              statusUntilInput.value = '';
+            }
+          }
+        }
+      }
 
       const setChipGroup = (group, value) => {
         const groupRow = document.querySelector('.chips-row[data-group="' + group + '"]');
@@ -1983,6 +2036,17 @@
 
           setChipGroup("english_level", data.english_level);
 
+          // Загружаем статус кандидата
+          if (data.status) {
+            setValue("status", data.status);
+            updateStatusUntilVisibility();
+          }
+          if (data.status_until) {
+            // Преобразуем ISO дату в формат YYYY-MM-DD для input type="date"
+            const dateStr = data.status_until.split('T')[0];
+            setValue("status_until", dateStr);
+          }
+
           highlightRequiredFields();
 
         } catch (err) {
@@ -2030,7 +2094,17 @@
           education: [],
           courses: [],
           projects: [],
-          english_level: getValue("english_level") || null
+          english_level: getValue("english_level") || null,
+          status: getValue("status") || null,
+          status_until: (() => {
+            const dateValue = getValue("status_until");
+            if (!dateValue) return null;
+            // Преобразуем дату в ISO формат, если она в формате YYYY-MM-DD
+            if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              return dateValue + "T00:00:00";
+            }
+            return dateValue;
+          })()
         };
 
         const expItems = document.querySelectorAll(".exp-item");
@@ -2151,6 +2225,14 @@
       const saveBtn = document.getElementById("save-btn");
       if (saveBtn) {
         saveBtn.addEventListener("click", saveCandidate);
+      }
+
+      // Обработчик для select статуса
+      const statusSelect = document.getElementById('status-select');
+      if (statusSelect) {
+        statusSelect.addEventListener('change', updateStatusUntilVisibility);
+        // Инициализируем видимость при загрузке
+        updateStatusUntilVisibility();
       }
 
   // ===== Photo Upload =====

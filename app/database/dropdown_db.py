@@ -473,13 +473,13 @@ class DropdownOptions:
         Получить все уникальные специализации из кандидатов пользователя.
         Извлекает значения из поля specializations, парсит их и возвращает уникальный список.
         """
-        from .database import CandidateProfileDB
+        from .database import RecruiterCandidates
         
         async with AsyncSession(self.engine) as session:
             result = await session.execute(
-                select(CandidateProfileDB.specializations).where(
-                    CandidateProfileDB.user_id == user_id,
-                    CandidateProfileDB.specializations.isnot(None)
+                select(RecruiterCandidates.specializations).where(
+                    RecruiterCandidates.user_id == user_id,
+                    RecruiterCandidates.specializations.isnot(None)
                 )
             )
             all_specs = result.scalars().all()

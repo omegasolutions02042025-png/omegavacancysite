@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .database import Admin, User, engine, CandidateProfileDB, Sverka, UserCustomerAccess, CustomerDropdown
+from .database import Admin, User, engine, RecruiterCandidates, Sverka, UserCustomerAccess, CustomerDropdown
 from ..core.passwords import hash_password, verify_password
 
 
@@ -141,18 +141,18 @@ class AdminRepository:
             )
             return list(result.scalars().all())
 
-    async def get_all_candidates(self) -> List[CandidateProfileDB]:
+    async def get_all_candidates(self) -> List[RecruiterCandidates]:
         """
         Получить всех кандидатов из всех рекрутеров.
         
         Администратор может видеть всех кандидатов независимо от рекрутера.
         
         Returns:
-            List[CandidateProfileDB]: Список всех кандидатов
+            List[RecruiterCandidates]: Список всех кандидатов
         """
         async with AsyncSession(self.engine) as session:
             result = await session.execute(
-                select(CandidateProfileDB)
+                select(RecruiterCandidates)
             )
             return list(result.scalars().all())
 

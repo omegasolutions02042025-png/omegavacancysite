@@ -4,7 +4,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from app.models.exchange_rate import ExchangeRate
-from app.database.database import CandidateProfileDB
+from app.database.database import RecruiterCandidates
 from app.core.exchange_rate_parser import parse_cb_rf
 from typing import Optional, Dict, Tuple
 from datetime import datetime
@@ -216,9 +216,9 @@ class CandidateRateService:
         base_amount: float,
         base_currency: str = "RUB",
         rate_type: str = "monthly"
-    ) -> Optional[CandidateProfileDB]:
+    ) -> Optional[RecruiterCandidates]:
         """Обновить ставку кандидата и пересчитать во всех валютах"""
-        query = select(CandidateProfileDB).where(CandidateProfileDB.id == candidate_id)
+        query = select(RecruiterCandidates).where(RecruiterCandidates.id == candidate_id)
         result = await session.execute(query)
         candidate = result.scalar_one_or_none()
         
@@ -257,9 +257,9 @@ class CandidateRateService:
     async def get_candidate_with_rates(
         session: AsyncSession,
         candidate_id: int
-    ) -> Optional[CandidateProfileDB]:
+    ) -> Optional[RecruiterCandidates]:
         """Получить кандидата со ставками"""
-        query = select(CandidateProfileDB).where(CandidateProfileDB.id == candidate_id)
+        query = select(RecruiterCandidates).where(RecruiterCandidates.id == candidate_id)
         result = await session.execute(query)
         return result.scalar_one_or_none()
     
@@ -267,7 +267,7 @@ class CandidateRateService:
     async def recalculate_candidate_rates(
         session: AsyncSession,
         candidate_id: int
-    ) -> Optional[CandidateProfileDB]:
+    ) -> Optional[RecruiterCandidates]:
         """Пересчитать ставки кандидата с актуальным курсом"""
         candidate = await CandidateRateService.get_candidate_with_rates(session, candidate_id)
         
@@ -295,12 +295,12 @@ class CandidateRateService:
             logger.error("Активный курс не найден")
             return 0
         
-        query = select(CandidateProfileDB).where(
-            CandidateProfileDB.base_rate_amount.isnot(None)
+        query = select(RecruiterCandidates).where(
+            RecruiterCandidates.base_rate_amount.isnot(None)
         )
         
         if user_id:
-            query = query.where(CandidateProfileDB.user_id == user_id)
+            query = query.where(RecruiterCandidates.user_id == user_id)
         
         result = await session.execute(query)
         candidates = result.scalars().all()

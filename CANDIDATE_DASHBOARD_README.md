@@ -166,3 +166,4 @@ async def candidate_dashboard(request: Request):
 - Соответствует Dark Tech стилю
 - Интегрируется с базовым шаблоном
 
+
