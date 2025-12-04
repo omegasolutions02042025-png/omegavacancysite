@@ -5,11 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.database import get_db, SessionDep
 from app.services.currency_service import CurrencyService, ExchangeRateService, CandidateRateService
+from app.core.current_user import get_current_user_from_cookie
+from app.database.candidate_db import CandidateRepository
 from pydantic import BaseModel, Field
 from typing import Optional, Dict
 from datetime import datetime
 
 router = APIRouter(prefix="/api/currency", tags=["currency"])
+candidate_repo = CandidateRepository()
 
 
 class ExchangeRateResponse(BaseModel):
@@ -214,12 +217,19 @@ async def calculate_candidate_rates(
 @router.get("/candidates/{candidate_id}/rate", response_model=CandidateRateResponse)
 async def get_candidate_rate(
     candidate_id: int,
-    session: SessionDep
+    session: SessionDep,
+    current_user=Depends(get_current_user_from_cookie)
 ):
     """
     Получить ставку кандидата во всех валютах
     """
-    candidate = await CandidateRateService.get_candidate_with_rates(session, candidate_id)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Получаем реального кандидата по number_for_user
+    candidate = await candidate_repo.get_candidate_profile_for_candidate_id_and_user_id(
+        candidate_id, current_user.id
+    )
     
     if not candidate:
         raise HTTPException(
@@ -227,14 +237,12 @@ async def get_candidate_rate(
             detail=f"Кандидат с ID {candidate_id} не найден"
         )
     
-    if not candidate.base_rate_amount:
-        raise HTTPException(
-            status_code=404,
-            detail="У кандидата не указана ставка"
-        )
+    # Если ставки нет, но есть валюта и сумма, попробуем рассчитать (но не сохранять пока)
+    # Хотя сервис get_candidate_with_rates просто возвращает объект.
+    # Мы можем вернуть то, что есть.
     
     return CandidateRateResponse(
-        base_amount=candidate.base_rate_amount,
+        base_amount=candidate.base_rate_amount or 0,
         base_currency=candidate.base_rate_currency or "RUB",
         rate_type=candidate.rate_type or "monthly",
         is_base=True,
@@ -252,11 +260,26 @@ async def get_candidate_rate(
 async def update_candidate_rate(
     candidate_id: int,
     request: CandidateRateRequest,
-    session: SessionDep
+    session: SessionDep,
+    current_user=Depends(get_current_user_from_cookie)
 ):
     """
     Обновить ставку кандидата
     """
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Получаем реального кандидата по number_for_user
+    candidate = await candidate_repo.get_candidate_profile_for_candidate_id_and_user_id(
+        candidate_id, current_user.id
+    )
+    
+    if not candidate:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Кандидат с ID {candidate_id} не найден"
+        )
+
     # Валидация валюты
     supported_currencies = {'RUB', 'USD', 'EUR', 'BYN'}
     if request.base_currency not in supported_currencies:
@@ -265,33 +288,32 @@ async def update_candidate_rate(
             detail=f"Неподдерживаемая валюта: {request.base_currency}"
         )
     
-    # Обновляем ставку
-    candidate = await CandidateRateService.update_candidate_rate(
+    # Обновляем ставку, используя реальный PK (candidate.id)
+    updated_candidate = await CandidateRateService.update_candidate_rate(
         session,
-        candidate_id,
+        candidate.id,
         request.base_amount,
         request.base_currency,
         request.rate_type
     )
     
-    if not candidate:
+    if not updated_candidate:
         raise HTTPException(
             status_code=404,
             detail=f"Не удалось обновить ставку кандидата {candidate_id}"
         )
     
-    
     return CandidateRateResponse(
-        base_amount=candidate.base_rate_amount,
-        base_currency=candidate.base_rate_currency,
-        rate_type=candidate.rate_type,
+        base_amount=updated_candidate.base_rate_amount,
+        base_currency=updated_candidate.base_rate_currency,
+        rate_type=updated_candidate.rate_type,
         is_base=True,
-        rate_rub=candidate.rate_rub,
-        rate_usd=candidate.rate_usd,
-        rate_eur=candidate.rate_eur,
-        rate_byn=candidate.rate_byn,
-        rates_calculated_at=candidate.rates_calculated_at,
-        exchange_rate_snapshot_id=candidate.exchange_rate_snapshot_id,
+        rate_rub=updated_candidate.rate_rub,
+        rate_usd=updated_candidate.rate_usd,
+        rate_eur=updated_candidate.rate_eur,
+        rate_byn=updated_candidate.rate_byn,
+        rates_calculated_at=updated_candidate.rates_calculated_at,
+        exchange_rate_snapshot_id=updated_candidate.exchange_rate_snapshot_id,
         exchange_rate_fetched_at=""
     )
 
@@ -299,30 +321,45 @@ async def update_candidate_rate(
 @router.post("/candidates/{candidate_id}/rate/recalculate", response_model=CandidateRateResponse)
 async def recalculate_candidate_rate(
     candidate_id: int,
-    session: SessionDep
+    session: SessionDep,
+    current_user=Depends(get_current_user_from_cookie)
 ):
     """
     Пересчитать ставку кандидата с актуальным курсом
     """
-    candidate = await CandidateRateService.recalculate_candidate_rates(session, candidate_id)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Получаем реального кандидата по number_for_user
+    candidate = await candidate_repo.get_candidate_profile_for_candidate_id_and_user_id(
+        candidate_id, current_user.id
+    )
     
     if not candidate:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Кандидат с ID {candidate_id} не найден"
+        )
+
+    updated_candidate = await CandidateRateService.recalculate_candidate_rates(session, candidate.id)
+    
+    if not updated_candidate:
         raise HTTPException(
             status_code=404,
             detail=f"Не удалось пересчитать ставку кандидата {candidate_id}"
         )
     
     return CandidateRateResponse(
-        base_amount=candidate.base_rate_amount,
-        base_currency=candidate.base_rate_currency,
-        rate_type=candidate.rate_type,
+        base_amount=updated_candidate.base_rate_amount,
+        base_currency=updated_candidate.base_rate_currency,
+        rate_type=updated_candidate.rate_type,
         is_base=True,
-        rate_rub=candidate.rate_rub,
-        rate_usd=candidate.rate_usd,
-        rate_eur=candidate.rate_eur,
-        rate_byn=candidate.rate_byn,
-        rates_calculated_at=candidate.rates_calculated_at,
-        exchange_rate_snapshot_id=candidate.exchange_rate_snapshot_id,
+        rate_rub=updated_candidate.rate_rub,
+        rate_usd=updated_candidate.rate_usd,
+        rate_eur=updated_candidate.rate_eur,
+        rate_byn=updated_candidate.rate_byn,
+        rates_calculated_at=updated_candidate.rates_calculated_at,
+        exchange_rate_snapshot_id=updated_candidate.exchange_rate_snapshot_id,
         exchange_rate_fetched_at=""
     )
 

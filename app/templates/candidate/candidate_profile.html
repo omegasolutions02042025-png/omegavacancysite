@@ -32,6 +32,7 @@
     background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
     transform: translate(-50%, -50%);
     transition: width 0.6s ease, height 0.6s ease;
+    pointer-events: none;
   }
 
   .candidate-profile-page .btn-primary:hover::before {
@@ -68,6 +69,7 @@
       rgba(255, 215, 0, 0.2) 50%, 
       transparent 100%);
     transition: left 0.5s ease;
+    pointer-events: none;
   }
 
   .candidate-profile-page .btn-secondary:hover::before {
@@ -328,7 +330,11 @@
 
   .field input,
   .field select,
-  .field textarea {
+  .field textarea,
+  .salary-widget input,
+  .salary-widget select,
+  .form-input,
+  .form-select {
     width: 100%;
     background: var(--color-bg-surface-2);
     backdrop-filter: blur(10px);
@@ -342,11 +348,20 @@
     box-shadow: 
       0 2px 8px rgba(0, 0, 0, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    cursor: text;
+  }
+
+  .form-select {
+    cursor: pointer;
   }
 
   .field input:focus,
   .field select:focus,
-  .field textarea:focus {
+  .field textarea:focus,
+  .salary-widget input:focus,
+  .salary-widget select:focus,
+  .form-input:focus,
+  .form-select:focus {
     outline: none;
     border-color: var(--color-accent-gold);
     background: var(--color-bg-surface);
@@ -356,6 +371,12 @@
       0 4px 12px rgba(0, 0, 0, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transform: translateY(-1px);
+  }
+
+  .form-input:disabled,
+  .form-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .field textarea {
@@ -414,6 +435,7 @@
     background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
     transform: translate(-50%, -50%);
     transition: width 0.4s ease, height 0.4s ease;
+    pointer-events: none;
   }
 
   .chip:hover {
@@ -620,6 +642,16 @@
     height: 200%;
     background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
     animation: pulse 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .salary-widget-header,
+  .salary-input-group,
+  .converted-rates,
+  .salary-widget-footer {
+    position: relative;
+    z-index: 1;
   }
 
   @keyframes pulse {
@@ -653,15 +685,23 @@
       display: flex;
       gap: 12px;
       margin-bottom: 20px;
+      align-items: stretch;
     }
 
   .currency-select {
       flex-shrink: 0;
-    min-width: 140px;
+      width: auto;
+      min-width: 120px;
+      max-width: 150px;
   }
 
     .salary-input {
       flex: 1;
+      min-width: 200px;
+      width: 100%;
+      display: block;
+      visibility: visible;
+      opacity: 1;
   }
 
     .converted-rates {
@@ -1116,20 +1156,21 @@
                 </div>
                 
                 <div class="salary-input-group">
-                <select id="base-currency-select" class="form-select currency-select">
+                  <input 
+                    type="number" 
+                    id="base-amount-input" 
+                    class="form-input salary-input" 
+                    placeholder="Введите сумму"
+                    step="0.01"
+                    min="0"
+                    style="position: relative; z-index: 10;"
+                  >
+                <select id="base-currency-select" class="form-select currency-select" style="position: relative; z-index: 10;">
                       <option value="RUB">₽ RUB</option>
                       <option value="USD" selected>$ USD</option>
                       <option value="EUR">€ EUR</option>
                       <option value="BYN">Br BYN</option>
                     </select>
-                  <input 
-                    type="number" 
-                    id="base-amount-input" 
-                  class="form-input salary-input" 
-                    placeholder="Введите сумму"
-                    step="0.01"
-                    min="0"
-                  >
                 </div>
                 
                 <div id="converted-rates" class="converted-rates">
@@ -1637,6 +1678,58 @@
   // ===== Salary Widget =====
       let exchangeRates = null;
       let calculationTimeout = null;
+      const HOURS_PER_MONTH = 170; // Рабочих часов в месяц
+
+      function calculateRateConversions(baseAmount, rateType, currency) {
+        let hourly, monthly, yearly;
+        
+        if (rateType === 'hourly') {
+          hourly = baseAmount;
+          monthly = baseAmount * HOURS_PER_MONTH;
+          yearly = baseAmount * HOURS_PER_MONTH * 12;
+        } else if (rateType === 'monthly') {
+          hourly = baseAmount / HOURS_PER_MONTH;
+          monthly = baseAmount;
+          yearly = baseAmount * 12;
+        } else if (rateType === 'yearly') {
+          hourly = baseAmount / (HOURS_PER_MONTH * 12);
+          monthly = baseAmount / 12;
+          yearly = baseAmount;
+        }
+        
+        return {
+          hourly: hourly || 0,
+          monthly: monthly || 0,
+          yearly: yearly || 0
+        };
+      }
+
+      function updateRateCalculations(baseAmount, rateType, currency) {
+        if (!baseAmount || baseAmount <= 0) {
+          document.getElementById('calc-hourly').textContent = '—';
+          document.getElementById('calc-monthly').textContent = '—';
+          document.getElementById('calc-yearly').textContent = '—';
+          return;
+        }
+        
+        const conversions = calculateRateConversions(baseAmount, rateType, currency);
+        
+        const currencySymbols = {
+          'RUB': '₽',
+          'USD': '$',
+          'EUR': '€',
+          'BYN': 'Br'
+        };
+        
+        const symbol = currencySymbols[currency] || '';
+        
+        document.getElementById('calc-hourly').textContent = 
+          symbol + formatNumber(conversions.hourly) + ' / час';
+        document.getElementById('calc-monthly').textContent = 
+          symbol + formatNumber(conversions.monthly) + ' / месяц';
+        document.getElementById('calc-yearly').textContent = 
+          symbol + formatNumber(conversions.yearly) + ' / год';
+      }
 
       async function loadExchangeRates() {
         try {

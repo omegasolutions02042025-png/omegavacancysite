@@ -7,6 +7,7 @@ from typing import Annotated
 import secrets
 import string
 import jwt
+import logging
 from datetime import datetime, timedelta
 
 from app.core.security import auth as authx, config
@@ -95,6 +96,7 @@ async def admin_login_page(request: Request):
 
 @router.post("/login")
 async def admin_login(
+    request: Request,
     username: str = Form(...),
     password: str = Form(...)
 ):
@@ -104,6 +106,7 @@ async def admin_login(
     Проверяет учетные данные и создает JWT токен для доступа.
     
     Args:
+        request: FastAPI Request объект (для получения IP адреса)
         username: Имя пользователя администратора
         password: Пароль администратора
         
@@ -113,23 +116,59 @@ async def admin_login(
     Raises:
         HTTPException: Если учетные данные неверны
     """
-    admin = await admin_repository.authenticate(username, password)
-    if not admin:
-        raise HTTPException(status_code=400, detail="Неверный логин или пароль")
+    logger = logging.getLogger(__name__)
     
-    # Создаем токен и устанавливаем cookie
-    token = authx.create_access_token(uid=str(admin.id))
+    # Получаем IP адрес клиента для логирования
+    client_ip = request.client.host if request.client else "unknown"
     
-    response = RedirectResponse("/admin/dashboard", status_code=303)
-    response.set_cookie(
-        "admin_access_token",
-        token,
-        httponly=True,
-        samesite="lax",
-        path="/"
-    )
+    # Логируем попытку входа
+    logger.info(f"[ADMIN_LOGIN] Попытка входа: username={username}, IP={client_ip}")
     
-    return response
+    try:
+        admin = await admin_repository.authenticate(username, password)
+        if not admin:
+            logger.warning(f"[ADMIN_LOGIN] ❌ Неудачная попытка входа: username={username}, IP={client_ip}")
+            raise HTTPException(
+                status_code=400, 
+                detail="Неверный логин или пароль"
+            )
+        
+        # Создаем токен и устанавливаем cookie
+        token = authx.create_access_token(uid=str(admin.id))
+        
+        logger.info(f"[ADMIN_LOGIN] ✅ Успешный вход: username={username}, admin_id={admin.id}, IP={client_ip}")
+        
+        # Создаем редирект на dashboard
+        response = RedirectResponse(
+            url="/admin/dashboard",
+            status_code=303  # See Other - явный редирект
+        )
+        response.set_cookie(
+            "admin_access_token",
+            token,
+            httponly=True,
+            samesite="lax",
+            path="/",
+            secure=False,  # Установите True если используете HTTPS
+            max_age=86400 * 7  # 7 дней
+        )
+        
+        # Явно устанавливаем заголовок Location для надежности
+        response.headers["Location"] = "/admin/dashboard"
+        
+        logger.info(f"[ADMIN_LOGIN] Редирект на /admin/dashboard для admin_id={admin.id}")
+        
+        return response
+        
+    except HTTPException:
+        # Пробрасываем HTTPException как есть
+        raise
+    except Exception as e:
+        logger.error(f"[ADMIN_LOGIN] ❌ Ошибка при входе: {str(e)}, username={username}, IP={client_ip}")
+        raise HTTPException(
+            status_code=500,
+            detail="Внутренняя ошибка сервера при аутентификации"
+        )
 
 
 @router.get("/dashboard", response_class=HTMLResponse)

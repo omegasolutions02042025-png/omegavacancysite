@@ -617,33 +617,33 @@
             </div>
             {% if candidate.base_rate_amount and candidate.base_rate_currency %}
             <div class="info-item" style="grid-column: 1 / -1;">
-              <div class="info-label">Ставка ({{ candidate.rate_type or 'monthly' }})</div>
+              <div class="info-label" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <span>Ставка ({{ candidate.rate_type or 'monthly' }})</span>
+                <select id="currency-selector" style="padding: 6px 12px; background: var(--color-bg-surface-2); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: var(--color-text-heading); font-size: 0.85rem; cursor: pointer;">
+                  <option value="RUB" {% if candidate.base_rate_currency == 'RUB' %}selected{% endif %}>₽ RUB</option>
+                  <option value="USD" {% if candidate.base_rate_currency == 'USD' %}selected{% endif %}>$ USD</option>
+                  <option value="EUR" {% if candidate.base_rate_currency == 'EUR' %}selected{% endif %}>€ EUR</option>
+                  <option value="BYN" {% if candidate.base_rate_currency == 'BYN' %}selected{% endif %}>Br BYN</option>
+                </select>
+              </div>
               <div class="info-value">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px;">
-                  {% if candidate.rate_rub %}
-                  <div style="padding: 12px; background: var(--color-bg-surface-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
+                  <div id="rate-rub-card" style="padding: 12px; background: var(--color-bg-surface-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
                     <div style="font-size: 0.85rem; color: var(--color-text-primary); opacity: 0.9; margin-bottom: 4px;">₽ RUB</div>
-                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-text-heading); text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);">{{ candidate.rate_rub|round|int }}</div>
+                    <div id="rate-rub" style="font-size: 1.2rem; font-weight: 700; color: var(--color-text-heading); text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);">{{ candidate.rate_rub|round|int if candidate.rate_rub else '—' }}</div>
                   </div>
-                  {% endif %}
-                  {% if candidate.rate_usd %}
-                  <div style="padding: 12px; background: var(--color-bg-surface-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
+                  <div id="rate-usd-card" style="padding: 12px; background: var(--color-bg-surface-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
                     <div style="font-size: 0.85rem; color: var(--color-text-primary); opacity: 0.9; margin-bottom: 4px;">$ USD</div>
-                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-text-heading); text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);">{{ candidate.rate_usd|round|int }}</div>
+                    <div id="rate-usd" style="font-size: 1.2rem; font-weight: 700; color: var(--color-text-heading); text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);">{{ candidate.rate_usd|round|int if candidate.rate_usd else '—' }}</div>
                   </div>
-                  {% endif %}
-                  {% if candidate.rate_eur %}
-                  <div style="padding: 12px; background: var(--color-bg-surface-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
+                  <div id="rate-eur-card" style="padding: 12px; background: var(--color-bg-surface-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
                     <div style="font-size: 0.85rem; color: var(--color-text-primary); opacity: 0.9; margin-bottom: 4px;">€ EUR</div>
-                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-text-heading); text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);">{{ candidate.rate_eur|round|int }}</div>
+                    <div id="rate-eur" style="font-size: 1.2rem; font-weight: 700; color: var(--color-text-heading); text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);">{{ candidate.rate_eur|round|int if candidate.rate_eur else '—' }}</div>
                   </div>
-                  {% endif %}
-                  {% if candidate.rate_byn %}
-                  <div style="padding: 12px; background: var(--color-bg-surface-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
+                  <div id="rate-byn-card" style="padding: 12px; background: var(--color-bg-surface-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
                     <div style="font-size: 0.85rem; color: var(--color-text-primary); opacity: 0.9; margin-bottom: 4px;">Br BYN</div>
-                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-text-heading); text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);">{{ candidate.rate_byn|round|int }}</div>
+                    <div id="rate-byn" style="font-size: 1.2rem; font-weight: 700; color: var(--color-text-heading); text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);">{{ candidate.rate_byn|round|int if candidate.rate_byn else '—' }}</div>
                   </div>
-                  {% endif %}
                 </div>
                 {% if candidate.rates_calculated_at %}
                 <div style="margin-top: 8px; font-size: 0.75rem; color: var(--color-text-primary); opacity: 0.8; display: flex; align-items: center; gap: 6px;">
@@ -899,5 +899,78 @@
       }
     }
 
+  </script>
+  <script>
+    // Пересчет валют при изменении дропдауна
+    document.addEventListener('DOMContentLoaded', function() {
+      const currencySelector = document.getElementById('currency-selector');
+      if (!currencySelector) return;
+
+      // Сохраняем исходные данные
+      const baseAmount = {{ candidate.base_rate_amount|default(0) }};
+      const rateType = '{{ candidate.rate_type or "monthly" }}';
+      const originalRates = {
+        RUB: {{ candidate.rate_rub|default(0) }},
+        USD: {{ candidate.rate_usd|default(0) }},
+        EUR: {{ candidate.rate_eur|default(0) }},
+        BYN: {{ candidate.rate_byn|default(0) }}
+      };
+
+      function formatNumber(num) {
+        if (!num || num === 0) return '—';
+        return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(num);
+      }
+
+      async function updateRates() {
+        const selectedCurrency = currencySelector.value;
+        const baseRate = originalRates[selectedCurrency];
+        
+        if (!baseRate || baseRate === 0) {
+          // Если нет значения для выбранной валюты, используем исходную
+          document.getElementById('rate-rub').textContent = formatNumber(originalRates.RUB);
+          document.getElementById('rate-usd').textContent = formatNumber(originalRates.USD);
+          document.getElementById('rate-eur').textContent = formatNumber(originalRates.EUR);
+          document.getElementById('rate-byn').textContent = formatNumber(originalRates.BYN);
+          return;
+        }
+
+        // Показываем загрузку
+        ['rate-rub', 'rate-usd', 'rate-eur', 'rate-byn'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = '...';
+        });
+
+        try {
+          const resp = await fetch("/api/currency/calculate-rates", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              base_amount: baseRate,
+              base_currency: selectedCurrency,
+              rate_type: rateType
+            })
+          });
+
+          if (!resp.ok) throw new Error("Ошибка расчета ставок");
+
+          const data = await resp.json();
+
+          document.getElementById('rate-rub').textContent = formatNumber(data.rate_rub);
+          document.getElementById('rate-usd').textContent = formatNumber(data.rate_usd);
+          document.getElementById('rate-eur').textContent = formatNumber(data.rate_eur);
+          document.getElementById('rate-byn').textContent = formatNumber(data.rate_byn);
+
+        } catch (err) {
+          console.error("Ошибка расчета ставок:", err);
+          // В случае ошибки показываем исходные значения
+          document.getElementById('rate-rub').textContent = formatNumber(originalRates.RUB);
+          document.getElementById('rate-usd').textContent = formatNumber(originalRates.USD);
+          document.getElementById('rate-eur').textContent = formatNumber(originalRates.EUR);
+          document.getElementById('rate-byn').textContent = formatNumber(originalRates.BYN);
+        }
+      }
+
+      currencySelector.addEventListener('change', updateRates);
+    });
   </script>
 {% endblock %}
