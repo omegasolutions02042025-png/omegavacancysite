@@ -269,24 +269,121 @@ class ChatRepository:
         message_type: str
     ) -> int:
         """
-        Удалить все сообщения с кандидатом
+        Удалить все сообщения с кандидатом (с сохранением в корзину)
         Возвращает количество удаленных сообщений
         """
         async with AsyncSession(self.engine) as session:
-            # Используем delete() statement для более эффективного удаления
-            stmt = delete(Chat).where(
+            # 1. Выбираем сообщения для удаления
+            stmt_select = select(Chat).where(
                 Chat.user_id == user_id,
                 Chat.candidate_fullname == candidate_fullname,
                 Chat.message_type == message_type
             )
+            result = await session.execute(stmt_select)
+            messages = result.scalars().all()
             
-            result = await session.execute(stmt)
+            if not messages:
+                return 0
+                
+            # 2. Копируем в DeletedChat
+            from .database import DeletedChat
+            now = datetime.now().isoformat()
+            
+            for msg in messages:
+                deleted_msg = DeletedChat(
+                    user_id=msg.user_id,
+                    candidate_id=msg.candidate_id,
+                    candidate_fullname=msg.candidate_fullname,
+                    vacancy_id=msg.vacancy_id,
+                    vacancy_title=msg.vacancy_title,
+                    message_type=msg.message_type,
+                    sender=msg.sender,
+                    message_text=msg.message_text,
+                    timestamp=msg.timestamp,
+                    is_read=msg.is_read,
+                    has_media=msg.has_media,
+                    media_type=msg.media_type,
+                    media_path=msg.media_path,
+                    media_filename=msg.media_filename,
+                    deleted_at=now
+                )
+                session.add(deleted_msg)
+            
+            # 3. Удаляем из Chat
+            stmt_delete = delete(Chat).where(
+                Chat.user_id == user_id,
+                Chat.candidate_fullname == candidate_fullname,
+                Chat.message_type == message_type
+            )
+            await session.execute(stmt_delete)
             await session.commit()
             
-            count = result.rowcount
-            print(f"[CHAT_DB] ✅ Удалено {count} сообщений от {candidate_fullname} ({message_type})")
+            count = len(messages)
+            print(f"[CHAT_DB] ✅ Перемещено в корзину {count} сообщений от {candidate_fullname} ({message_type})")
             
             return count
+
+    async def get_user_deleted_chats(self, user_id: int) -> List[dict]:
+        """
+        Получить список удаленных чатов пользователя (уникальные кандидаты)
+        """
+        from .database import DeletedChat
+        async with AsyncSession(self.engine) as session:
+            # Получаем все удаленные сообщения пользователя
+            stmt = (
+                select(DeletedChat)
+                .where(DeletedChat.user_id == user_id)
+                .order_by(desc(DeletedChat.timestamp))
+            )
+            result = await session.execute(stmt)
+            all_messages = result.scalars().all()
+
+            # Группируем по кандидатам
+            chats_dict = {}
+            for msg in all_messages:
+                key = (msg.candidate_fullname, msg.message_type)
+                if key not in chats_dict:
+                    chats_dict[key] = {
+                        "candidate_id": msg.candidate_id,
+                        "candidate_fullname": msg.candidate_fullname,
+                        "vacancy_id": msg.vacancy_id,
+                        "vacancy_title": msg.vacancy_title,
+                        "message_type": msg.message_type,
+                        "last_message": msg.message_text,
+                        "last_timestamp": msg.timestamp,
+                        "deleted_at": msg.deleted_at,
+                        "unread_count": 0,
+                        "is_deleted": True
+                    }
+            
+            return list(chats_dict.values())
+            
+    async def get_deleted_chat_messages_admin(
+        self,
+        user_id: int,
+        candidate_fullname: str,
+        message_type: str,
+        limit: int = 1000,
+    ) -> List[Chat]:
+        """
+        Получить все удаленные сообщения в конкретном чате (для админа)
+        """
+        from .database import DeletedChat
+        async with AsyncSession(self.engine) as session:
+            stmt = (
+                select(DeletedChat)
+                .where(
+                    and_(
+                        DeletedChat.user_id == user_id,
+                        DeletedChat.candidate_fullname == candidate_fullname,
+                        DeletedChat.message_type == message_type,
+                    )
+                )
+                .order_by(DeletedChat.timestamp)
+                .limit(limit)
+            )
+            result = await session.execute(stmt)
+            return result.scalars().all()
 
     async def get_all_users_with_chats(self) -> List[dict]:
         """
@@ -365,4 +462,3 @@ class ChatRepository:
 
 # Singleton instance
 chat_repository = ChatRepository()
-

@@ -87,6 +87,18 @@
       color: var(--color-text-muted);
       margin-bottom: 16px;
     }
+    .deleted-section {
+      margin-top: 40px;
+      opacity: 0.8;
+    }
+    .deleted-label {
+      font-size: 0.75rem;
+      color: #dc3545;
+      border: 1px solid #dc3545;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
   </style>
 {% endblock %}
 
@@ -99,9 +111,10 @@
       <p style="color: var(--color-text-muted); margin-top: 8px; margin-bottom: 0;">ID пользователя: <span class="text-readable-primary">{{ user_id }}</span></p>
     </div>
 
+    <!-- Active Chats -->
     {% if telegram_chats or email_chats %}
       {% if telegram_chats %}
-      <div class="card">
+      <div class="card mb-4">
         <div class="section-title">
           <i class="bi bi-telegram" style="color: #0088cc;"></i>
           Telegram диалоги ({{ telegram_chats|length }})
@@ -141,7 +154,7 @@
       {% endif %}
 
       {% if email_chats %}
-      <div class="card">
+      <div class="card mb-4">
         <div class="section-title">
           <i class="bi bi-envelope" style="color: #2ECC71;"></i>
           Email диалоги ({{ email_chats|length }})
@@ -180,13 +193,93 @@
       </div>
       {% endif %}
     {% else %}
-      <div class="card">
+      <div class="card mb-4">
         <div class="empty-state">
           <i class="bi bi-chat-dots"></i>
-          <h4 style="color: var(--color-text-muted);">Нет диалогов</h4>
-          <p style="color: var(--color-text-muted); font-size: 0.9rem;">У этого пользователя пока нет активных переписок</p>
+          <h4 style="color: var(--color-text-muted);">Нет активных диалогов</h4>
+          <p style="color: var(--color-text-muted); font-size: 0.9rem;">У этого пользователя нет активных переписок</p>
         </div>
       </div>
     {% endif %}
+    
+    <!-- Deleted Chats -->
+    {% if deleted_telegram_chats or deleted_email_chats %}
+    <div class="deleted-section">
+      <h3 style="color: var(--color-text-muted); margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        <i class="bi bi-trash me-2"></i>Удаленные диалоги
+      </h3>
+      
+      {% if deleted_telegram_chats %}
+      <div class="card mb-4" style="border-color: rgba(220, 53, 69, 0.3);">
+        <div class="section-title">
+          <i class="bi bi-telegram" style="color: #6c757d;"></i>
+          Удаленные Telegram диалоги ({{ deleted_telegram_chats|length }})
+        </div>
+        {% for chat in deleted_telegram_chats %}
+        <div class="chat-card" style="opacity: 0.8;" onclick="window.location.href='/admin/user/{{ user_id }}/chat/telegram/' + encodeURIComponent('{{ chat.candidate_fullname }}') + '?is_deleted=true'">
+          <!-- onclick disabled or point to deleted view? For now let's disable click or make it clear it's deleted -->
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+              <h6>
+                <i class="bi bi-person me-2" style="color: #6c757d;"></i>
+                <span class="text-readable-heading">{{ chat.candidate_fullname }}</span>
+                <span class="deleted-label">УДАЛЕН</span>
+              </h6>
+              {% if chat.vacancy_title %}
+              <div style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 8px;">
+                <i class="bi bi-briefcase me-1"></i><span class="text-readable-primary">{{ chat.vacancy_title }}</span>
+              </div>
+              {% endif %}
+              <div class="chat-preview">
+                {{ chat.last_message[:100] }}{% if chat.last_message|length > 100 %}...{% endif %}
+              </div>
+              <div style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 8px;">
+                <i class="bi bi-trash me-1"></i>Удален: {{ chat.deleted_at[:19] if chat.deleted_at else 'Н/Д' }}
+              </div>
+            </div>
+            <div class="text-end">
+              <!-- No unread count for deleted -->
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if deleted_email_chats %}
+      <div class="card mb-4" style="border-color: rgba(220, 53, 69, 0.3);">
+        <div class="section-title">
+          <i class="bi bi-envelope" style="color: #6c757d;"></i>
+          Удаленные Email диалоги ({{ deleted_email_chats|length }})
+        </div>
+        {% for chat in deleted_email_chats %}
+        <div class="chat-card" style="opacity: 0.8;" onclick="window.location.href='/admin/user/{{ user_id }}/chat/email/' + encodeURIComponent('{{ chat.candidate_fullname }}') + '?is_deleted=true'">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+              <h6>
+                <i class="bi bi-person me-2" style="color: #6c757d;"></i>
+                <span class="text-readable-heading">{{ chat.candidate_fullname }}</span>
+                <span class="deleted-label">УДАЛЕН</span>
+              </h6>
+              {% if chat.vacancy_title %}
+              <div style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 8px;">
+                <i class="bi bi-briefcase me-1"></i><span class="text-readable-primary">{{ chat.vacancy_title }}</span>
+              </div>
+              {% endif %}
+              <div class="chat-preview">
+                {{ chat.last_message[:100] }}{% if chat.last_message|length > 100 %}...{% endif %}
+              </div>
+              <div style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 8px;">
+                <i class="bi bi-trash me-1"></i>Удален: {{ chat.deleted_at[:19] if chat.deleted_at else 'Н/Д' }}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    
   </div>
 {% endblock %}

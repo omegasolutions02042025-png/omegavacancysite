@@ -127,6 +127,32 @@ class Chat(SQLModel, table=True):
     user: Optional["User"] = Relationship(back_populates="chats")
 
 
+class DeletedChat(SQLModel, table=True):
+    """
+    Таблица для хранения удаленных сообщений.
+    Структура идентична Chat, плюс поле deleted_at.
+    """
+    __tablename__ = "deleted_chat"
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
+    candidate_id: Optional[int] = Field(default=None, index=True)
+    candidate_fullname: str = Field(default=None, index=True)
+    vacancy_id: Optional[str] = Field(default=None, index=True)
+    vacancy_title: Optional[str] = Field(default=None)
+    message_type: str = Field(default=None)
+    sender: str = Field(default=None)
+    message_text: str = Field(default=None)
+    timestamp: Optional[str] = Field(default=None)
+    is_read: bool = Field(default=False)
+    
+    # Поля для файлов/медиа
+    has_media: bool = Field(default=False)
+    media_type: Optional[str] = Field(default=None)
+    media_path: Optional[str] = Field(default=None)
+    media_filename: Optional[str] = Field(default=None)
+    
+    deleted_at: Optional[str] = Field(default=None)  # Дата и время удаления
+
 
 class Sverka(SQLModel, table=True):
     __tablename__ = "sverka"

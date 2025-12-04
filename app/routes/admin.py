@@ -1306,10 +1306,15 @@ async def admin_user_chats(
     
     # Получаем все чаты пользователя
     chats = await chat_repository.get_user_chats(user_id)
+    deleted_chats = await chat_repository.get_user_deleted_chats(user_id)
     
     # Разделяем на Telegram и Email
     telegram_chats = [c for c in chats if c["message_type"] == "telegram"]
     email_chats = [c for c in chats if c["message_type"] == "email"]
+
+    # Разделяем удаленные чаты
+    deleted_telegram_chats = [c for c in deleted_chats if c["message_type"] == "telegram"]
+    deleted_email_chats = [c for c in deleted_chats if c["message_type"] == "email"]
     
     return templates.TemplateResponse(
         "admin/user_chats.html",
@@ -1320,6 +1325,8 @@ async def admin_user_chats(
             "user_email": user.email,
             "telegram_chats": telegram_chats,
             "email_chats": email_chats,
+            "deleted_telegram_chats": deleted_telegram_chats,
+            "deleted_email_chats": deleted_email_chats,
         },
     )
 
@@ -1330,6 +1337,7 @@ async def admin_chat_messages(
     message_type: str,
     candidate_fullname: str,
     request: Request,
+    is_deleted: bool = Query(False),
     current_admin=Depends(get_current_admin_from_cookie),
 ):
     """
@@ -1340,6 +1348,7 @@ async def admin_chat_messages(
         message_type: Тип сообщения ('telegram' или 'email')
         candidate_fullname: Полное имя кандидата
         request: FastAPI Request объект
+        is_deleted: Флаг для просмотра удаленного диалога
         current_admin: Текущий администратор (из cookie)
         
     Returns:
@@ -1360,13 +1369,21 @@ async def admin_chat_messages(
         if not user:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
     
-    # Получаем все сообщения диалога
-    messages = await chat_repository.get_chat_messages_admin(
-        user_id=user_id,
-        candidate_fullname=candidate_fullname,
-        message_type=message_type,
-        limit=1000,
-    )
+    # Получаем все сообщения диалога (активные или удаленные)
+    if is_deleted:
+        messages = await chat_repository.get_deleted_chat_messages_admin(
+            user_id=user_id,
+            candidate_fullname=candidate_fullname,
+            message_type=message_type,
+            limit=1000,
+        )
+    else:
+        messages = await chat_repository.get_chat_messages_admin(
+            user_id=user_id,
+            candidate_fullname=candidate_fullname,
+            message_type=message_type,
+            limit=1000,
+        )
     
     # Преобразуем в список словарей для шаблона
     messages_data = [
