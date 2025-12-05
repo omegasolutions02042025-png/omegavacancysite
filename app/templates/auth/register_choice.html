@@ -1,0 +1,229 @@
+{% extends "layouts/auth_layout.html" %}
+
+{% block title %}Выбор роли — Omega Hire{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .register-choice-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 60px 40px;
+    }
+
+    .register-choice-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--color-text-heading);
+        text-align: center;
+        margin-bottom: 48px;
+        text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    }
+
+    .tilt-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 32px;
+        margin-top: 40px;
+    }
+
+    .tilt-card {
+        background: var(--color-bg-surface);
+        backdrop-filter: blur(20px) saturate(180%);
+        border-radius: 24px;
+        padding: 40px 32px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transform-style: preserve-3d;
+    }
+
+    .tilt-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent 0%, currentColor 50%, transparent 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .tilt-card:hover::before {
+        opacity: 1;
+    }
+
+    .tilt-card:hover {
+        transform: translateY(-12px) rotateX(2deg);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    }
+
+    .tilt-card.blue {
+        color: #06B6D4;
+        border-color: rgba(6, 182, 212, 0.2);
+    }
+
+    .tilt-card.blue:hover {
+        border-color: rgba(6, 182, 212, 0.5);
+        box-shadow: 0 16px 48px rgba(6, 182, 212, 0.3);
+    }
+
+    .tilt-card.purple {
+        color: #A855F7;
+        border-color: rgba(168, 85, 247, 0.2);
+    }
+
+    .tilt-card.purple:hover {
+        border-color: rgba(168, 85, 247, 0.5);
+        box-shadow: 0 16px 48px rgba(168, 85, 247, 0.3);
+    }
+
+    .tilt-card.gold {
+        color: var(--color-accent-gold);
+        border-color: rgba(255, 215, 0, 0.2);
+    }
+
+    .tilt-card.gold:hover {
+        border-color: rgba(255, 215, 0, 0.5);
+        box-shadow: 0 16px 48px rgba(255, 215, 0, 0.3);
+    }
+
+    .tilt-card-visual {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+        background: linear-gradient(135deg, currentColor 0%, transparent 100%);
+        border-radius: 20px;
+        opacity: 0.8;
+        filter: drop-shadow(0 0 20px currentColor);
+    }
+
+    .tilt-card-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 16px;
+        color: var(--color-text-heading);
+    }
+
+    .tilt-card-copy {
+        font-size: 1.1rem;
+        text-align: center;
+        color: var(--color-text-primary);
+        opacity: 0.9;
+        margin-bottom: 32px;
+        line-height: 1.6;
+    }
+
+    .tilt-card-action {
+        display: block;
+        width: 100%;
+        padding: 16px 24px;
+        text-align: center;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 1.1rem;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        border: none;
+        cursor: pointer;
+    }
+
+    .tilt-card.blue .tilt-card-action {
+        background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
+        color: white;
+    }
+
+    .tilt-card.blue .tilt-card-action:hover {
+        background: linear-gradient(135deg, #0891B2 0%, #06B6D4 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(6, 182, 212, 0.4);
+    }
+
+    .tilt-card.purple .tilt-card-action {
+        background: linear-gradient(135deg, #A855F7 0%, #9333EA 100%);
+        color: white;
+    }
+
+    .tilt-card.purple .tilt-card-action:hover {
+        background: linear-gradient(135deg, #9333EA 0%, #A855F7 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(168, 85, 247, 0.4);
+    }
+
+    .tilt-card.gold .tilt-card-action {
+        background: var(--gradient-gold);
+        color: #0A1929;
+    }
+
+    .tilt-card.gold .tilt-card-action:hover {
+        background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+        color: #0A1929;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(255, 215, 0, 0.4);
+    }
+
+    @media (max-width: 768px) {
+        .register-choice-wrapper {
+            padding: 40px 20px;
+        }
+
+        .register-choice-title {
+            font-size: 2rem;
+        }
+
+        .tilt-cards-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-choice-wrapper">
+    <h1 class="register-choice-title">Присоединяйтесь к экосистеме OmegaHire</h1>
+    
+    <div class="tilt-cards-grid">
+        <!-- Talents Card -->
+        <div class="tilt-card blue" onclick="window.location.href='/auth/candidate'">
+            <div class="tilt-card-visual">💻</div>
+            <h3 class="tilt-card-title">Talents</h3>
+            <p class="tilt-card-copy">Получите доступ к скрытым вакансиям и персонального карьерного менеджера.</p>
+            <a href="/auth/candidate" class="tilt-card-action">Создать профиль кандидата</a>
+        </div>
+
+        <!-- Partners Card -->
+        <div class="tilt-card purple" onclick="window.location.href='/auth/contractor'">
+            <div class="tilt-card-visual">🌐</div>
+            <h3 class="tilt-card-title">Partners</h3>
+            <p class="tilt-card-copy">Монетизируйте свой бенч. Единое окно для подачи ваших специалистов.</p>
+            <a href="/auth/contractor" class="tilt-card-action">Стать партнером</a>
+        </div>
+
+        <!-- Team Card -->
+        <div class="tilt-card gold" onclick="window.location.href='/auth/internal'">
+            <div class="tilt-card-visual">
+                <img src="/static/img/omega-logo.png" alt="Omega" style="width: 80px; height: 80px; filter: drop-shadow(0 0 20px currentColor);">
+            </div>
+            <h3 class="tilt-card-title">Team</h3>
+            <p class="tilt-card-copy">Вход в систему управления наймом.</p>
+            <a href="/auth/internal" class="tilt-card-action">Войти</a>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="/auth/login" class="text-gold text-decoration-none">Уже есть аккаунт? Войти</a>
+    </div>
+</div>
+{% endblock %}

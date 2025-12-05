@@ -76,3 +76,4 @@ def downgrade() -> None:
     if 'created_at' in existing_columns:
         op.drop_column('candidate_profiles', 'created_at')
 
+

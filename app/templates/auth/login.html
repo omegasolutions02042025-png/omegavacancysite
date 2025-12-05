@@ -2,7 +2,77 @@
 
 {% block title %}Вход — Omega Hire{% endblock %}
 
+{% block head %}
+{{ super() }}
+<style>
+    .auth-header-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 16px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+    }
+
+    .auth-header-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: white;
+    }
+
+    .auth-header-logo img {
+        height: 40px;
+        filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
+    }
+
+    .auth-header-logo-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+
+    .auth-header-login-btn {
+        padding: 10px 20px;
+        background: var(--color-bg-surface-2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: var(--color-text-heading);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .auth-header-login-btn:hover {
+        background: var(--color-bg-surface);
+        border-color: rgba(255, 215, 0, 0.3);
+        color: var(--color-accent-gold);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2);
+    }
+
+    .auth-form-side {
+        position: relative;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<!-- Header -->
+<div class="auth-header-top">
+    <a href="/" class="auth-header-logo">
+        <img src="/static/img/omega-logo.png" alt="Omega Hire">
+        <span class="auth-header-logo-text">OMEGA HIRE</span>
+    </a>
+    <a href="/auth/login" class="auth-header-login-btn">
+        Вход
+    </a>
+</div>
 <div class="mb-5">
     <h1 class="mb-2">С возвращением</h1>
     <p class="text-muted">Введите свои учетные данные для входа в платформу</p>
@@ -41,7 +111,7 @@
     </button>
 
     <div class="text-center text-muted">
-        Нет аккаунта? <a href="/auth/register" class="text-gold fw-bold">Зарегистрироваться</a>
+        Нет аккаунта? <a href="/" class="text-gold fw-bold">Зарегистрироваться</a>
     </div>
 </form>
 

@@ -4,10 +4,362 @@
 
 {% block head %}
 <style>
+  /* Landing Page Header */
+  .landing-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(2, 6, 23, 0.8);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 16px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .landing-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--color-text-heading);
+  }
+
+  .landing-header-logo img {
+    height: 40px;
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
+  }
+
+  .landing-header-logo-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  }
+
+  .auth-nav-wrapper {
+    position: relative;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .auth-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--color-bg-surface-2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: var(--color-text-heading);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .auth-nav-btn:hover {
+    background: var(--color-bg-surface);
+    border-color: rgba(255, 215, 0, 0.3);
+    color: var(--color-accent-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2);
+  }
+
+  .auth-nav-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 280px;
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    padding: 8px;
+    display: none;
+    z-index: 1001;
+  }
+
+  .auth-nav-dropdown.show {
+    display: block;
+  }
+
+  .auth-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: var(--color-text-heading);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: 500;
+  }
+
+  .auth-nav-item:hover {
+    background: var(--color-bg-surface-2);
+    transform: translateX(4px);
+  }
+
+  .auth-nav-item-icon {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+  }
+
+  .auth-nav-item.blue:hover {
+    color: #06B6D4;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+  }
+
+  .auth-nav-item.purple:hover {
+    color: #A855F7;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+  }
+
+  .auth-nav-item.white:hover {
+    color: var(--color-accent-gold);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  }
+
+  /* Pre-Footer Section */
+  .pre-footer-section {
+    margin-top: 80px;
+    margin-bottom: 60px;
+    padding: 60px 0;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .pre-footer-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    text-align: center;
+    margin-bottom: 48px;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+  }
+
+  .tilt-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 32px;
+    margin-top: 40px;
+    padding: 0 40px;
+  }
+
+  .tilt-card {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 24px;
+    padding: 40px 32px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  .tilt-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, currentColor 50%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .tilt-card:hover::before {
+    opacity: 1;
+  }
+
+  .tilt-card:hover {
+    transform: translateY(-12px) rotateX(2deg);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  }
+
+  .tilt-card.blue {
+    color: #06B6D4;
+    border-color: rgba(6, 182, 212, 0.2);
+  }
+
+  .tilt-card.blue:hover {
+    border-color: rgba(6, 182, 212, 0.5);
+    box-shadow: 0 16px 48px rgba(6, 182, 212, 0.3);
+  }
+
+  .tilt-card.purple {
+    color: #A855F7;
+    border-color: rgba(168, 85, 247, 0.2);
+  }
+
+  .tilt-card.purple:hover {
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 16px 48px rgba(168, 85, 247, 0.3);
+  }
+
+  .tilt-card.gold {
+    color: var(--color-accent-gold);
+    border-color: rgba(255, 215, 0, 0.2);
+  }
+
+  .tilt-card.gold:hover {
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 0 16px 48px rgba(255, 215, 0, 0.3);
+  }
+
+  .tilt-card-visual {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    background: linear-gradient(135deg, currentColor 0%, transparent 100%);
+    border-radius: 20px;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 20px currentColor);
+  }
+
+  .tilt-card-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 16px;
+    color: var(--color-text-heading);
+  }
+
+  .tilt-card-copy {
+    font-size: 1.1rem;
+    text-align: center;
+    color: var(--color-text-primary);
+    opacity: 0.9;
+    margin-bottom: auto;
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .tilt-card-action {
+    display: block;
+    width: 100%;
+    padding: 16px 24px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border: none;
+    cursor: pointer;
+    margin-top: auto;
+  }
+
+  .tilt-card.blue .tilt-card-action {
+    background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
+    color: white;
+  }
+
+  .tilt-card.blue .tilt-card-action:hover {
+    background: linear-gradient(135deg, #0891B2 0%, #06B6D4 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(6, 182, 212, 0.4);
+  }
+
+  .tilt-card.purple .tilt-card-action {
+    background: linear-gradient(135deg, #A855F7 0%, #9333EA 100%);
+    color: white;
+  }
+
+  .tilt-card.purple .tilt-card-action:hover {
+    background: linear-gradient(135deg, #9333EA 0%, #A855F7 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(168, 85, 247, 0.4);
+  }
+
+  .tilt-card.gold .tilt-card-action {
+    background: var(--gradient-gold);
+    color: #0A1929;
+  }
+
+  .tilt-card.gold .tilt-card-action:hover {
+    background: linear-gradient(135deg, #FFE066 0%, var(--color-accent-gold) 100%);
+    color: #0A1929;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(255, 215, 0, 0.4);
+  }
+
+  @media (max-width: 768px) {
+    .landing-header {
+      padding: 12px 20px;
+    }
+
+    .pre-footer-title {
+      font-size: 2rem;
+    }
+
+    .tilt-cards-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .page-wrapper {
     max-width: 1200px;
     margin: 0 auto;
     padding: 40px 16px;
+  }
+
+  /* Для неавторизованных пользователей - растягиваем на всю ширину */
+  body.no-auth .app-main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh;
+  }
+
+  body.no-auth .page-wrapper {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+  }
+
+  body.no-auth .hero-section,
+  body.no-auth .section-block,
+  body.no-auth .cta-section {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+
+  body.no-auth .pre-footer-section {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+
+  @media (max-width: 768px) {
+    body.no-auth .hero-section,
+    body.no-auth .section-block,
+    body.no-auth .cta-section,
+    body.no-auth .pre-footer-section {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
   }
 
   .hover-lift {
@@ -600,6 +952,61 @@
 {% endblock %}
 
 {% block content %}
+<!-- Landing Page Header (только для неавторизованных пользователей) -->
+{% if not user_id %}
+<header class="landing-header">
+    <a href="/" class="landing-header-logo">
+        <img src="/static/img/omega-logo.png" alt="Omega Hire">
+        <span class="landing-header-logo-text">OMEGA HIRE</span>
+    </a>
+    
+    <div class="auth-nav-wrapper">
+        <a href="/auth/login" class="auth-nav-btn" style="text-decoration: none;">
+            <i class="bi bi-box-arrow-in-right"></i>
+            <span>Вход</span>
+        </a>
+        <button class="auth-nav-btn" id="authNavBtn" onclick="toggleAuthDropdown()">
+            <i class="bi bi-person-plus"></i>
+            <span>Регистрация</span>
+            <i class="bi bi-chevron-down" style="font-size: 0.8rem;"></i>
+        </button>
+        
+        <div class="auth-nav-dropdown" id="authNavDropdown">
+            <a href="/auth/candidate" class="auth-nav-item blue">
+                <span class="auth-nav-item-icon">🔵</span>
+                <span>Я Соискатель</span>
+            </a>
+            <a href="/auth/contractor" class="auth-nav-item purple">
+                <span class="auth-nav-item-icon">🟣</span>
+                <span>Я Партнер</span>
+            </a>
+            <a href="/auth/internal" class="auth-nav-item white">
+                <span class="auth-nav-item-icon">⚪</span>
+                <span>Сотрудник</span>
+            </a>
+        </div>
+    </div>
+</header>
+
+{% endif %}
+
+<script>
+function toggleAuthDropdown() {
+    const dropdown = document.getElementById('authNavDropdown');
+    dropdown.classList.toggle('show');
+}
+
+// Закрытие dropdown при клике вне его
+document.addEventListener('click', function(event) {
+    const wrapper = document.querySelector('.auth-nav-wrapper');
+    const dropdown = document.getElementById('authNavDropdown');
+    const btn = document.getElementById('authNavBtn');
+    if (wrapper && !wrapper.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+</script>
+
 <main class="page-wrapper">
     <section class="hero-section">
         <div class="hero-logo-wrapper mb-4">
@@ -781,6 +1188,39 @@
             <i class="bi bi-people me-2"></i>Мои кандидаты
           </a>
         </div>
+    </section>
+
+    <!-- Pre-Footer Section -->
+    <section class="pre-footer-section">
+      <h2 class="pre-footer-title">Присоединяйтесь к экосистеме OmegaHire</h2>
+      
+      <div class="tilt-cards-grid">
+        <!-- Talents Card -->
+        <div class="tilt-card blue" onclick="window.location.href='/auth/candidate'">
+          <div class="tilt-card-visual">💻</div>
+          <h3 class="tilt-card-title">Talents</h3>
+          <p class="tilt-card-copy">Получите доступ к скрытым вакансиям и персонального карьерного менеджера.</p>
+          <a href="/auth/candidate" class="tilt-card-action">Создать профиль кандидата</a>
+        </div>
+
+        <!-- Partners Card -->
+        <div class="tilt-card purple" onclick="window.location.href='/auth/contractor'">
+          <div class="tilt-card-visual">🌐</div>
+          <h3 class="tilt-card-title">Partners</h3>
+          <p class="tilt-card-copy">Монетизируйте свой бенч. Единое окно для подачи ваших специалистов.</p>
+          <a href="/auth/contractor" class="tilt-card-action">Стать партнером</a>
+        </div>
+
+        <!-- Team Card -->
+        <div class="tilt-card gold" onclick="window.location.href='/auth/internal'">
+          <div class="tilt-card-visual">
+            <img src="/static/img/omega-logo.png" alt="Omega" style="width: 80px; height: 80px; filter: drop-shadow(0 0 20px currentColor);">
+          </div>
+          <h3 class="tilt-card-title">Team</h3>
+          <p class="tilt-card-copy">Вход в систему управления наймом.</p>
+          <a href="/auth/internal" class="tilt-card-action">Войти</a>
+        </div>
+      </div>
     </section>
   </main>
 {% endblock %}

@@ -138,9 +138,31 @@
         }
         
         .form-input:focus {
-            border-color: var(--color-accent-gold);
-            box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.1);
+            border-color: var(--auth-accent-color, var(--color-accent-gold));
+            box-shadow: 0 0 0 4px var(--auth-accent-shadow, rgba(255, 215, 0, 0.1));
             outline: none;
+        }
+
+        /* Color scheme variables - can be overridden */
+        :root {
+            --auth-accent-color: var(--color-accent-gold);
+            --auth-accent-shadow: rgba(255, 215, 0, 0.1);
+            --auth-text-accent: var(--color-accent-gold);
+        }
+
+        .text-gold {
+            color: var(--auth-text-accent, var(--color-accent-gold)) !important;
+        }
+
+        .btn-primary {
+            background: var(--auth-accent-color, var(--gradient-gold));
+            border-color: var(--auth-accent-color, var(--color-accent-gold));
+        }
+
+        .btn-primary:hover {
+            background: var(--auth-accent-color, var(--gradient-gold));
+            border-color: var(--auth-accent-color, var(--color-accent-gold));
+            filter: brightness(1.1);
         }
         
         /* Mobile Responsive */

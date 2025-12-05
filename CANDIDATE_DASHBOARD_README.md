@@ -167,3 +167,4 @@ async def candidate_dashboard(request: Request):
 - Интегрируется с базовым шаблоном
 
 
+

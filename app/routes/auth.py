@@ -442,33 +442,55 @@ async def reset_password(
     )
 
 
+@router.get("/register-choice")
+async def register_choice_page(request: Request):
+    """Страница выбора роли для регистрации"""
+    return templates.TemplateResponse("auth/register_choice.html", {"request": request})
+
+
 @router.get("/register")
 async def register_page(request: Request):
-    """Показать страницу подачи заявки на регистрацию"""
-    return templates.TemplateResponse("auth/register.html", {"request": request})
+    """Редирект на страницу выбора роли"""
+    from starlette.responses import RedirectResponse
+    return RedirectResponse(url="/auth/register-choice", status_code=303)
 
 
-@router.post("/register")
-async def register_request(
+@router.get("/internal")
+async def register_internal_page(request: Request):
+    """Показать страницу регистрации для сотрудников (рекрутеров)"""
+    return templates.TemplateResponse("auth/register_internal.html", {"request": request})
+
+
+@router.get("/candidate")
+async def register_candidate_page(request: Request):
+    """Показать страницу регистрации для кандидатов"""
+    return templates.TemplateResponse("auth/register_candidate.html", {"request": request})
+
+
+@router.get("/contractor")
+async def register_contractor_page(request: Request):
+    """Показать страницу регистрации для подрядчиков (партнеров)"""
+    return templates.TemplateResponse("auth/register_contractor.html", {"request": request})
+
+
+async def process_registration(
     request: Request,
-    email: str = Form(...),
-    password: str = Form(...),
-    confirm_password: str = Form(...),
-    first_name: str = Form(...),
-    last_name: str = Form(...),
-    phone: str = Form(...),
-    middle_name: str = Form(None),
-    role: str = Form(...),
-    specialization: str = Form(None),
-    experience: str = Form(None),
-    resume: str = Form(None),
-    pd_consent: str = Form(None),  # Чекбокс возвращает "on" если отмечен
+    email: str,
+    password: str,
+    confirm_password: str,
+    first_name: str,
+    last_name: str,
+    phone: str,
+    user_role: UserRole,
+    template_name: str,
+    middle_name: str = None,
+    specialization: str = None,
+    experience: str = None,
+    resume: str = None,
+    pd_consent: str = None,
 ):
     """
-    Подать заявку на регистрацию нового пользователя.
-    
-    Создает заявку в базе данных, отправляет письмо с подтверждением email.
-    После подтверждения email администратор должен одобрить заявку.
+    Общая функция для обработки регистрации.
     
     Args:
         request: FastAPI Request объект
@@ -478,61 +500,23 @@ async def register_request(
         first_name: Имя
         last_name: Фамилия
         phone: Телефон
+        user_role: Роль пользователя (определяется из URL)
+        template_name: Имя шаблона для отображения ошибок
         middle_name: Отчество (опционально)
         specialization: Специализация (опционально)
         experience: Опыт работы (опционально)
         resume: Резюме или ссылка (опционально)
+        pd_consent: Согласие на обработку ПД
         
     Returns:
-        HTMLResponse: Страница успешной отправки заявки
-        
-    Raises:
-        HTTPException: Если пользователь уже существует или заявка уже подана
+        HTMLResponse: Страница успешной отправки заявки или страница с ошибкой
     """
-    print(f"[REGISTRATION] Заявка на регистрацию: email={email}, role={role}")
-    
-    # Валидация роли
-    try:
-        user_role = UserRole(role)
-        if user_role == UserRole.ADMIN:
-            return templates.TemplateResponse(
-                "auth/register.html",
-                {
-                    "request": request,
-                    "error": "Недопустимая роль",
-                    "email": email,
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "middle_name": middle_name,
-                    "phone": phone,
-                    "role": role,
-                    "specialization": specialization,
-                    "experience": experience,
-                    "resume": resume
-                }
-            )
-    except ValueError:
-        return templates.TemplateResponse(
-            "auth/register.html",
-            {
-                "request": request,
-                "error": "Недопустимая роль",
-                "email": email,
-                "first_name": first_name,
-                "last_name": last_name,
-                "middle_name": middle_name,
-                "phone": phone,
-                "role": role,
-                "specialization": specialization,
-                "experience": experience,
-                "resume": resume
-            }
-        )
+    print(f"[REGISTRATION] Заявка на регистрацию: email={email}, role={user_role}")
     
     # Проверяем согласие на обработку персональных данных
     if not pd_consent or pd_consent != "on":
         return templates.TemplateResponse(
-            "auth/register.html",
+            template_name,
             {
                 "request": request,
                 "error": "Необходимо дать согласие на обработку персональных данных",
@@ -541,7 +525,6 @@ async def register_request(
                 "last_name": last_name,
                 "middle_name": middle_name,
                 "phone": phone,
-                "role": role,
                 "specialization": specialization,
                 "experience": experience,
                 "resume": resume
@@ -549,8 +532,8 @@ async def register_request(
         )
     
     if password != confirm_password:
-         return templates.TemplateResponse(
-            "auth/register.html",
+        return templates.TemplateResponse(
+            template_name,
             {
                 "request": request,
                 "error": "Пароли не совпадают",
@@ -559,7 +542,6 @@ async def register_request(
                 "last_name": last_name,
                 "middle_name": middle_name,
                 "phone": phone,
-                "role": role,
                 "specialization": specialization,
                 "experience": experience,
                 "resume": resume
@@ -601,7 +583,7 @@ async def register_request(
     )
     if not request_obj:
         return templates.TemplateResponse(
-            "auth/register.html",
+            template_name,
             {
                 "request": request,
                 "error": "Пользователь с таким email уже существует или заявка уже подана",
@@ -610,7 +592,6 @@ async def register_request(
                 "last_name": last_name,
                 "middle_name": middle_name,
                 "phone": phone,
-                "role": role,
                 "specialization": specialization,
                 "experience": experience,
                 "resume": resume
@@ -649,16 +630,194 @@ async def register_request(
             use_tls=settings.smtp_use_tls,
             use_starttls=settings.smtp_use_starttls,
         )
-        
-        if not success:
+        if success:
+            print(f"[REGISTRATION] ✅ Письмо отправлено на {email}")
+        else:
             print(f"[REGISTRATION] ⚠️ Не удалось отправить письмо на {email}")
     except Exception as e:
-        print(f"[REGISTRATION] ❌ Ошибка отправки письма: {e}")
+        print(f"[REGISTRATION] ❌ Ошибка при отправке письма: {e}")
     
-    # Перенаправляем на страницу с сообщением
+    # Показываем страницу успеха
     return templates.TemplateResponse(
         "auth/register_success.html",
-        {"request": request, "email": email}
+        {
+            "request": request,
+            "email": email
+        }
+    )
+
+
+@router.post("/register")
+async def register_request(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    phone: str = Form(...),
+    middle_name: str = Form(None),
+    role: str = Form(...),
+    specialization: str = Form(None),
+    experience: str = Form(None),
+    resume: str = Form(None),
+    pd_consent: str = Form(None),
+):
+    """
+    Подать заявку на регистрацию (обратная совместимость - использует роль из формы).
+    """
+    try:
+        user_role = UserRole(role)
+        if user_role == UserRole.ADMIN:
+            return templates.TemplateResponse(
+                "auth/register_internal.html",
+                {
+                    "request": request,
+                    "error": "Недопустимая роль",
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "middle_name": middle_name,
+                    "phone": phone,
+                    "specialization": specialization,
+                    "experience": experience,
+                    "resume": resume
+                }
+            )
+    except ValueError:
+        return templates.TemplateResponse(
+            "auth/register_internal.html",
+            {
+                "request": request,
+                "error": "Недопустимая роль",
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "middle_name": middle_name,
+                "phone": phone,
+                "specialization": specialization,
+                "experience": experience,
+                "resume": resume
+            }
+        )
+    
+    return await process_registration(
+        request=request,
+        email=email,
+        password=password,
+        confirm_password=confirm_password,
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone,
+        user_role=user_role,
+        template_name="auth/register_internal.html",
+        middle_name=middle_name,
+        specialization=specialization,
+        experience=experience,
+        resume=resume,
+        pd_consent=pd_consent,
+    )
+
+
+@router.post("/internal")
+async def register_internal_post(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    phone: str = Form(...),
+    middle_name: str = Form(None),
+    specialization: str = Form(None),
+    experience: str = Form(None),
+    resume: str = Form(None),
+    pd_consent: str = Form(None),
+):
+    """Подать заявку на регистрацию для сотрудников (рекрутеров)"""
+    return await process_registration(
+        request=request,
+        email=email,
+        password=password,
+        confirm_password=confirm_password,
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone,
+        user_role=UserRole.RECRUITER,
+        template_name="auth/register_internal.html",
+        middle_name=middle_name,
+        specialization=specialization,
+        experience=experience,
+        resume=resume,
+        pd_consent=pd_consent,
+    )
+
+
+@router.post("/candidate")
+async def register_candidate_post(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    phone: str = Form(...),
+    middle_name: str = Form(None),
+    specialization: str = Form(None),
+    experience: str = Form(None),
+    resume: str = Form(None),
+    pd_consent: str = Form(None),
+):
+    """Подать заявку на регистрацию для кандидатов"""
+    return await process_registration(
+        request=request,
+        email=email,
+        password=password,
+        confirm_password=confirm_password,
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone,
+        user_role=UserRole.CANDIDATE,
+        template_name="auth/register_candidate.html",
+        middle_name=middle_name,
+        specialization=specialization,
+        experience=experience,
+        resume=resume,
+        pd_consent=pd_consent,
+    )
+
+
+@router.post("/contractor")
+async def register_contractor_post(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    phone: str = Form(...),
+    middle_name: str = Form(None),
+    specialization: str = Form(None),
+    experience: str = Form(None),
+    resume: str = Form(None),
+    pd_consent: str = Form(None),
+):
+    """Подать заявку на регистрацию для подрядчиков (партнеров)"""
+    return await process_registration(
+        request=request,
+        email=email,
+        password=password,
+        confirm_password=confirm_password,
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone,
+        user_role=UserRole.CONTRACTOR,
+        template_name="auth/register_contractor.html",
+        middle_name=middle_name,
+        specialization=specialization,
+        experience=experience,
+        resume=resume,
+        pd_consent=pd_consent,
     )
 
 

@@ -1,0 +1,136 @@
+{% extends "layouts/auth_layout.html" %}
+
+{% block title %}Регистрация кандидата — Omega Hire{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    :root {
+        --auth-accent-color: #06B6D4;
+        --auth-accent-shadow: rgba(6, 182, 212, 0.2);
+        --auth-text-accent: #06B6D4;
+    }
+
+    .auth-brand-side {
+        background-image: 
+            radial-gradient(circle at 20% 30%, rgba(6, 182, 212, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 40%);
+    }
+
+    .stat-item .stat-value {
+        color: #06B6D4;
+        text-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+    }
+
+    .brand-quote h2 {
+        background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
+        color: white;
+        box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #0891B2 0%, #06B6D4 100%);
+        box-shadow: 0 6px 24px rgba(6, 182, 212, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="mb-2">Создать профиль кандидата</h1>
+    <p class="text-muted">Заполните форму, чтобы получить доступ к скрытым вакансиям</p>
+</div>
+
+{% if error %}
+<div class="alert alert-danger mb-4">
+    <i class="bi bi-exclamation-circle me-2"></i> {{ error }}
+</div>
+{% endif %}
+
+<div class="alert alert-info d-flex mb-4" style="background: rgba(6, 182, 212, 0.2); border-color: rgba(6, 182, 212, 0.3); color: var(--color-text-primary);">
+    <i class="bi bi-info-circle me-2 mt-1" style="color: #06B6D4;"></i>
+    <div class="small">После подачи заявки вам придет письмо для подтверждения email. Затем администратор рассмотрит вашу заявку.</div>
+</div>
+
+<form id="register_form" method="POST" action="/auth/candidate">
+    <!-- Личные данные -->
+    <h5 class="mb-3 text-uppercase fs-7 ls-1" style="color: #06B6D4;">Личные данные</h5>
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ФАМИЛИЯ *</label>
+            <input name="last_name" type="text" placeholder="Иванов" class="form-input" required value="{{ last_name or '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ИМЯ *</label>
+            <input name="first_name" type="text" placeholder="Иван" class="form-input" required value="{{ first_name or '' }}">
+        </div>
+    </div>
+    <div class="mb-4">
+        <label class="form-label small text-muted fw-bold">ОТЧЕСТВО</label>
+        <input name="middle_name" type="text" placeholder="Иванович" class="form-input" value="{{ middle_name or '' }}">
+    </div>
+
+    <!-- Контакты -->
+    <h5 class="mb-3 text-uppercase fs-7 ls-1" style="color: #06B6D4;">Контакты</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">EMAIL *</label>
+            <input name="email" type="email" placeholder="example@mail.com" class="form-input" required value="{{ email or '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ТЕЛЕФОН *</label>
+            <input name="phone" type="tel" placeholder="+7 (999) 000-00-00" class="form-input" required value="{{ phone or '' }}">
+        </div>
+    </div>
+
+    <!-- Профессиональные данные -->
+    <h5 class="mb-3 text-uppercase fs-7 ls-1" style="color: #06B6D4;">Профиль</h5>
+    <div class="mb-3">
+        <label class="form-label small text-muted fw-bold">СПЕЦИАЛИЗАЦИЯ</label>
+        <input name="specialization" type="text" placeholder="Python Developer, Frontend Developer..." class="form-input" value="{{ specialization or '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label small text-muted fw-bold">ОПЫТ РАБОТЫ</label>
+        <input name="experience" type="text" placeholder="3 года в разработке..." class="form-input" value="{{ experience or '' }}">
+    </div>
+    <div class="mb-4">
+        <label class="form-label small text-muted fw-bold">ССЫЛКА НА РЕЗЮМЕ</label>
+        <input name="resume" type="text" placeholder="hh.ru/resume/..." class="form-input" value="{{ resume or '' }}">
+    </div>
+
+    <!-- Пароль -->
+    <h5 class="mb-3 text-uppercase fs-7 ls-1" style="color: #06B6D4;">Безопасность</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ПАРОЛЬ *</label>
+            <input name="password" type="password" placeholder="Min 6 characters" class="form-input" required minlength="6">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small text-muted fw-bold">ПОВТОР *</label>
+            <input name="confirm_password" type="password" placeholder="********" class="form-input" required minlength="6">
+        </div>
+    </div>
+
+    <!-- Согласие -->
+    <div class="form-check mb-4 p-3 rounded border border-secondary bg-surface-2">
+        <input class="form-check-input mt-1" type="checkbox" id="pd_consent" name="pd_consent" required style="background-color: var(--color-bg-primary); border-color: var(--color-text-muted);">
+        <label class="form-check-label small text-muted ms-2" for="pd_consent">
+            Я согласен на обработку <a href="/auth/consent-personal-data" target="_blank" class="text-decoration-none" style="color: #06B6D4;">персональных данных</a> и принимаю <a href="/auth/policy-personal-data" target="_blank" class="text-decoration-none" style="color: #06B6D4;">политику конфиденциальности</a>.
+        </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 mb-4">
+        Подать заявку
+    </button>
+
+    <div class="text-center text-muted">
+        Уже есть аккаунт? <a href="/auth/login" class="fw-bold" style="color: #06B6D4;">Войти</a>
+    </div>
+</form>
+{% endblock %}

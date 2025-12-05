@@ -21,11 +21,12 @@
     
     {% block head %}{% endblock %}
 </head>
-<body>
+<body {% if not user_id %}class="no-auth"{% endif %}>
     
+    {% if user_id %}
     {% include "components/sidebar.html" %}
-    
     {% include "components/header.html" %}
+    {% endif %}
     
     <main class="app-main">
         {% block content %}{% endblock %}
